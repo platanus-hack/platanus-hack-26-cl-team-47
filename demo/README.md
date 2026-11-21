@@ -67,3 +67,26 @@ python -m http.server 8200 --directory demo
 
 Prueba sin el detector: `--decide-right demo.tests.factories:rotate_at` (rota en t=20).
 Tests: `python -m pytest demo/tests -q`.
+
+## Cómo mostrar la demo (15d)
+
+```
+bash demo/demo.sh
+```
+
+1. Corre `python demo/run_split.py --out-dir demo/out` con los valores por defecto:
+   izquierda `engine.detector:make_measure_only` (mide igual, nunca bloquea ni
+   rota: los bits suben hasta el final y el atacante recibe 200), derecha
+   `engine.detector:make_decide` (rota en la llamada 24 con 48 bits filtrados:
+   diente de sierra y 401).
+2. Levanta `python -m http.server 8200 --directory demo`.
+3. Imprime la URL: `http://127.0.0.1:8200/viz/split.html?left=../out/left.jsonl&right=../out/right.jsonl`.
+
+Abre la URL, pulsa ▶ (o espacio) y elige 4× o 16×. Al final se ven el 200 y el 401.
+
+**Sin Python** (por ejemplo, si algo falla en vivo): hay una copia versionada de
+la corrida en `demo/viz/fixtures/real_left.jsonl` y `real_right.jsonl`. Sirve
+`demo/viz` con cualquier servidor estático y abre
+`split.html?left=fixtures/real_left.jsonl&right=fixtures/real_right.jsonl`.
+Para regenerarla: `python demo/run_split.py --out-dir demo/out` y copia los dos
+archivos a `demo/viz/fixtures/real_*.jsonl`.

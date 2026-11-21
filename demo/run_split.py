@@ -1,13 +1,17 @@
-"""Genera los dos registros de la pantalla dividida (tarea 15c).
+"""Genera los dos registros de la pantalla dividida (tareas 15c y 15d).
 
+    python demo/run_split.py --out-dir demo/out          # demo real, valores por defecto
     python demo/run_split.py --session demo/sessions/goteo.jsonl \
-        --decide-right <modulo>:<fabrica> --out-dir demo/out [--secret-id SECRET_1]
+        [--decide-left <modulo>:<fabrica>] [--decide-right <modulo>:<fabrica>] \
+        --out-dir demo/out [--secret-id SECRET_1]
     python demo/run_split.py --make-session      # regenera demo/sessions/goteo.jsonl
 
 La misma sesión grabada pasa por el arnés dos veces:
-  izquierda  proxy.decide:allow_all (sin protección)
-  derecha    la fábrica de --decide-right; cada decisión rotate* rota el secreto
-             en un gestor en proceso y deja un evento rotation
+  izquierda  --decide-left (por defecto engine.detector:make_measure_only: mide
+             como el detector pero siempre deja pasar y nunca rota)
+  derecha    --decide-right (por defecto engine.detector:make_decide); cada
+             decisión rotate* rota el secreto en un gestor en proceso y deja un
+             evento rotation
 Al final, el atacante usa el valor ORIGINAL del secreto (el del manifiesto)
 contra la API protegida en proceso, con un gestor propio por panel: 200 si la
 clave sigue vigente, 401 si se rotó. Sin red, sin uvicorn.
@@ -42,7 +46,8 @@ from services.vault.manifest import load_manifest  # noqa: E402
 
 MANIFEST = ROOT / "demo" / "secrets_manifest.json"
 DEFAULT_SESSION = ROOT / "demo" / "sessions" / "goteo.jsonl"
-LEFT_FACTORY = "proxy.decide:allow_all"
+LEFT_FACTORY = "engine.detector:make_measure_only"
+RIGHT_FACTORY = "engine.detector:make_decide"
 
 # ------------------------------------------------------------------ sesión
 
@@ -165,8 +170,8 @@ def write(events: list[Event], path: Path) -> Path:
     return path
 
 
-def run_split(session: Path, decide_right, out_dir: Path, secret_id: str = "SECRET_1",
-              decide_left=LEFT_FACTORY) -> tuple[Path, Path]:
+def run_split(session: Path, decide_right=RIGHT_FACTORY, out_dir: Path = ROOT / "demo" / "out",
+              secret_id: str = "SECRET_1", decide_left=LEFT_FACTORY) -> tuple[Path, Path]:
     secrets = load_manifest(MANIFEST)
     if secret_id not in secrets:
         raise SystemExit(f"{secret_id} no está en {MANIFEST}")
@@ -179,7 +184,10 @@ def run_split(session: Path, decide_right, out_dir: Path, secret_id: str = "SECR
 def main() -> None:
     ap = argparse.ArgumentParser(prog="python demo/run_split.py")
     ap.add_argument("--session", type=Path, default=DEFAULT_SESSION)
-    ap.add_argument("--decide-right", help="fábrica de decisión del panel derecho, modulo:fabrica")
+    ap.add_argument("--decide-left", default=LEFT_FACTORY,
+                    help=f"fábrica del panel izquierdo, modulo:fabrica (por defecto {LEFT_FACTORY})")
+    ap.add_argument("--decide-right", default=RIGHT_FACTORY,
+                    help=f"fábrica del panel derecho, modulo:fabrica (por defecto {RIGHT_FACTORY})")
     ap.add_argument("--out-dir", type=Path, default=ROOT / "demo" / "out")
     ap.add_argument("--secret-id", default="SECRET_1")
     ap.add_argument("--make-session", action="store_true", help="regenera la sesión de ejemplo y sale")
@@ -188,10 +196,7 @@ def main() -> None:
     if args.make_session:
         print(make_session(args.session, args.secret_id))
         return
-    if not args.decide_right:
-        ap.error("falta --decide-right")
-
-    left, right = run_split(args.session, args.decide_right, args.out_dir, args.secret_id)
+    left, right = run_split(args.session, args.decide_right, args.out_dir, args.secret_id, args.decide_left)
     for p in (left, right):
         evs = p.read_text(encoding="utf-8").splitlines()
         rot = sum('"kind":"rotation"' in x for x in evs)

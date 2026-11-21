@@ -97,3 +97,54 @@ def test_acepta_decide_o_fabrica():
 
     assert as_factory(allow_all)() is allow_all     # decide(call) se envuelve
     assert callable(as_factory(rotate_at)())         # make_decide() se usa tal cual
+
+
+# ------------------------------------------------ demo real con el detector (15d)
+
+REAL_LEFT = ROOT / "demo" / "viz" / "fixtures" / "real_left.jsonl"
+REAL_RIGHT = ROOT / "demo" / "viz" / "fixtures" / "real_right.jsonl"
+
+
+def run_defaults(out_dir):
+    r = subprocess.run([sys.executable, str(SCRIPT), "--out-dir", str(out_dir)], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    read = lambda p: [Event.model_validate_json(x) for x in p.read_text(encoding="utf-8").splitlines()]
+    return read(out_dir / "left.jsonl"), read(out_dir / "right.jsonl")
+
+
+def s1_bits(evs):
+    return [e.data["leak"].get("SECRET_1", {}).get("bits", 0.0) for e in kinds(evs, "decision")]
+
+
+@pytest.fixture(scope="module")
+def real_run(tmp_path_factory):
+    return run_defaults(tmp_path_factory.mktemp("real"))
+
+
+def test_real_izquierda_mide_sin_proteger(real_run):
+    left, _ = real_run
+    decisions = kinds(left, "decision")
+    assert len(decisions) == 60 and all(e.data["action"] == "allow" for e in decisions)
+    assert not kinds(left, "rotation")
+    bits = s1_bits(left)
+    assert all(b >= a for a, b in zip(bits, bits[1:])), "los bits de la izquierda nunca bajan"
+    assert bits[-1] > bits[0]
+    assert left[-1].data["status"] == 200
+
+
+def test_real_derecha_rota_en_24_y_401(real_run):
+    _, right = real_run
+    rotating = [e for e in kinds(right, "decision") if e.data["action"].startswith("rotate")]
+    assert [e.call_id for e in rotating] == ["c24"]
+    assert rotating[0].data["action"] == "rotate+allow"
+    assert rotating[0].data["leak"]["SECRET_1"]["bits"] == 48.0
+    assert len(kinds(right, "rotation")) == 1
+    assert right[-1].data["status"] == 401
+
+
+def test_fixtures_real_validos_y_al_dia(real_run):
+    left, right = real_run
+    for path, fresh in ((REAL_LEFT, left), (REAL_RIGHT, right)):
+        saved = [Event.model_validate_json(x) for x in path.read_text(encoding="utf-8").splitlines()]
+        assert comparable(saved) == comparable(fresh), f"{path.name} no coincide con una corrida nueva"
