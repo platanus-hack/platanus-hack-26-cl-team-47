@@ -141,7 +141,7 @@ def git(workspace: str | os.PathLike, args: list[str]) -> str:
     try:
         res = subprocess.run(
             ["git", *args], cwd=root, capture_output=True,
-            text=True, timeout=GIT_TIMEOUT_S, env=env,
+            text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S, env=env,
         )
     except FileNotFoundError as e:
         raise ToolError("git no está instalado") from e
