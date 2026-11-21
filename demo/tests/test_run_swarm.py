@@ -38,7 +38,9 @@ def read(path):
 def test_sesion_determinista_y_versionada(tmp_path):
     a = rs.make_swarm_session(tmp_path / "a.jsonl")
     b = rs.make_swarm_session(tmp_path / "b.jsonl")
-    assert a.read_bytes() == b.read_bytes() == rs.SWARM_SESSION.read_bytes()
+    assert a.read_bytes() == b.read_bytes()
+    # La copia versionada puede venir en CRLF (Windows con core.autocrlf): se compara el texto por líneas.
+    assert a.read_text(encoding="utf-8").splitlines() == rs.SWARM_SESSION.read_text(encoding="utf-8").splitlines()
 
 
 def test_sesion_forma():
