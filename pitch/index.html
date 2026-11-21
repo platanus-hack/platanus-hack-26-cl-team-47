@@ -19,6 +19,7 @@
       <h2>El problema</h2>
       <p>Un agente de código con acceso a archivos, shell y red puede ser manipulado para sacar secretos en muchos pasos, cada uno inocente por sí solo.</p>
       <p class="strong">Los filtros que evalúan cada llamada aislada no lo ven.</p>
+      <p class="nota-pie track">AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya</p>
     </section>
 
     <section class="slide" data-n="3">
@@ -102,7 +103,18 @@
       <p class="pendiente">PENDIENTE: corridas en vivo con un LLM (aún no hechas)</p>
     </section>
 
-    <section class="slide" data-n="13">
+    <section class="slide slide-cifras" data-n="13">
+      <h2>36 horas en cifras</h2>
+      <ul class="cifras">
+        <li><span class="num">635</span> tests automáticos</li>
+        <li><span class="num pendiente">PENDIENTE</span> sistemas comparados</li>
+        <li><span class="num">80 + 80 + 180</span> ataques del equipo rojo; los 180, sellados con hash antes de evaluar</li>
+        <li>El equipo rojo no vio el detector</li>
+        <li>Red sin internet: gestor de secretos, API, atacante, GitHub y web simulados</li>
+      </ul>
+    </section>
+
+    <section class="slide" data-n="14">
       <h2>Usuario y cierre</h2>
       <p><span class="k">Quién compra</span> Seguridad y plataforma en salud y sus proveedores de software.</p>
       <p><span class="k">Por qué ahora</span> Alerta a la ANCI en 3 horas; el informe dice qué salió y cuándo rotó.</p>
@@ -113,7 +125,7 @@
 
   <nav class="hud" aria-label="Navegación">
     <button id="prev" title="Anterior (←)">◀</button>
-    <span id="counter">1 / 13</span>
+    <span id="counter">1 / 14</span>
     <button id="next" title="Siguiente (→)">▶</button>
   </nav>
 

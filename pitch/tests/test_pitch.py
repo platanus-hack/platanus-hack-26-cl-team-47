@@ -65,8 +65,8 @@ def norm(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
-def test_trece_laminas():
-    assert len(parse()) == 13
+def test_catorce_laminas():
+    assert len(parse()) == 14
 
 
 def test_sin_internet():
@@ -102,10 +102,10 @@ def test_demo_enlaza_la_pantalla_dividida():
     assert (PITCH.parent / "demo" / "viz" / "split.html").is_file()
 
 
-def test_guion_trece_secciones_y_pendientes():
+def test_guion_catorce_secciones_y_pendientes():
     guion = (PITCH / "GUION.md").read_text(encoding="utf-8")
     secciones = re.findall(r"^## (\d+)\. ", guion, flags=re.M)
-    assert secciones == [str(i) for i in range(1, 14)]
+    assert secciones == [str(i) for i in range(1, 15)]
     assert re.search(r"^## Pendientes", guion, flags=re.M)
     for falta in ("T1", "T2", "T3", "T4", "qué pedimos"):  # el escenario ya se decidió (15j)
         assert falta in guion
@@ -306,7 +306,7 @@ def test_lamina_de_competidores():
 
 
 def test_lamina_final_con_pedido():
-    s = parse()[12]
+    s = parse()[13]
     assert s["pendientes"] == 0 and "piloto" in s["body"]
     assert "para que lo confirme una persona del equipo" in GUION
 
@@ -314,3 +314,30 @@ def test_lamina_final_con_pedido():
 def test_demo_dice_que_decide_solo_el_contador():
     assert "la demo usa solo el contador de bits; la configuración evaluada suma la evidencia acumulada" in GUION
     assert "independiente del detector" in PREGUNTAS
+
+
+# ------------------------------------------------ pregunta del track y cifras (16d, segundo comentario)
+
+def test_guion_abre_con_la_pregunta_del_track():
+    primera = re.split(r"(?<=[.»])\s", _texto_hablado(GUION).strip(), maxsplit=1)[0]
+    assert "¿cómo te darías cuenta?" in primera
+    assert "Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
+
+
+def test_lamina_del_problema_situa_el_track():
+    assert "AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya" in parse()[1]["text"]
+
+
+def test_lamina_36_horas():
+    s = next(sl for sl in parse() if "36 horas" in sl["title"])
+    assert parse().index(s) == len(parse()) - 2  # justo antes de la final
+    for clave in ("tests automáticos", "80 + 80 + 180", "no vio el detector", "sin internet"):
+        assert clave in s["text"], clave
+    assert "PR" not in s["text"].split() and "commits" not in s["text"].lower()
+    assert "python -m pytest -q" in GUION and "redteam/SELLO.md" in GUION
+
+
+def test_ia_blanco_y_vector_sin_llm_real():
+    sec = PREGUNTAS.split("¿Dónde está la IA")[1].split("\n## ")[0]
+    assert "blanco y el vector" in sec and "determinista a propósito" in sec
+    assert "PENDIENTE: resultado de las corridas con un LLM real (#139)" in sec

@@ -42,9 +42,9 @@ Fuente: [22], [28]; informe, A.3.
 
 ## 7. ¿Dónde está la IA, si el detector es determinista?
 
-La IA es el blanco y el vector: el ataque no existe sin un agente LLM que obedece texto no confiable. El monitor no es un LLM a propósito, porque un monitor LLM se ataca con la misma inyección que ataca al agente: un guardia que se convence con texto no es un guardia. Y un atacante que agrega un LLM no gana nada contra Cuentagotas, porque medimos información, no intención.
+El agente de IA es el blanco y el vector del ataque: el ataque no existe sin un agente LLM que obedece texto no confiable. El monitor es determinista a propósito, porque un monitor LLM se ataca con la misma inyección que ataca al agente: un monitor que se convence con texto no es un monitor. Y un atacante que agrega un LLM no gana nada contra Cuentagotas, porque medimos información, no intención.
 
-Fuente: informe, E (puntos 1, 2 y 4). PENDIENTE: corridas en vivo con un LLM siguiendo la inyección (aún no hechas). Mientras no existan, no decir que lo mostramos.
+Fuente: informe, E (puntos 1, 2 y 4); `docs/BASES.md`, línea de trabajo 1 (AI control). PENDIENTE: resultado de las corridas con un LLM real (#139). Mientras no existan, no decir que lo mostramos.
 
 ## 8. ¿Qué no detectan?
 
