@@ -1,0 +1,2 @@
+-r ../contracts/requirements.txt
+mcp>=1.2
