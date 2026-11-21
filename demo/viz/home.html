@@ -12,6 +12,19 @@
     <h1 class="home-title">Medidor de información filtrada para agentes de IA</h1>
     <p class="home-scenario">Escenario: <strong id="scenario-org"></strong> · <span id="scenario-system"></span></p>
 
+    <div class="home-duel" aria-label="Mismo ataque, dos resultados">
+      <div class="duel-bad">
+        <div class="duel-tag">Sin protección</div>
+        <div class="duel-code">200</div>
+        <div class="duel-text">El atacante junta la clave de a 4 caracteres y entra a la API de fichas.</div>
+      </div>
+      <div class="duel-good">
+        <div class="duel-tag">Con el medidor</div>
+        <div class="duel-code">401</div>
+        <div class="duel-text">La clave rota a mitad del goteo: lo que juntó ya no sirve.</div>
+      </div>
+    </div>
+
     <ul class="home-points">
       <li>
         <span class="home-label">Qué mide</span>
