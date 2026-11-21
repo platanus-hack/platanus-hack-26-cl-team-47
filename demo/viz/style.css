@@ -535,3 +535,34 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
 .agent-a3 { background: #59a14f; }
 .agent-a4 { background: #b07aa1; }
 .agent-a5 { background: #e15759; }
+
+/* ------------------------------------------------ demo interactiva (15l): el público elige */
+
+.chooser[hidden], .split-page .chooser[hidden] { display: none; }  /* sin ?demo=elige la página queda como antes */
+.split-page .chooser {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(18, 24, 36, .6);
+  flex-wrap: wrap;
+}
+.split-page .chooser-question { margin: 0; font-size: 20px; font-weight: 800; color: var(--text); text-transform: none; letter-spacing: 0; }
+.split-page .chooser-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+.split-page .chooser .choice {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 20px; font-weight: 800; padding: 8px 22px; border-radius: 12px; border-width: 2px;
+}
+.split-page .chooser .choice-key {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 6px;
+  font-size: 14px; background: #0b0f16; color: var(--muted); border: 1px solid var(--border);
+}
+.split-page .chooser .choice.active .choice-key { color: var(--current); border-color: #08101f; }
+.split-page .chooser-hint { margin-left: auto; color: var(--muted); font-size: 13px; }
+.split-page .chart-box[data-empty]::after {
+  content: attr(data-empty);
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 24px; font-weight: 800; color: var(--muted);
+}
