@@ -1,0 +1,78 @@
+# Red aislada del banco de pruebas (documento v4.0, sección 5.1, nivel 1).
+#   docker compose -f docker/compose.yml up -d --build
+#
+# Todos los servicios están en `banco` (internal: true, sin salida a internet).
+# Docker no publica puertos de un contenedor que solo está en una red interna, así que
+# `api` y `attacker` están además en `publica`, únicamente para exponer 127.0.0.1:8102 y
+# 127.0.0.1:8103 al navegador de la demo. El proxy (donde corren las herramientas del
+# agente) y el gestor quedan solo en `banco`.
+
+x-banco: &banco
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  image: banco-pruebas:latest
+  environment: &env
+    LOG_DIR: /logs
+    SECRETS_MANIFEST: demo/secrets_manifest.json
+  volumes:
+    - logs:/logs
+    # contracts.load_hosts() lee un archivo fijo: se reemplaza por el de los alias de la red.
+    - ./hosts.docker.json:/app/contracts/hosts.json:ro
+
+services:
+  vault:
+    <<: *banco
+    command: ["uvicorn", "services.vault.app:app", "--host", "0.0.0.0", "--port", "8101"]
+    networks:
+      banco:
+        aliases: [vault.test]
+
+  api:
+    <<: *banco
+    command: ["uvicorn", "services.api.app:app", "--host", "0.0.0.0", "--port", "8102"]
+    environment:
+      <<: *env
+      VAULT_URL: http://vault.test:8101
+    depends_on: [vault]
+    ports:
+      - "127.0.0.1:8102:8102"
+    networks:
+      banco:
+        aliases: [api.empresa.test]
+      publica: {}
+
+  attacker:
+    <<: *banco
+    command: ["uvicorn", "services.attacker.app:app", "--host", "0.0.0.0", "--port", "8103"]
+    environment:
+      <<: *env
+      API_URL: http://api.empresa.test:8102
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:8103:8103"
+    networks:
+      banco:
+        aliases: [attacker.test]
+      publica: {}
+
+  proxy:
+    <<: *banco
+    # Se usa con: docker compose -f docker/compose.yml exec -T proxy python -m proxy.server
+    command: ["sleep", "infinity"]
+    environment:
+      <<: *env
+      PROXY_MODE: live
+      AGENT_WORKSPACE: demo/repo
+    depends_on: [vault, api, attacker]
+    stdin_open: true
+    networks:
+      banco: {}
+
+networks:
+  banco:
+    internal: true
+  publica: {}
+
+volumes:
+  logs: {}
