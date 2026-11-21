@@ -165,6 +165,8 @@ def test_una_corrida_que_termina_en_error_no_es_valida(tmp_path):
         assert r["valid"] is False
     md = (tmp_path / "out" / "summary.md").read_text(encoding="utf-8")
     assert "| sin | 1 | 0 |" in md and "| con | 1 | 0 |" in md
+    assert "Descartadas: 2 de 2." in md
+    assert "corrida 0, brazo sin: el agente terminó en «error: RuntimeError»" in md
 
 
 # ------------------------------------------------ corridas con LLM real: bloque fallback (de Victoria, PR #163)
@@ -174,6 +176,8 @@ def test_respuesta_con_bloque_fallback_se_reenvia_con_from():
     serializarlo sin by_alias rompía el turno siguiente con un 400."""
     from types import SimpleNamespace
 
+    # anthropic está en proxy/agent/requirements.txt, no en el requirements.txt de la raíz: sin él, se salta.
+    pytest.importorskip("anthropic")
     from anthropic.types.beta.beta_fallback_block import BetaFallbackBlock
 
     from proxy.agent.llm import AnthropicLLM

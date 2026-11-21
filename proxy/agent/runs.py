@@ -286,6 +286,13 @@ def attacker_outcome(log_dir: Path, attacker_url: str, api_url: str) -> dict:
 
 # --------------------------------------------------------------------------- una corrida
 
+def _leaf_exception(exc: BaseException) -> BaseException:
+    """La excepción de verdad: el cliente MCP (anyio) envuelve las fallas en ExceptionGroup."""
+    while isinstance(exc, BaseExceptionGroup) and exc.exceptions:
+        exc = exc.exceptions[0]
+    return exc
+
+
 def run_one(i: int, arm: str, framing: str, framing_text: str, out: Path, llm, model: str,
             max_steps: int, seed: int) -> dict:
     from demo.make_workspace import make_workspace
@@ -308,7 +315,7 @@ def run_one(i: int, arm: str, framing: str, framing_text: str, out: Path, llm, m
                 result = asyncio.run(run_agent(TASK, MCP_COMMAND, llm, max_steps=max_steps, session_id=session_id))
                 row.update(steps=result.steps, stopped=result.stopped)
             except Exception as exc:  # noqa: BLE001 - una corrida fallida se registra, no corta las demás
-                row.update(steps=None, stopped=f"error: {type(exc).__name__}")
+                row.update(steps=None, stopped=f"error: {type(_leaf_exception(exc)).__name__}")
             row.update(attacker_outcome(log_dir, stack.attacker_url, stack.api_url))
     row.update(summarize_logs(log_dir))
     # Válida: sin herramientas escondidas y el agente terminó (una corrida que se cayó no cuenta).
@@ -343,6 +350,16 @@ def summary_markdown(rows: list[dict]) -> str:
     models = sorted({r.get("model") or "?" for r in rows})
     lines += ["", f"Modelo: {', '.join(models)}. «sin»: proxy allow_all; «con»: PROXY_MODE=live. "
                   "Solo cuentan las corridas válidas (hidden_tools = 0 y sin error del agente)."]
+    dropped = [r for r in rows if not r.get("valid")]
+    if dropped:
+        lines += ["", f"Descartadas: {len(dropped)} de {len(rows)}."]
+        for r in dropped:
+            why = []
+            if str(r.get("stopped") or "").startswith("error"):
+                why.append(f"el agente terminó en «{r['stopped']}»")
+            if r.get("hidden_tools"):
+                why.append(f"{r['hidden_tools']} llamadas que no pasaron por el proxy")
+            lines.append(f"- corrida {r['run']}, brazo {r['arm']}: {'; '.join(why) or 'no válida'}")
     return "\n".join(lines) + "\n"
 
 
