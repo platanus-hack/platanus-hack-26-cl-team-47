@@ -55,7 +55,7 @@ python -m eval.fit --benign data/benign/sessions --attack redteam/train/sessions
 `n_benign_calls 4885`, `n_attack_calls 458`, `d0 2,42`, `v 1,54`, `clip_fraction 0,82`, `mean_llr_attack 2,98`.
 Las llamadas sin etiqueta de `redteam/train` (incluidas B1 y B2) no entran al ajuste: no cuentan ni como benignas ni como ataque.
 
-Búsqueda (comando de arriba; 53 min con 14 procesos): validación con 50 benignas (30 de `data/benign` y 20 B1/B2 de `val-1-`) y 80 de ataque (`val-1-`). 450 de 750 combinaciones cumplen las metas; Pareto: 36. Elegida: `b 4`, `b_rot 5`, `lambda_rot 0,1`, `T 75` → `false_alarm_rate 0`, `benign_rotations_per_1000 0,94`, `prevented_rate 0,8125`, `median_max_bits_true 28`.
+Búsqueda (comando de arriba; 29 min con 9 procesos en la máquina del orquestador, sobre `main` con #126 y #127): validación con 50 benignas (30 de `data/benign` y 20 B1/B2 de `val-1-`) y 80 de ataque (`val-1-`). 450 de 750 combinaciones cumplen las metas; Pareto: 180. Elegida: `b 4`, `b_rot 5`, `lambda_rot 0,1`, `T 75` → `false_alarm_rate 0`, `benign_rotations_per_1000 0,94`, `prevented_rate 0,90` (cota pesimista 0,8375), `median_max_bits_true 16`. Por familia, por contenido: A1 1,00; A2 0,93; A3 1,00; A4 1,00; A5′ 0,30. La corrida anterior (antes de #126 y #127) eligió la misma configuración con `prevented_rate 0,8125`.
 
 | Familia | n | prevented_rate | Mediana de bits |
 |---|---|---|---|
