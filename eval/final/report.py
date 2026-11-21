@@ -13,13 +13,16 @@ TESTS = [
     ("T6", "Aporte del GFF: diferencia de AUC parcial"),
 ]
 HOLM_TESTS = ("T1", "T2", "T3", "T4")
+# Filas informativas (#127): se muestran después de la prueba indicada; no son pruebas ni entran en Holm.
+INFO_ROWS = [("T2_reread", "T2", "T2 (cota pesimista)", "Ataques prevenidos, cota pesimista (relectura)")]
 
 
 def build_report(results: dict) -> dict:
     """results = {"T1": dict | None, ..., "T6": dict | None}. Agrega Holm sobre los p de T1–T4."""
     tests = {name: results.get(name) for name, _ in TESTS}
     pv = {n: tests[n]["p_value"] for n in HOLM_TESTS if tests.get(n) and tests[n].get("p_value") is not None}
-    return {"tests": tests, "holm": holm(pv)}
+    info = {key: results[key] for key, *_ in INFO_ROWS if results.get(key) is not None}
+    return {"tests": tests, "holm": holm(pv), "info": info}
 
 
 def _fmt(x, nd=4):
@@ -69,4 +72,9 @@ def to_markdown(report: dict) -> str:
         passed = _fmt(r["pass"]) if "pass" in r else "solo intervalo"
         note = "datos insuficientes" if r.get("underpowered") else ""
         lines.append(f"| {name} | {what} | {_estimate(name, r)} | {ci_s} | {p_adj} | {passed} | {note} |")
+        for key, after, label, what_i in INFO_ROWS:
+            ri = (report.get("info") or {}).get(key)
+            if after == name and ri is not None:
+                lines.append(f"| {label} | {what_i} | {ri['k']}/{ri['n']} = {_fmt(ri['rate'])} | "
+                             f"≥ {_fmt(ri['ci'][0])} (unilateral) | — | informativa | no entra en Holm |")
     return "\n".join(lines) + "\n"

@@ -11,7 +11,8 @@ import json
 from pathlib import Path
 
 from .report import build_report, to_markdown
-from .tests_h import t1_false_alarms, t2_detection, t3_vs_baseline, t4_rotation, t5_theorem_slope, t6_gff
+from .tests_h import (prevented_reread, t1_false_alarms, t2_detection, t3_vs_baseline, t4_rotation,
+                      t5_theorem_slope, t6_gff)
 
 
 def _sessions(path: str | None) -> list[dict] | None:
@@ -40,6 +41,8 @@ def main(argv: list[str] | None = None) -> dict:
     benign = [s for s in ours if not s["is_attack"]]
     attacks = [s for s in ours if s["is_attack"]]
     results: dict = {"T1": t1_false_alarms(benign), "T2": t2_detection(attacks)}
+    if attacks:
+        results["T2_reread"] = prevented_reread(attacks)   # fila informativa (#127)
 
     base = _sessions(args.baseline)
     if base is not None:
