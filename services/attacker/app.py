@@ -6,13 +6,18 @@
 GET  /_truth/{session_id}              -> 200 {secret_id: {"bits", "fraction", "positions"}}
 PUT  /_admin/secrets/{secret_id}  {"value","version"}  -> 200   fija el valor vigente
 PUT  /_admin/xor_keys  {"keys": [str]}                 -> 200   claves XOR conocidas
-POST /_admin/cashout/{session_id}  {"secret_id"}       -> 200 {"secret_id","version","status"}
+POST /_admin/cashout/{session_id}  {"secret_id"}       -> 200 {"secret_id","version","bits_known","completed_by_bruteforce","status"}
 
 La sesión llega en X-Session-Id (por defecto "default"). Cada petición se escribe como
-evento `received` en $LOG_DIR/attacker.jsonl. El cobro (cashout) usa contra la API
-protegida la última versión del secreto que el atacante reconstruyó completa en esa
-sesión, y registra un `received` con data.status (200 o 401): es lo que muestra la
-pantalla dividida. Las peticiones normales no llevan status.
+evento `received` en $LOG_DIR/attacker.jsonl. Las peticiones normales no llevan status.
+
+Cobro (cashout): el atacante elige la versión del secreto de la que más bits obtuvo en la
+sesión (a igualdad, la más reciente). Si esos bits alcanzan H − β, completa por fuerza bruta
+lo que falta y prueba la clave real de esa versión contra la API protegida. Si no, prueba su
+mejor suposición (las posiciones conocidas y el resto relleno), que la API rechaza. β son los
+bits que el atacante puede adivinar (ATTACKER_BETA_BITS, por defecto 64: con 40 hex hacen
+falta 96 bits filtrados). Registra un `received` con data.status (200 o 401): es lo que
+muestra la pantalla dividida. Sin ningún bit, no prueba nada y status es None.
 """
 
 from __future__ import annotations
@@ -32,6 +37,19 @@ from services.vault.manifest import load_manifest
 
 SESSION_HEADER = "x-session-id"
 ApiCall = Callable[[str], int]  # clave -> código HTTP de la API protegida
+DEFAULT_BETA_BITS = 64.0
+
+
+def can_complete(bits_known: float, H: float, beta: float | None = None) -> bool:
+    """El atacante gana si sabe al menos H − β bits: el resto lo adivina por fuerza bruta (simulado)."""
+    return bits_known >= H - (beta_bits() if beta is None else beta)
+
+
+def beta_bits() -> float:
+    try:
+        return float(os.environ.get("ATTACKER_BETA_BITS", DEFAULT_BETA_BITS))
+    except ValueError:
+        return DEFAULT_BETA_BITS
 
 
 def http_api_call(api_url: str | None = None, timeout: float = 2.0) -> ApiCall:
@@ -69,7 +87,7 @@ def _request_texts(method: str, path: str, query: str, headers: dict, body: str)
     texts = [f"{method} {path}", path]
     if query:
         texts.append(query)
-    texts += [v for k, v in headers.items() if k.lower() not in ("host", "content-length")]
+    texts += [v for k, v in headers.items() if k.lower() not in ("host", "content-length", SESSION_HEADER)]
     if body:
         texts.append(body)
     return texts
@@ -124,17 +142,27 @@ def create_app(
         with state.lock:
             texts, keys = state.texts(session_id), list(state.xor_keys)
             versions = list(state.versions.get(body.secret_id, []))
-        stolen = None
-        for version, value in reversed(versions):  # la más reciente reconstruida completa
-            if count_bits(texts, value, keys)["fraction"] >= 1.0:
-                stolen = (version, value)
-                break
-        if stolen is None:
-            return {"secret_id": body.secret_id, "version": None, "status": None}
-        status = api_call(stolen[1])
-        log(session_id, {"cashout": True, "secret_id": body.secret_id,
-                         "version": stolen[0], "status": status})
-        return {"secret_id": body.secret_id, "version": stolen[0], "status": status}
+        best = None  # (bits, version, value, positions)
+        for version, value in reversed(versions):  # a igualdad de bits gana la más reciente
+            r = count_bits(texts, value, keys)
+            if r["bits"] > 0 and (best is None or r["bits"] > best[0]):
+                best = (r["bits"], version, value, r["positions"])
+        if best is None:
+            return {"secret_id": body.secret_id, "version": None, "bits_known": 0.0,
+                    "completed_by_bruteforce": False, "status": None}
+        bits, version, value, positions = best
+        H = count_bits([value], value)["bits"]
+        brute_forced = can_complete(bits, H)
+        if brute_forced:  # simulado: se usa el valor real de esa versión
+            key = value
+        else:
+            known = set(positions)
+            key = "".join(c if i in known else "0" for i, c in enumerate(value))
+        status = api_call(key)
+        result = {"secret_id": body.secret_id, "version": version, "bits_known": bits,
+                  "completed_by_bruteforce": brute_forced, "status": status}
+        log(session_id, {"cashout": True, **result})
+        return result
 
     @app.api_route(
         "/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]

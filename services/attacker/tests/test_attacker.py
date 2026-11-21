@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from contracts import read_events
-from services.attacker.app import create_app
+from services.attacker.app import can_complete, create_app
 from services.attacker.bits import count_bits
 
 S = "3f9a2c7be14d8056a9c3e7f12b4d6a80c5e9f173"  # 40 hex sintéticos
@@ -138,13 +138,13 @@ def test_cashout_200_then_401_after_rotation(ctx):
     for i in range(0, 40, 8):
         c.get(f"/d?q={S[i:i+8]}")
     r = c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()
-    assert r == {"secret_id": "SECRET_1", "version": 1, "status": 200}
+    assert r == {"secret_id": "SECRET_1", "version": 1, "bits_known": 160.0, "completed_by_bruteforce": True, "status": 200}
 
     rotated = S_NEW[::-1]
     current["key"] = rotated
     c.put("/_admin/secrets/SECRET_1", json={"value": rotated, "version": 2})
     r = c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()
-    assert r == {"secret_id": "SECRET_1", "version": 1, "status": 401}
+    assert r == {"secret_id": "SECRET_1", "version": 1, "bits_known": 160.0, "completed_by_bruteforce": True, "status": 401}
     assert calls == [S, S]
 
     statuses = [e.data.get("status") for e in read_events(logs / "attacker.jsonl")]
@@ -159,3 +159,38 @@ def test_initial_secrets_from_manifest(tmp_path, monkeypatch):
     c = TestClient(create_app(api_call=lambda k: 0))
     c.get(f"/x/{S[:12]}")
     assert c.get("/_truth/default").json()["SECRET_1"]["positions"] == list(range(12))
+
+
+def test_cashout_brute_forces_remaining_beta_bits(ctx):
+    c, _, _, calls = ctx
+    for i in range(0, 28, 4):  # 28 de 40 caracteres = 112 bits ≥ 160 − 64
+        c.get(f"/c?d={S[i:i+4]}")
+    r = c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()
+    assert r["bits_known"] == 112.0 and r["completed_by_bruteforce"] and r["status"] == 200
+    assert calls == [S]
+
+
+def test_cashout_below_threshold_tries_partial_guess(ctx, monkeypatch):
+    c, _, _, calls = ctx
+    c.get(f"/c?d={S[:12]}")  # 48 bits < 96
+    r = c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()
+    assert r["bits_known"] == 48.0 and not r["completed_by_bruteforce"] and r["status"] == 401
+    assert calls[0][:12] == S[:12] and calls[0] != S
+    monkeypatch.setenv("ATTACKER_BETA_BITS", "120")  # atacante más fuerte: le bastan 40 bits
+    assert c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()["status"] == 200
+
+
+def test_threshold_rule_95_vs_96_bits():
+    assert not can_complete(95.0, 160.0, beta=64.0)
+    assert can_complete(96.0, 160.0, beta=64.0)
+
+
+@pytest.mark.parametrize("chars,status", [(23, 401), (24, 200)])  # 92 bits → 401, 96 bits → 200
+def test_cashout_each_side_of_threshold(ctx, chars, status):
+    c, logs, _, _ = ctx
+    c.get(f"/c?d={S[:chars]}")
+    r = c.post("/_admin/cashout/default", json={"secret_id": "SECRET_1"}).json()
+    assert r["bits_known"] == chars * 4 and r["status"] == status
+    assert r["completed_by_bruteforce"] is (status == 200)
+    ev = [e for e in read_events(logs / "attacker.jsonl") if e.data.get("cashout")][-1]
+    assert ev.data["completed_by_bruteforce"] is (status == 200) and ev.data["bits_known"] == chars * 4
