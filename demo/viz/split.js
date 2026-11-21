@@ -58,7 +58,8 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
   function setEvents(p, events) {
     p.events = events;
     p.frames = buildFrames(events);
-    p.secrets = secretIds(p.frames);
+    // Solo los secretos que alguna vez tienen bits (el detector reporta todos, casi siempre en 0).
+    p.secrets = secretIds(p.frames).filter((sid) => p.frames.some((f) => bitsAt(f, sid) > 0));
     p.status = finalStatus(events);
     renderList(p);
   }
@@ -188,7 +189,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     p.result.className = "result";
     if (!atEnd()) return;
     const fr = finalFractions(p.frames);
-    const leaks = Object.entries(fr).map(([sid, x]) => `${sid}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
+    const leaks = Object.entries(fr).filter(([sid]) => p.secrets.includes(sid)).map(([sid, x]) => `${sid}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
     const big = document.createElement("div");
     big.className = "result-status";
     if (p.status === 200) {
