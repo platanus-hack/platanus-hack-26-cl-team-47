@@ -122,3 +122,13 @@ td.pendiente { border-radius: 0; }
   .slide { position: relative; display: flex; width: 1600px; height: 900px; page-break-after: always; }
   .hud { display: none; }
 }
+
+/* Lámina del enjambre (16c) */
+.slide-swarm .results.swarm { font-size: 30px; margin: 10px 0 18px; }
+.slide-swarm .results.swarm th, .slide-swarm .results.swarm td { padding: 12px 14px; }
+.slide-swarm .results.swarm th { width: auto; }
+.slide-swarm .results.swarm tr:first-child th { font-size: 26px; color: var(--muted); }
+.slide-swarm .results.swarm td.bad { color: #ff7b72; font-weight: 700; }
+.slide-swarm .results.swarm td.good { color: #5fd38d; font-weight: 700; }
+.slide-swarm .strong { margin: 6px 0 10px; }
+.swarm-link { font-size: 26px; color: var(--muted); }
