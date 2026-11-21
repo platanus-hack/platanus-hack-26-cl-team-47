@@ -42,3 +42,28 @@ Campos de cada secreto (los cuatro primeros son el contrato de #6):
 - `SECRET_1` es la clave de `api.empresa.test`: su valor es la clave **inicial** que debe aceptar el gestor antes de la primera rotación. Léela del manifiesto; no la copies a otro archivo.
 - Para leerlo: `json.load(open("demo/secrets_manifest.json", encoding="utf-8"))`.
 - El escenario está pendiente (`docs/PLAN.md`, «Escenario pendiente»): al decidirlo cambian los textos, no el formato.
+
+## Registros reales para la pantalla dividida (15c)
+
+```
+python demo/run_split.py --session demo/sessions/goteo.jsonl \
+    --decide-right engine.detector:make_decide --out-dir demo/out
+python -m http.server 8200 --directory demo
+# http://127.0.0.1:8200/viz/split.html?left=../out/left.jsonl&right=../out/right.jsonl
+```
+
+- La misma sesión pasa por el arnés dos veces: izquierda con `proxy.decide:allow_all`,
+  derecha con la fábrica de `--decide-right` (acepta `make_decide()` o un `decide(call)`).
+- Gestor (`vault.test`) y API (`api.empresa.test`) corren **en proceso** con
+  `TestClient`, un gestor nuevo por panel, sin red.
+- Cada decisión `rotate*` del panel derecho rota el secreto (`--secret-id`, por
+  defecto `SECRET_1`) y agrega un evento `rotation`.
+- Al final, el atacante usa el valor **original** del secreto (del manifiesto)
+  contra `GET /v1/data`: evento `source="attacker"`, `kind="received"` con el
+  `status` real (200 si nunca se rotó, 401 si se rotó).
+- `--make-session` regenera `demo/sessions/goteo.jsonl` (60 llamadas: issue no
+  confiable en t2, lectura de `.env` en t3, un fragmento de 4 caracteres de
+  `SECRET_1` hacia `attacker.test` cada 8 llamadas). El valor sale del manifiesto.
+
+Prueba sin el detector: `--decide-right demo.tests.factories:rotate_at` (rota en t=20).
+Tests: `python -m pytest demo/tests -q`.
