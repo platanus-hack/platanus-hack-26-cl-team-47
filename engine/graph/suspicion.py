@@ -1,10 +1,9 @@
 """Aristas de sospecha y R⁺. Tarea 12.
 
-Arista candidata i -> j: i es fuente (no confiable o lee un secreto), t_j > t_i
-y ambas tocan nodos del grafo de archivos. Se abre con probabilidad
-
-    p_ij = g · exp(−(t_j − t_i) / τ_s),
-    g    = max_{u∈res_i, v∈res_j} sqrt(μ_u μ_v) · max(0, ρ_uv),   recortado a [0, 1].
+Arista candidata i -> j: i es fuente (no confiable o lee un secreto) y t_j > t_i.
+Se abre con probabilidad p_ij = g · exp(−(t_j − t_i) / τ_s), con g de la tarea
+12b (ver suspicion_g): solo el lado que tiene nodos del grafo cuando i es no
+confiable o j es un sumidero externo; correlación posterior si ambos tienen nodos.
 
 R⁺(c) = P(existe camino no confiable -> lectura de secreto -> c) con las aristas
 de contenido siempre abiertas y las de sospecha independientes. Como en el
@@ -43,19 +42,43 @@ def _mu01(graph: FileGraph, node: str) -> float:
     return float(np.clip(graph.mu[graph.idx[node]], 0.0, 1.0))
 
 
+def _side(graph: FileGraph, nodes: list[str]) -> float:
+    """max sobre los nodos de sqrt(max(0, μ)); 0 si no hay nodos."""
+    return max((float(np.sqrt(max(0.0, graph.mu[graph.idx[n]]))) for n in nodes), default=0.0)
+
+
+def suspicion_g(graph: FileGraph, res_i: list[str], res_j: list[str],
+                i_untrusted: bool = False, j_sink: bool = False) -> float:
+    """g de la arista i -> j (tarea 12b), recortado a [0, 1]:
+    - i no confiable y N_j no vacío: max_v sqrt(μ_v) sobre N_j;
+    - i no confiable y j sumidero sin nodos: 0;
+    - j sumidero sin nodos y N_i no vacío: max_u sqrt(μ_u) sobre N_i;
+    - ambos con nodos: max sqrt(μ_u μ_v) · max(0, ρ_uv);
+    - si no, 0.
+    """
+    a, b = _nodes(graph, res_i), _nodes(graph, res_j)
+    if i_untrusted:
+        g = _side(graph, b) if b else 0.0
+    elif not b:
+        g = _side(graph, a) if (j_sink and a) else 0.0
+    elif a:
+        g = 0.0
+        for u in a:
+            for v in b:
+                rho = graph.correlation(u, v)
+                if rho > 0:
+                    g = max(g, float(np.sqrt(_mu01(graph, u) * _mu01(graph, v))) * rho)
+    else:
+        g = 0.0
+    return float(np.clip(g, 0.0, 1.0))
+
+
 def suspicion_probability(graph: FileGraph, res_i: list[str], res_j: list[str],
-                          t_i: int, t_j: int, tau_s: float = 50.0) -> float:
+                          t_i: int, t_j: int, tau_s: float = 50.0, *,
+                          i_untrusted: bool = False, j_sink: bool = False) -> float:
     if t_j <= t_i:
         return 0.0
-    a, b = _nodes(graph, res_i), _nodes(graph, res_j)
-    if not a or not b:
-        return 0.0
-    g = 0.0
-    for u in a:
-        for v in b:
-            rho = graph.correlation(u, v)
-            if rho > 0:
-                g = max(g, np.sqrt(_mu01(graph, u) * _mu01(graph, v)) * rho)
+    g = suspicion_g(graph, res_i, res_j, i_untrusted=i_untrusted, j_sink=j_sink)
     return float(np.clip(g * np.exp(-(t_j - t_i) / tau_s), 0.0, 1.0))
 
 
@@ -82,23 +105,33 @@ class RPlus:
         g = self.graph
         touched = [[g.idx[x] for x in _nodes(g, self.dag.nodes[i].call.resources)] for i in ids]
         T = sorted({x for tt in touched for x in tt})
-        P = np.zeros((n, n))
         src = own_U | own_S
+        sink = np.array([self.dag.nodes[i].call.is_sink for i in ids], dtype=bool)
+        has = np.array([bool(tt) for tt in touched], dtype=bool)
+        side = np.array([max((np.sqrt(max(0.0, g.mu[x])) for x in tt), default=0.0) for tt in touched])
+
+        G = np.zeros((n, n))
+        # Ambos con nodos e i confiable: correlación posterior.
         if T:
             loc = {x: k for k, x in enumerate(T)}
             mu = np.clip(g.mu[T], 0.0, 1.0)
             Gm = np.sqrt(np.outer(mu, mu)) * np.maximum(0.0, g.corr_block(T))
             R = np.zeros((n, len(T)))
-            for i in np.nonzero(src)[0]:
-                if touched[i]:
-                    R[i] = Gm[[loc[x] for x in touched[i]]].max(axis=0)
-            G = np.zeros((n, n))
-            for j, tt in enumerate(touched):
-                if tt:
-                    G[:, j] = R[:, [loc[x] for x in tt]].max(axis=1)
-            later = t[None, :] > t[:, None]
-            decay = np.exp(-np.maximum(t[None, :] - t[:, None], 0.0) / self.tau_s)
-            P = np.clip(G * decay * later * src[:, None], 0.0, 1.0)
+            for i in np.nonzero(src & ~own_U & has)[0]:
+                R[i] = Gm[[loc[x] for x in touched[i]]].max(axis=0)
+            for j in np.nonzero(has)[0]:
+                G[:, j] = R[:, [loc[x] for x in touched[j]]].max(axis=1)
+        # i no confiable y N_j no vacío: sensibilidad de lo que toca j.
+        G[own_U] = 0.0
+        G[np.ix_(own_U, has)] = side[has][None, :]
+        # j sumidero sin nodos, i confiable con nodos: sensibilidad de lo que leyó i.
+        ext = sink & ~has
+        rows = ~own_U & has
+        G[np.ix_(rows, ext)] = side[rows][:, None]
+
+        later = t[None, :] > t[:, None]
+        decay = np.exp(-np.maximum(t[None, :] - t[:, None], 0.0) / self.tau_s)
+        P = np.clip(np.clip(G, 0.0, 1.0) * decay * later * src[:, None], 0.0, 1.0)
         return ids, pos[call_id], own_U, own_S, parents, P
 
     def _trivial(self, call_id: str):

@@ -28,30 +28,76 @@ def tc(cid, t, tool, resources, sink=False, untrusted=False, args=None):
                     resources=list(resources), is_sink=sink, untrusted=untrusted, session_id="s")
 
 
-def example(sink_t=41):
-    """c2 lee un issue no confiable; c3 lee .env; c40 lee secrets.yaml; sumidero sin contenido."""
+def example(sink_t=4):
+    """Issue #32: c2 lee un issue (github.test, no confiable); c3 lee .env; c41 sale a attacker.test sin contenido."""
     d = CallDAG(SECRET_FILES)
-    d.add(tc("c2", 2, "http_request", ["docs/issues/014-ultima-franja.md"], sink=True, untrusted=True))
+    d.add(tc("c2", 2, "http_request", ["github.test"], sink=True, untrusted=True))
     d.add(tc("c3", 3, "read_file", [".env"]))
-    d.add(tc("c40", 40, "read_file", ["config/secrets.yaml"]))
-    d.add(tc("cS", sink_t, "http_request", ["api.empresa.test"], sink=True))
+    d.add(tc("c41", sink_t, "http_request", ["attacker.test"], sink=True))
     return d
 
 
 def test_suspicion_probability(graph):
+    # i confiable, ambos con nodos: correlación
     p1 = suspicion_probability(graph, [".env"], ["api.empresa.test"], 1, 2)
     p2 = suspicion_probability(graph, [".env"], ["api.empresa.test"], 1, 100)
     assert 0 < p2 < p1 <= 1
-    assert suspicion_probability(graph, [".env"], ["attacker.test", "git"], 1, 2) == 0.0
     assert suspicion_probability(graph, [".env"], ["api.empresa.test"], 5, 5) == 0.0
+    # sin nodos y j no sumidero: 0
+    assert suspicion_probability(graph, [".env"], ["attacker.test", "git"], 1, 2) == 0.0
 
 
-def test_exact_example_between_0_and_1_and_decays(graph):
-    near = RPlus(example(41), graph).exact("cS")
-    far = RPlus(example(240), graph).exact("cS")
-    assert 0 < near < 1
-    assert far < near
-    assert RPlus(example(41), graph, M=200).estimate("cS")["n_uncertain"] > 0
+def test_g_cases(graph):
+    from engine.graph.suspicion import suspicion_g
+
+    root_env = float(np.sqrt(graph.mu[graph.idx[".env"]]))
+    # i no confiable sin nodos -> lado de j
+    assert suspicion_g(graph, ["github.test"], [".env"], i_untrusted=True) == pytest.approx(root_env)
+    assert suspicion_g(graph, ["github.test"], ["docs/onboarding.md"], i_untrusted=True) < 0.2
+    # i no confiable y j sumidero sin nodos -> 0
+    assert suspicion_g(graph, ["github.test"], ["attacker.test"], i_untrusted=True, j_sink=True) == 0.0
+    assert suspicion_g(graph, [".env"], ["attacker.test"], i_untrusted=True, j_sink=True) == 0.0
+    # j sumidero externo, i confiable con nodos -> lado de i
+    assert suspicion_g(graph, [".env"], ["attacker.test"], j_sink=True) == pytest.approx(root_env)
+    assert suspicion_g(graph, [".env"], ["attacker.test"], j_sink=False) == 0.0
+    # ningún lado con nodos -> 0
+    assert suspicion_g(graph, ["git"], ["attacker.test"], j_sink=True) == 0.0
+    p_near = suspicion_probability(graph, ["github.test"], [".env"], 1, 2, i_untrusted=True)
+    p_far = suspicion_probability(graph, ["github.test"], [".env"], 1, 200, i_untrusted=True)
+    assert 0 < p_far < p_near < 1
+
+
+def test_issue_example_near_and_far(graph):
+    near = RPlus(example(4), graph)
+    far = RPlus(example(104), graph)
+    r_near, r_far = near.exact("c41"), far.exact("c41")
+    assert r_near > 0.3
+    assert r_far < r_near / 2
+    est = near.estimate("c41")
+    assert 0 < est["R_plus"] < 1 and est["n_uncertain"] > 0
+    assert abs(est["R_plus"] - r_near) <= 3 * est["se"] + 1e-12
+
+
+def test_untrusted_docs_then_external_sink_low(graph):
+    d = CallDAG(SECRET_FILES)
+    d.add(tc("c1", 1, "http_request", ["github.test"], sink=True, untrusted=True))
+    d.add(tc("c2", 2, "read_file", ["docs/onboarding.md"]))
+    d.add(tc("c3", 3, "http_request", ["attacker.test"], sink=True))
+    r = RPlus(d, graph)
+    assert r.exact("c3") < 0.2
+    assert r.estimate("c3")["R_plus"] < 0.2
+
+
+def test_no_untrusted_is_zero(graph):
+    d = CallDAG(SECRET_FILES)
+    d.add(tc("c1", 1, "read_file", [".env"]))
+    d.add(tc("c2", 2, "read_file", ["config/secrets.yaml"]))
+    d.add(tc("c3", 3, "http_request", ["attacker.test"], sink=True))
+    d.add(tc("c4", 4, "http_request", ["api.empresa.test"], sink=True))
+    r = RPlus(d, graph)
+    for c in ("c3", "c4"):
+        assert r.estimate(c)["R_plus"] == 0.0
+        assert r.exact(c) == 0.0
 
 
 def test_content_path_is_one(graph):
@@ -70,7 +116,7 @@ def test_content_path_is_one(graph):
 def test_non_sink_is_zero(graph):
     d = example()
     r = RPlus(d, graph)
-    assert r.estimate("c40")["R_plus"] == 0.0
+    assert r.estimate("c3")["R_plus"] == 0.0
     assert r.exact("c3") == 0.0
 
 
