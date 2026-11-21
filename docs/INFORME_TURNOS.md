@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 14:00 (hora 15 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 15:25 (hora 16 de 34).
 
 **El proyecto.** Alicanto (hasta las 11:30 del sábado se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -31,16 +31,15 @@ Actualizado: sábado 21 de noviembre de 2026, 14:00 (hora 15 de 34).
 | Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 0 de 180 | 0 |
 
 Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosas que hay que decir siempre junto a esa cifra:
-- **Las banderas de cada llamada venían de las grabaciones.** Si una llamada es una salida y si va a un destino no confiable lo escribió el generador de ataques; el proxy en vivo lo calcula distinto. Con las banderas del proxy, una comprobación del orquestador da 120 de 180: quedan sin cubrir la familia que saca la clave por su propio destino permitido y la que la esconde en mensajes de `git commit`. La tabla oficial con las dos cifras sale de la tarea #167; hasta entonces no se escriben frases nuevas con el 180 de 180.
+- **Hay dos cifras y van juntas.** El 180 de 180 se midió con marcas que escribió el generador de los ataques (si una llamada es una salida y si va a un destino no confiable). El proxy en vivo calcula esas marcas por su cuenta: medido así son **120 de 180, cuatro de las seis familias**. Quedan sin cubrir la clave enviada a su propio destino permitido y la escondida en mensajes de `git commit`. Con las marcas de las grabaciones, una regla de una línea empata con Alicanto; con las del proxy, la regla frena 90. Tabla en `results/proxy_flags/`.
 - **Son ataques grabados.** El atacante que se adapta a la rotación se midió aparte, en simulación (`results/adaptive/summary.md`): 180 de 180 no pasan de 96 bits de ninguna versión de la clave (máximo 64). Lo frena llegando al tope de tres rotaciones y bloqueando las salidas de esa clave: es una detención con costo, no rotación sin fin.
 - **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
 - **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
-**En curso ahora** (repartido a las 13:45, después de una revisión crítica del proyecto criterio por criterio de la rúbrica):
-- **#167, José Carlos:** la evaluación con las banderas del proxy, publicada junto a la actual, y una regla simple («leyó un secreto y envía a un destino no confiable: rota») como línea de base, para decir con números qué aporta cada pieza.
-- **#168, Matías:** la demo se corta a 1024×768 (resolución típica de proyector) y en teléfono, abre detenida sin avisar, y las láminas no están en el sitio público. Se arregla todo eso.
-- **#169, José Carlos, después de #167:** un hook de Claude Code que pasa por el contador de bits lo que el agente está por ejecutar con `Bash` y `WebFetch`. Es la respuesta a «¿lo puedo usar el lunes?».
-- **Después:** textos públicos (pitch, README y página de resultados) con las dos cifras y las frases corregidas.
+**En curso ahora:**
+- **#189, José Carlos:** medir qué pasa con la rotación periódica cuando los pedazos son más cortos que lo que el contador cuenta, y corregir en el README la frase que hoy promete más de lo demostrado.
+- **#190, Matías:** que los servicios locales no queden ocupando puertos cuando se cierran sin Ctrl+C.
+- **PR #178, espera al líder:** la descripción pública reescrita, menos técnica y con la frase de una línea acortada.
 
 **Dónde verlo:**
 - **Demo en línea:** https://alicanto.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
@@ -52,10 +51,10 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosa
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | #167 y después #169 |
+| José Carlos (`JCBasulto`) | Activo | #189 |
 | Victoria (`VictoriaGuerriero`) | Activa desde las 12:25 | Hizo las corridas con el modelo real. Sin tarea abierta |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
-| Matías (`matix3000`) | Activo desde las 12:25 | #168, con traspaso puntual de `demo/viz/` y `pitch/` |
+| Matías (`matix3000`) | Activo desde las 12:25 | #190 |
 | Juan Pedro (`jplira2`), líder | Activo | Corre el orquestador y la sesión del equipo rojo |
 
 Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orquestador reparte según eso.
@@ -92,6 +91,20 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 ---
 
 ## Turnos
+
+### Sábado 21, 14:00 a 15:25
+
+Escrito por el orquestador.
+
+- **Las dos cifras, publicadas.** La evaluación con las marcas que calcula el proxy da 120 de 180 (#167). El pitch, el README, la portada del sitio, la página de resultados y el resumen sencillo dicen ya las dos cifras (#179 y #180). Ningún texto público dice «180 de 180» sin su salvedad, y hay tests que lo vigilan.
+- **Demo legible.** Ya no se corta a 1024×768 ni en teléfono, avisa cómo reproducir y las láminas están en el sitio: https://alicanto.vercel.app/pitch/index.html (#168).
+- **Pitch.** Abre con lo que nos distingue, nombra al usuario real (equipos con agentes de código y claves en el repositorio) y cita un precedente público, CamoLeak (#172). Texto hablado: 337 palabras, 2 min 56 s con la demo.
+- **Hook de Claude Code** (#169 y #185): pasa lo que el agente va a ejecutar por el contador. Probado en una sesión real: permite sin fricción y niega con el motivo. El contador con un modelo real no quedó probado, porque el modelo se negó por su cuenta a enviar pedazos de la clave.
+- **Suite completa:** 809 tests en verde. Se arregló el grabador del video de respaldo, que fallaba según el ffmpeg de cada máquina (#173).
+- **Carpeta `demo/alternativas/`:** ideas de demo en paralelo, una subcarpeta por alternativa. Hay dos subidas (01 «El botín» y 02 «El juez es el atacante»). La demo oficial no cambia hasta que el líder elija.
+- **Descripción pública** reescrita a partir de 144 descripciones de ediciones anteriores: PR #178, espera la aprobación del líder.
+
+**Decisiones del líder en este turno:** la demo principal no se rediseña desde la sesión del orquestador; las alternativas de demo se exploran en `demo/alternativas/`; la descripción se reescribe menos técnica.
 
 ### Sábado 21, 11:30 a 14:00
 

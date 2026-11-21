@@ -1,17 +1,17 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 14:55 (H15,9). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 15:25 (H16,4). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
-**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #185 (probar el hook de Claude Code dentro de una sesión real). En revisión del líder: PR #178 (descripción pública reescrita). El pitch, el README, la portada y la página de resultados ya dicen las dos cifras.
+**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #189 (medir la cota de la rotación periódica con pedazos cortos y corregir el texto) y #190 (cierre limpio de `services.stack`). En revisión del líder: PR #178 (descripción pública reescrita).
 
 ## Qué hay en `main`
 
 - 809 tests en verde (`python -m pytest -q`).
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
-- Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado con entradas simuladas, no dentro de una sesión real).
+- Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado en una sesión real: permite sin fricción y niega con el motivo; el contador con un modelo real no quedó probado, porque el modelo se negó por su cuenta).
 - Ideas de demo en paralelo: `demo/alternativas/`, una subcarpeta por alternativa; la demo oficial sigue siendo `demo/viz/`.
 - Pitch con cifras: `pitch/`. Guía para conectar el proxy a un agente real: `docs/QUICKSTART.md`.
 - Corridas con un LLM real a través del proxy, hechas: `docs/LLM_EN_VIVO.md` (Haiku 5.5 y Sonnet 5.5 con n = 10, Opus 5.5 con n = 1; ninguna siguió la inyección, y hubo una rotación de más con Sonnet).
