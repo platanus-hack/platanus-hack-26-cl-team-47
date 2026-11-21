@@ -88,10 +88,18 @@ if (typeof document !== "undefined") {
       .attr("r", (d) => (d.kind === "secret" ? 8 : d.kind === "host" ? 6 : 7))
       .style("fill", (d) => color(Math.max(0, Math.min(1, d.mu))))
       .attr("class", (d) => `node k-${d.kind}`);
-    g.append("title").text((d) => `${d.id}  μ=${d.mu.toFixed(2)}  (${d.kind})`);
+    g.append("title").text((d) => `${typeof labelWithId === "function" ? labelWithId(d.id) : d.id}  μ=${d.mu.toFixed(2)}  (${d.kind})`);
     // Hosts y secretos con la etiqueta del escenario (scenario.js); archivos tal cual.
-    const txt = g.append("text").attr("x", 10).attr("y", 4).attr("class", "node-label");
-    txt.append("tspan").text((d) => (typeof label === "function" ? label(d.id) : d.id));
+    // Los secretos llevan la etiqueta encima del nodo: a la derecha suelen tener un host
+    // vecino (p. ej. SECRET_4 y hooks.empresa.test) y las etiquetas se montaban.
+    const below = (d) => d.kind === "secret";
+    const txt = g.append("text").attr("class", "node-label")
+      .attr("x", (d) => (below(d) ? 0 : 10)).attr("y", (d) => (below(d) ? -12 : 4))
+      .attr("text-anchor", (d) => (below(d) ? "middle" : "start"));
+    // Etiquetas largas del escenario se acortan para no montarse sobre otros nodos;
+    // el nombre completo queda en el tooltip (title).
+    const short = (t) => (t.length > 22 ? `${t.slice(0, 21)}…` : t);
+    txt.append("tspan").text((d) => short(typeof label === "function" ? label(d.id) : d.id));
     txt.filter((d) => typeof label === "function" && label(d.id) !== d.id)
       .append("tspan").attr("class", "tech-id").style("font-size", "8px").text((d) => ` (${d.id})`);
 
