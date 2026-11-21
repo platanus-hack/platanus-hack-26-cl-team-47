@@ -76,8 +76,8 @@ def t4_rotation(with_rot: list[dict], without_rot: list[dict]) -> dict:
     fw, pw = counts(with_rot)
     fo, po = counts(without_rot)
     fisher_p = float(stats.fisher_exact([[fw, pw], [fo, po]])[1]) if (with_rot and without_rot) else 1.0
-    bw = [float(s.get("bits_true_at_action", 0.0)) for s in with_rot]
-    bo = [float(s.get("bits_true_at_action", 0.0)) for s in without_rot]
+    bw = [float(s.get("max_bits_true", 0.0)) for s in with_rot]
+    bo = [float(s.get("max_bits_true", 0.0)) for s in without_rot]
     if bw and bo and len(set(bw + bo)) > 1:
         mw_p = float(stats.mannwhitneyu(bw, bo, alternative="two-sided").pvalue)
     else:

@@ -6,10 +6,10 @@ from eval.final.__main__ import main as cli_main
 
 def _summary(n_benign=10, per=100, attacks=5):
     rows = [{"session_id": f"b{i}", "is_attack": False, "family": None, "n_calls": per, "n_exposed": per,
-             "false_alarm_calls": 0, "n_rotations": 0, "prevented": None, "bits_true_at_action": 0.0}
+             "false_alarm_calls": 0, "n_rotations": 0, "prevented": None, "max_bits_true": 0.0}
             for i in range(n_benign)]
     rows += [{"session_id": f"a{i}", "is_attack": True, "family": "A1", "n_calls": 20, "n_exposed": 20,
-              "false_alarm_calls": 0, "n_rotations": 1, "prevented": True, "bits_true_at_action": 32.0}
+              "false_alarm_calls": 0, "n_rotations": 1, "prevented": True, "max_bits_true": 32.0}
              for i in range(attacks)]
     return rows
 
