@@ -160,15 +160,25 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 25
+    assert len(titulos) == 26
     claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
               "instala", "lista de destinos permitidos", "ya pasó de verdad", "bajó de 180 a 120",
               "regla simple", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
-              "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
+              "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "no se puede rotar", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación",
               "momentos aleatorios", "se llama Alicanto")
     for clave, titulo in zip(claves, titulos):
         assert clave in titulo, f"falta la pregunta sobre {clave!r}"
+
+
+def test_clave_que_no_se_puede_rotar():
+    sec = PREGUNTAS.split("¿Y si la clave no se puede rotar?")[1].split("\n## ")[0]
+    assert "ningún código lo lee" in sec and "bloquear las salidas" in sec and "trabajo pendiente" in sec
+    broker = PREGUNTAS.split("broker de credenciales")[1].split("\n## ")[0]
+    assert "llaves de firma" not in broker
+    assert "rotatable" not in "".join(p.read_text(encoding="utf-8")
+                                     for p in (PITCH.parent / "engine").rglob("*.py") if "tests" not in p.parts), \
+        "si engine/ ya lee rotatable, actualiza la pregunta 19"
 
 
 def test_cada_respuesta_cita_su_fuente():

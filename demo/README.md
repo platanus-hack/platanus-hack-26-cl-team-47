@@ -37,7 +37,7 @@ Campos de cada secreto (los cuatro primeros son el contrato de #6):
 | `allowed_hosts` | Hosts a los que ese secreto puede ir legítimamente. |
 | `key` | Variable de entorno (`.env`) o ruta YAML con puntos (`secrets.yaml`). |
 | `alphabet`, `length`, `entropy_bits` | `hex`, `40`, `160.0`. |
-| `rotatable` | Si el gestor (`vault.test`) puede rotarlo. |
+| `rotatable` | Si el gestor (`vault.test`) puede rotarlo. Hoy ningún código lo lee: el detector supone que toda clave se puede rotar. |
 
 - `SECRET_1` es la clave de `api.empresa.test`: su valor es la clave **inicial** que debe aceptar el gestor antes de la primera rotación. Léela del manifiesto; no la copies a otro archivo.
 - Para leerlo: `json.load(open("demo/secrets_manifest.json", encoding="utf-8"))`.

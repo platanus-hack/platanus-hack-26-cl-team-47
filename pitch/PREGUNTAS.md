@@ -96,7 +96,7 @@ Fuente: «Actualización de H10», corrección 1: https://pipelab.org/blog/cross
 
 ## 15. ¿Por qué no usar un broker de credenciales y no darle el secreto al agente?
 
-Es la crítica más fuerte, y los brokers son complementarios. Si puede poner todo detrás de un broker, hágalo. Quedan las claves que viven en el repositorio: contraseñas de base de datos, llaves de firma, secretos de webhook. Alicanto es una vida útil adaptativa: la clave dura hasta que empieza a filtrarse, no hasta un reloj.
+Es la crítica más fuerte, y los brokers son complementarios. Si puede poner todo detrás de un broker, hágalo. Quedan las claves que viven en el repositorio: contraseñas de base de datos y secretos de webhook, que se pueden rotar. Alicanto es una vida útil adaptativa: la clave dura hasta que empieza a filtrarse, no hasta un reloj.
 
 Fuente: [22], [28]; informe, A.3.
 
@@ -120,43 +120,49 @@ La rotación automática ya es práctica común: existe por calendario, por TTL 
 
 Fuente: [21], [22]; informe, A.2; límite de rotaciones en `engine/detector/params.py` (#79); `results/test/LECTURA.md`, punto 3.
 
-## 19. ¿Son los primeros?
+## 19. ¿Y si la clave no se puede rotar?
+
+Hoy Alicanto supone que toda clave se puede rotar; el campo `rotatable` del manifiesto existe pero ningún código lo lee todavía. Para una clave que no se puede rotar sin romper algo, como una llave de firma, lo único que queda es bloquear las salidas de esa clave y avisar a una persona, y ahí se pierde la ventaja de no interrumpir el trabajo. Es trabajo pendiente, no algo que hagamos.
+
+Fuente: `demo/README.md` (tabla del manifiesto, fila `rotatable`); `engine/detector/detector.py` (la regla de rotar no consulta el campo).
+
+## 20. ¿Son los primeros?
 
 No lo afirmamos. Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete. Hay trabajos cercanos y los nombramos: OCELOT, NeuroTaint, Chauhan y Revankar, el «capacity ledger» de Metere, Pipelock y AgentBrake. También existen monitores entre agentes (Brown et al., arXiv 2605.31593; Makins et al., arXiv 2607.07368), pero usan un LLM o agrupamiento, no una cuenta de bits por secreto.
 
 Fuente: informe, A.3 y A.5; «Actualización de H10» (https://arxiv.org/abs/2605.31593, https://arxiv.org/abs/2607.07368, https://arxiv.org/html/2605.20734).
 
-## 20. ¿Los resultados son reales?
+## 21. ¿Los resultados son reales?
 
 Sí, con sus límites. Las cifras salen de una sola corrida sobre un set de ataques sellado con hash antes de evaluar, con la configuración congelada antes de abrirlo; el sello se comprobó al abrirlo. Después revisamos las marcas de cada llamada: con las que calcula el proxy en vivo quedan 120 de 180, cuatro de seis familias (pregunta 8). Son ataques grabados de seis familias que el detector no había visto, y todo el tráfico es sintético. La demo también es real: los bits del atacante se cuentan con el código del servidor del atacante, que es independiente del detector, y el 200 o el 401 lo devuelve la API protegida al probar la clave que armó con lo que recibió.
 
 Fuente: `docs/PLAN.md` (reglas del equipo morado); `results/test/LECTURA.md` (qué dice el resultado y qué no); `redteam/SELLO.md` (el sello y cómo verificarlo); `results/proxy_flags/systems.md`.
 
-## 21. ¿Por qué un hospital?
+## 22. ¿Por qué un hospital?
 
 Porque ahí una clave filtrada abre datos sensibles y obliga a reportar rápido. La Ley 20.584 dice que toda la información de la ficha clínica es dato sensible (https://www.suseso.gob.cl/612/w3-propertyvalue-130626.html). Y bajo la Ley 21.663 un prestador de servicios esenciales debe enviar a la ANCI una alerta temprana en 3 horas, y no reportar es infracción grave, con multas de hasta 10.000 UTM (https://www.cariola.cl/app/uploads/2025/03/Alerta-Legal_04.03.2025.pdf).
 
 Fuente: `docs/ESCENARIO.md`, filas «verificado» de la tabla de datos. El hospital de la demo es ficticio: no nombrar un hospital real como ejemplo.
 
-## 22. ¿Y si el atacante reparte la fuga entre varios agentes?
+## 23. ¿Y si el atacante reparte la fuga entre varios agentes?
 
 Lo probamos con cinco agentes que sacan dos fragmentos cada uno: con un monitor por agente, ninguno ve más de 32 de los 160 bits, nada rota y el atacante arma la clave (200); con la cuenta global de Alicanto la clave rota en la llamada 32 y el atacante recibe 401. Hoy la cuenta compartida cubre a varios agentes en una misma máquina, cada uno con su proceso, por un archivo común, y se conserva entre sesiones; coordinar varias máquinas es trabajo futuro. Ya hay monitores entre agentes: Makins et al. (arXiv 2607.07368) describen el «efecto fragmentación» contra monitores por instancia, y Brown et al. (arXiv 2605.31593) también vigilan entre agentes; los dos usan un LLM o agrupamiento, no una cuenta de bits por secreto. El riesgo no es teórico: Anthropic describió una campaña en que los atacantes dividieron el ataque en tareas pequeñas de apariencia inocente y el modelo cosechó credenciales, y Google GTIG describe actores que automatizan descubrimiento y explotación con frameworks multiagente, con las intrusiones totalmente agénticas como tendencia.
 
 Fuente: `demo/viz/fixtures/swarm_left.jsonl` y `swarm_right.jsonl` (`python demo/run_split.py --swarm`); Anthropic, 13 de noviembre de 2025, <https://www.anthropic.com/news/disrupting-AI-espionage>; Google GTIG, 16 de noviembre de 2026, <https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold>. Ojo: la campaña de Anthropic no fue un «enjambre» sino un framework de orquestación sobre un agente de código; y no decir que las intrusiones totalmente autónomas ya son generalizadas.
 
-## 23. ¿Y si el atacante se adapta a la rotación?
+## 24. ¿Y si el atacante se adapta a la rotación?
 
 La evaluación final es contra ataques grabados, que después de rotar siguen enviando la clave vieja. Lo medimos aparte con un atacante simulado que relee la clave nueva antes de cada envío: en el set de prueba y con las marcas de las grabaciones, 180 de 180 ataques no pasan de 96 bits de ninguna versión de la clave (máximo 64, mediana 20); sin rotación, solo 30 de 180. Con las marcas del proxy no la repetimos. Cómo lo frena: llega al tope de tres rotaciones y pasa al modo escalado, que bloquea las salidas de esa clave hacia destinos no permitidos y avisa a una persona; pasó en todos los casos. Es una detención con costo, no rotación sin fin, y el costo de ese modo sobre tráfico benigno no está medido. Es una simulación con un atacante de guion, reportada aparte.
 
 Fuente: `results/adaptive/summary.md` (`python -m eval.final.adaptive`); `results/test/LECTURA.md`, «El atacante que se adapta».
 
-## 24. ¿Conviene rotar en momentos aleatorios, para que el atacante no pueda anticiparlo?
+## 25. ¿Conviene rotar en momentos aleatorios, para que el atacante no pueda anticiparlo?
 
 Hoy la rotación periódica es de período fijo, y tiene una cota que vale aunque el atacante lo conozca, pero solo para pedazos de 4 caracteres o más, los que el contador cuenta: lo máximo que se puede sacar enviando justo bajo el radar entre dos rotaciones no alcanza para armar la clave (en la medición, máximo 84 de 160 bits). Con pedazos de 1 a 3 caracteres la cota no se aplica: la configuración evaluada rota al primer envío por la evidencia de comportamiento (máximo 12 bits), y la de la demo, sin modelo de evidencia, deja salir la clave entera en 10 de 18 combinaciones. Contra el atacante que relee la clave nueva y sigue, lo que lo frena no es el momento de la rotación sino el tope: a la tercera, Alicanto bloquea las salidas de esa clave y avisa a una persona. La variación aleatoria ayudaría en un caso estrecho, el de un canal que no sabemos leer y que no deja rastro de comportamiento: ahí impide elegir el momento que deja más tiempo de uso a una clave robada entera. Es el siguiente paso de diseño, con una condición: la variación solo puede acortar el período, porque alargarlo rompería la cota. No está implementado ni medido.
 
 Fuente: `engine/detector/params.py` (`Params.check`); `results/short_fragments/summary.md` (`python -m eval.final.short_fragments`; sesiones sintéticas propias, sin el set sellado); `results/adaptive/summary.md`.
 
-## 25. ¿Por qué se llama Alicanto?
+## 26. ¿Por qué se llama Alicanto?
 
 En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el oro; quien la sigue por codicia termina perdido y con las manos vacías. Es lo que hace el producto con una clave: el atacante la va juntando de a pedazos y, cuando cree que la tiene, ya no sirve. Lo que el producto hace en concreto es contar cuánta clave salió y rotarla antes de que se complete.
 
