@@ -75,6 +75,6 @@ Lo que salió del texto hablado para que quepa en 3 minutos con la demo. No es p
     (`python -c "import json; print(len({json.loads(l)['session_id'] for l in open('redteam/train/labels.jsonl')}))"`,
     y lo mismo con `redteam/val`), y 180 sellados (seis familias de ataque de 30 en
     `redteam/SELLO.md`; las tres de 30 benignas no cuentan). Total: 340.
-  - Equipos separados: quien escribió los ataques no abrió `engine/` (regla del equipo morado en `AGENTS.md`).
+  - Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo): quien escribió los ataques lo hizo en una sesión de agente nueva que no abrió `engine/` (regla del equipo morado en `AGENTS.md`). No decir que lo hizo otro equipo de personas.
   - Banco de pruebas: `services/` (gestor, API protegida, atacante) y `services/github_sim`, `services/web_sim`, en la red aislada de docker compose.
 - **Rotación de la industria:** «la rotación automática existe por calendario, por TTL o tras una fuga pública completa; nada la dispara por fuga parcial dentro del tráfico de un agente».

@@ -440,8 +440,11 @@ def test_lamina_del_problema_situa_el_track():
 def test_lamina_36_horas():
     s = slide("36 horas")
     assert idx("36 horas") > idx("Respaldo")   # en el respaldo (16e)
-    for clave in ("tests automáticos", "80 + 80 + 180", "no vio el detector", "sin internet"):
-        assert clave in s["text"], clave
+    for clave in ("tests automáticos", "80 + 80 + 180",
+                  "Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)", "sin internet"):
+        assert clave in norm(s["text"]), clave
+    assert "equipo rojo no vio" not in s["text"]
+    assert "Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)" in GUION
     assert "PR" not in s["text"].split() and "commits" not in s["text"].lower()
     assert "python -m pytest -q" in GUION and "redteam/SELLO.md" in GUION
 
@@ -580,3 +583,35 @@ def test_preguntas_que_mas_se_repiten():
     assert PREGUNTAS.index("## Las que más se repiten") < PREGUNTAS.index("## 1. ")
     assert "`docs/QUICKSTART.md`" in PREGUNTAS and "PENDIENTE: enlace a `docs/QUICKSTART.md`" not in PREGUNTAS
     assert (PITCH.parent / "docs" / "QUICKSTART.md").is_file()
+
+
+# ------------------------------------------------ pedazos cortos (después de #189)
+
+def _short_fragments():
+    import json
+    return json.loads((PITCH.parent / "results" / "short_fragments" / "summary.json").read_text(encoding="utf-8"))
+
+
+def test_cota_de_la_rotacion_solo_para_pedazos_de_4_o_mas():
+    """La pregunta de los momentos aleatorios ya no dice que la cota vale sin condiciones."""
+    rows = _short_fragments()["rows"]
+    largos = [r for r in rows if r["piece_chars"] >= 4]
+    cortos = lambda sistema: [r for r in rows if r["system"] == sistema and r["piece_chars"] <= 3]
+    max_largos = max(r["max_bits_any_version"] for r in largos)
+    max_ours_cortos = max(r["max_bits_any_version"] for r in cortos("ours"))
+    demo_pasan = sum(r["success"] for r in cortos("demo"))
+    assert not any(r["success"] for r in largos)
+    assert (max_largos, max_ours_cortos, demo_pasan, len(cortos("demo"))) == (84, 12, 10, 18)
+
+    sec = PREGUNTAS.split("¿Conviene rotar en momentos aleatorios")[1].split("\n## ")[0]
+    assert "solo para pedazos de 4 caracteres o más" in sec
+    assert f"máximo {int(max_largos)} de 160 bits" in sec
+    assert f"rota al primer envío por la evidencia de comportamiento (máximo {int(max_ours_cortos)} bits)" in sec
+    assert f"deja salir la clave entera en {demo_pasan} de {len(cortos('demo'))} combinaciones" in sec
+    assert "`results/short_fragments/summary.md`" in sec
+
+
+def test_lamina_de_limites_nombra_los_pedazos_cortos():
+    s = slide("Límites, dichos de frente")
+    assert ("Pedazos de 1 a 3 letras el contador no los cuenta: ahí decide la evidencia de comportamiento."
+            in norm(s["body"]))
