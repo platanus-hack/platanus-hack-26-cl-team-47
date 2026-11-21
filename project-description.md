@@ -1,49 +1,54 @@
-# Cuentagotas
+# Cuentagotas 💧
 
-**Mide cuántos bits de cada clave ya filtró tu agente de IA, y la rota antes de que el atacante la complete.**
+### Tu agente de IA puede regalar tus claves de a cuatro letras. Nosotros contamos cada gota y cambiamos la cerradura antes de que la llave esté completa.
 
-## El problema
+## Un robo que nadie ve
 
-Los agentes de IA que programan leen el repositorio completo, incluidos el `.env` y los archivos de configuración con claves. Un issue o una página web con una instrucción escondida puede convencer al agente de sacar una clave hacia afuera.
+Los agentes que programan leen todo tu repositorio, incluido el `.env`. Basta un issue o una página web con una instrucción escondida para que el agente empiece a sacar una clave hacia afuera.
 
-Las defensas actuales buscan el secreto **completo** en cada mensaje. Un atacante paciente lo saca de a cuatro caracteres por llamada, separados por decenas de llamadas normales, o codificado en base64. Cada mensaje por separado se ve inocente.
+El atacante paciente no la pide entera. La saca **de a 4 caracteres**, entre decenas de llamadas normales, o disfrazada en base64. Cada mensaje por separado se ve inocente, y los filtros de hoy, que buscan el secreto completo, lo dejan pasar todas las veces.
+
+Diez mensajes después, tiene la clave.
 
 ## Qué hace Cuentagotas
 
-Es un proxy que se pone entre el agente y sus herramientas (lectura de archivos, HTTP, git, issues). No modifica el agente y no usa un LLM para decidir.
+Se pone entre el agente y sus herramientas. No toca el agente y **no usa otra IA para decidir**: un monitor que se convence con texto no es un monitor.
 
 En cada llamada:
 
-1. **Mide.** Cuenta cuántos bits de cada secreto ya salieron hacia afuera, sumando fragmentos a lo largo de toda la sesión, también si van codificados (base64, hexadecimal, URL, ROT13, invertidos o separados).
-2. **Acumula evidencia.** Sigue de dónde viene cada dato (qué archivo se leyó, qué contenido no confiable influyó) y acumula evidencia de ataque con un detector de cambio de régimen (CUSUM).
-3. **Actúa.** Permite, bloquea o **rota la clave** en el gestor de secretos. Lo que el atacante juntó de la clave vieja deja de servir.
+- 🔬 **Mide.** Cuenta cuántos bits de cada clave ya salieron, sumando gota por gota a lo largo de la sesión, aunque vengan en base64, hexadecimal, al revés o separados por guiones.
+- 🧭 **Sigue el rastro.** Sabe qué archivo se leyó, qué contenido no confiable influyó y por dónde salió.
+- 🔁 **Rota.** Antes de que la fuga se complete, cambia la clave en el gestor de secretos. Lo que el atacante juntó ya no abre nada.
 
-## La demo
+## La demo: el mismo ataque, dos finales
 
-El mismo ataque corre dos veces contra el repositorio del servicio de agenda y ficha clínica de un hospital ficticio (hospital, pacientes y claves son inventados):
+Un hospital ficticio, su sistema de agenda y ficha clínica, y un agente al que le plantan una instrucción. Hospital, pacientes y claves son inventados.
 
 | | Sin protección | Con Cuentagotas |
 |---|---|---|
-| Qué pasa | El atacante junta la clave de a 4 caracteres | La clave rota a mitad del goteo |
-| Bits de la clave vigente que obtiene | 160 de 160 | 0 de 160 |
-| Respuesta de la API de fichas | **200** | **401** |
+| El atacante junta | 160 de 160 bits de la clave | 0 bits de la clave vigente |
+| La API de fichas clínicas responde | **200**: entró | **401**: rechazado |
 
-Los bits que obtuvo el atacante los cuenta el servidor del atacante, no el detector: son dos registros independientes.
+Los bits que consiguió el atacante los cuenta **su propio servidor**, no nuestro detector. No nos ponemos la nota nosotros.
 
-## Cómo está hecho
+## Por qué importa
 
-- **Proxy MCP** en Python con seis herramientas; todas las llamadas del agente pasan por él y quedan en un registro de eventos.
-- **Motor de bits**: decodificadores encadenados y conteo de posiciones del secreto reveladas, con pruebas por propiedades.
-- **Grafos**: un grafo de archivos por sensibilidad y un grafo de llamadas que sigue el contenido de una llamada a otra y explica cada decisión.
-- **Servicios simulados** con FastAPI: gestor de secretos con rotación, API protegida, servidor del atacante, y GitHub y web de prueba. Todo corre en una red aislada, con nombres `.test` y sin salida a internet.
-- **Evaluación**: arnés de reproducción, líneas de base (lista de destinos permitidos y detect-secrets) y pruebas de hipótesis con intervalos.
+Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad. Cuentagotas no espera al incidente: cuando la clave lleva un tercio filtrado, ya la cambió, y deja escrito qué salió, hacia dónde y por qué camino.
 
-## Límites, dicho con honestidad
+## Por dentro
 
-- Mide una **cota inferior**: solo ve lo que pasa por el proxy y las codificaciones que sabe decodificar.
-- La rotación limita el daño; no impide que el agente intente la fuga.
-- Hoy la cuenta se lleva por sesión de un agente.
+- **Proxy MCP** en Python: toda llamada del agente pasa por él y queda registrada.
+- **Motor de bits** con decodificadores encadenados y pruebas por propiedades.
+- **Dos grafos**: uno de archivos por sensibilidad y otro de llamadas, que explica cada decisión.
+- **Banco de pruebas cerrado**: gestor de secretos con rotación, API protegida, servidor del atacante, GitHub y web simulados, en una red sin salida a internet.
+- **Evaluación seria**: equipo rojo separado del azul, líneas de base y pruebas de hipótesis con intervalos.
 
-## Equipo
+## Lo que no prometemos
+
+- Medimos una **cota inferior**: lo que pasa por el proxy, en las codificaciones que sabemos leer.
+- Rotar limita el daño; no impide que el agente lo intente.
+- Hoy la cuenta se lleva por sesión de un agente. **En curso:** una sola cuenta por clave para todo un enjambre de agentes, para que repartir la fuga entre varios no sirva de nada.
+
+---
 
 team-47 · Platanus Hack 26 · track AI Security
