@@ -282,7 +282,8 @@ def test_frases_desmentidas_fuera_de_pitch():
     for f in _pitch_files():
         t = f.read_text(encoding="utf-8")
         for frase in ("ninguna cuenta fragmentos", "ningún filtro", "6,64", "Paubox", "21.719",
-                      "PENDIENTE: nombre del escenario", "nadie junta fragmentos", "No encontramos ningún trabajo"):
+                      "PENDIENTE: nombre del escenario", "nadie junta fragmentos", "No encontramos ningún trabajo",
+                      "marcados como rotables"):
             assert frase.lower() not in t.lower(), f"{f.name}: {frase}"
 
 
@@ -308,3 +309,8 @@ def test_lamina_final_con_pedido():
     s = parse()[12]
     assert s["pendientes"] == 0 and "piloto" in s["body"]
     assert "para que lo confirme una persona del equipo" in GUION
+
+
+def test_demo_dice_que_decide_solo_el_contador():
+    assert "la demo usa solo el contador de bits; la configuración evaluada suma la evidencia acumulada" in GUION
+    assert "independiente del detector" in PREGUNTAS

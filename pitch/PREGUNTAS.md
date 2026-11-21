@@ -54,7 +54,7 @@ Fuente: lámina 11; informe, A.5.
 
 ## 9. ¿Rotar no rompe producción?
 
-La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Solo se rotan los secretos marcados como rotables en el gestor, y si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Cuentagotas deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona.
+La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Cuentagotas deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona.
 
 Fuente: [21], [22]; informe, A.2; límite de rotaciones en `engine/detector/params.py` (#79).
 
@@ -66,7 +66,7 @@ Fuente: informe, A.3 y A.5; «Actualización de H10» (https://arxiv.org/abs/260
 
 ## 11. ¿Los resultados son reales?
 
-Sí. Las cifras salen de una sola corrida de evaluación sobre un set de ataques sellado con hash, con los parámetros congelados antes de abrirlo. La demo también: el 200 y el 401 los mide el servidor del atacante con la clave que reconstruyó de lo que recibió. Si nos preguntan antes de esa corrida, la respuesta es: todavía no la corremos.
+Sí. Las cifras salen de una sola corrida de evaluación sobre un set de ataques sellado con hash, con los parámetros congelados antes de abrirlo. La demo también: los bits del atacante se cuentan con el código del servidor del atacante, que es independiente del detector, y el 200 o el 401 lo devuelve la API protegida al probar la clave que armó con lo que recibió. Si nos preguntan antes de esa corrida, la respuesta es: todavía no la corremos.
 
 Fuente: `docs/PLAN.md` (reglas del equipo morado). PENDIENTE: la corrida final (H20 a H23).
 
