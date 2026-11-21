@@ -23,12 +23,12 @@ class Slides(HTMLParser):
     def handle_starttag(self, tag, attrs):
         cls = (dict(attrs).get("class") or "").split()
         if tag == "section" and "slide" in cls:
-            self.cur = {"title": "", "body": "", "quote": "", "pendientes": 0, "text": ""}
+            self.cur = {"title": "", "body": "", "quote": "", "pendientes": 0, "pend_text": "", "text": ""}
             self.slides.append(self.cur)
         if self.cur is not None:
             if "pendiente" in cls:
                 self.cur["pendientes"] += 1
-            self.stack.append((tag, "cita" in cls))
+            self.stack.append((tag, "cita" in cls, "pendiente" in cls))
 
     def handle_endtag(self, tag):
         if self.stack:
@@ -40,10 +40,12 @@ class Slides(HTMLParser):
         if self.cur is None or not self.stack:
             return
         self.cur["text"] += data + " "
-        tags = [t for t, _ in self.stack]
+        tags = [t for t, _, _ in self.stack]
         if "h1" in tags or "h2" in tags:
             self.cur["title"] += data
-        elif any(c for _, c in self.stack):
+        elif any(p for _, _, p in self.stack):
+            self.cur["pend_text"] += data + " "
+        elif any(c for _, c, _ in self.stack):
             self.cur["quote"] += data
         else:
             self.cur["body"] += data + " "
@@ -87,14 +89,15 @@ def test_citas_literales():
 
 
 def test_maximo_cuarenta_palabras_de_cuerpo():
-    """Cuerpo = todo menos el título. Única excepción: la cita literal de la lámina 8
-    (41 palabras en el documento v4.0; no se recorta sin visto bueno del líder)."""
+    """Cuerpo = todo menos el título y los marcadores PENDIENTE (no son texto final).
+    Única excepción: la cita literal de la lámina 8 (41 palabras en el documento v4.0;
+    no se recorta sin visto bueno del líder); su línea menor (tarea 16b) va aparte."""
     for n, s in enumerate(parse(), 1):
         body = words(s["body"])
         quote = words(s["quote"])
         if n == 8:
-            assert not body, "la lámina 8 solo lleva la cita"
             assert len(quote) == 41
+            assert len(body) <= 40, f"lámina 8: la línea menor tiene {len(body)} palabras"
             continue
         total = len(body) + len(quote)
         assert total <= 40, f"lámina {n}: {total} palabras"
@@ -112,3 +115,46 @@ def test_guion_doce_secciones_y_pendientes():
     assert re.search(r"^## Pendientes", guion, flags=re.M)
     for falta in ("T1", "T2", "T3", "T4", "escenario", "qué pedimos"):
         assert falta in guion
+
+
+# ------------------------------------------------ tarea 16b
+
+PREGUNTAS = (PITCH / "PREGUNTAS.md").read_text(encoding="utf-8")
+GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
+
+
+def test_preguntas_tiene_las_diez():
+    titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
+    assert len(titulos) == 10
+    claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "broker de credenciales",
+              "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
+              "resultados son reales")
+    for clave, titulo in zip(claves, titulos):
+        assert clave in titulo, f"falta la pregunta sobre {clave!r}"
+
+
+def test_cada_respuesta_cita_su_fuente():
+    secciones = re.split(r"^## \d+\. ", PREGUNTAS, flags=re.M)[1:]
+    assert all("Fuente:" in sec for sec in secciones)
+
+
+def _sin_pregunta_que_lo_niega(texto):
+    return re.sub(r"^## \d+\. ¿Son los primeros\?.*?(?=^## |\Z)", "", texto, flags=re.M | re.S)
+
+
+def test_frases_prohibidas():
+    for nombre, texto in (("index.html", HTML), ("GUION.md", GUION), ("PREGUNTAS.md", PREGUNTAS)):
+        t = _sin_pregunta_que_lo_niega(texto).lower()
+        assert "somos los primeros" not in t, nombre
+        assert "90 %" not in t and "90%" not in t, nombre
+        assert "persistente entre sesiones" not in t, nombre
+
+
+def test_lamina_8_dice_hasta_donde_encontramos():
+    s8 = parse()[7]
+    assert "hasta donde encontramos" in s8["body"].lower()
+
+
+def test_lamina_11_tiene_pendiente():
+    assert parse()[10]["pendientes"] >= 1
+    assert "LLM" in parse()[10]["pend_text"]
