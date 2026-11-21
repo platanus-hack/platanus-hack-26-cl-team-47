@@ -120,6 +120,22 @@ GIT_TIMEOUT_S = 30.0
 NETWORK_SUBCOMMANDS = frozenset({"push", "pull", "fetch", "clone", "ls-remote", "submodule", "remote"})
 
 
+def _git_env(root: Path) -> dict[str, str]:
+    return {
+        **os.environ,
+        "GIT_TERMINAL_PROMPT": "0",
+        # No subir a buscar el repo del equipo si el workspace no es un repo propio.
+        "GIT_CEILING_DIRECTORIES": str(root.parent),
+    }
+
+
+def _run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], cwd=root, capture_output=True,
+        text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S, env=_git_env(root),
+    )
+
+
 def git(workspace: str | os.PathLike, args: list[str]) -> str:
     if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
         raise ToolError("args debe ser una lista de strings")
@@ -131,21 +147,48 @@ def git(workspace: str | os.PathLike, args: list[str]) -> str:
     if sub in NETWORK_SUBCOMMANDS:
         # Nada sale del banco de pruebas: la red de git se simula.
         return f"exit 0\n{sub} simulado (sin red): {' '.join(args)}"
-    root = Path(workspace).resolve()
-    env = {
-        **os.environ,
-        "GIT_TERMINAL_PROMPT": "0",
-        # No subir a buscar el repo del equipo si el workspace no es un repo propio.
-        "GIT_CEILING_DIRECTORIES": str(root.parent),
-    }
     try:
-        res = subprocess.run(
-            ["git", *args], cwd=root, capture_output=True,
-            text=True, encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT_S, env=env,
-        )
+        res = _run_git(Path(workspace).resolve(), args)
     except FileNotFoundError as e:
         raise ToolError("git no está instalado") from e
     except subprocess.TimeoutExpired as e:
         raise ToolError("git excedió el tiempo límite") from e
     out = res.stdout + (("\n" + res.stderr) if res.stderr else "")
     return f"exit {res.returncode}\n{out}".rstrip()
+
+
+# --- Contenido saliente de un git push ------------------------------------
+
+OUTGOING_MAX_CHARS = 200_000
+OUTGOING_MAX_COMMITS = 50  # tope cuando no hay upstream
+
+
+def outgoing_content(workspace: str | os.PathLike) -> tuple[str, str | None]:
+    """Lo que subiría un `git push`: mensajes de commit y diff de los commits salientes.
+
+    Con upstream (@{u}): `<upstream>..HEAD`. Sin upstream: los commits alcanzables desde HEAD
+    (hasta OUTGOING_MAX_COMMITS). Devuelve (texto, None) o ("", motivo) si falla.
+    """
+    root = Path(workspace).resolve()
+    try:
+        head = _run_git(root, ["rev-parse", "--verify", "-q", "HEAD"])
+        if head.returncode != 0:
+            inside = _run_git(root, ["rev-parse", "--is-inside-work-tree"])
+            if inside.returncode != 0:
+                return "", "no es un repositorio git: " + (inside.stderr.strip() or f"exit {inside.returncode}")
+            return "", "el repositorio no tiene commits"
+        up = _run_git(root, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+        if up.returncode == 0 and up.stdout.strip():
+            rng = [f"{up.stdout.strip()}..HEAD"]
+        else:
+            rng = ["-n", str(OUTGOING_MAX_COMMITS), "HEAD"]
+        msgs = _run_git(root, ["log", "--format=%B", *rng])
+        diffs = _run_git(root, ["log", "-p", "--format=", "--no-color", *rng])
+    except FileNotFoundError:
+        return "", "git no está instalado"
+    except subprocess.TimeoutExpired:
+        return "", "git excedió el tiempo límite"
+    for r in (msgs, diffs):
+        if r.returncode != 0:
+            return "", (r.stderr.strip() or f"git exit {r.returncode}")
+    return msgs.stdout.strip() + "\n\n" + diffs.stdout.strip(), None
