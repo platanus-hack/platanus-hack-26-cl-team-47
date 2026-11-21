@@ -77,6 +77,7 @@ Cada afirmación del proyecto, con el archivo que la sostiene y un comando que l
 | Lee fragmentos en claro y en base64, hexadecimal, URL, ROT13, invertidos y separados | `engine/bits/decoders.py` | `python -m pytest engine/bits/tests/test_short_encoded.py -q` |
 | Rota la clave en el gestor: la vieja deja de servir (401) y la nueva sirve (200) | `proxy/live.py`, `services/vault/` | `python -m services.scenarios goteo --out logs/goteo` |
 | El mismo ataque termina en 200 sin protección y en 401 con Alicanto | `demo/run_split.py` | `python demo/run_split.py --out-dir demo/out` (regenera la demo desde cero) |
+| El grafo de archivos propaga la sensibilidad de los archivos conocidos a sus vecinos y da señales por llamada al modelo de evidencia. El grafo de archivos usa propagación de etiquetas con campos gaussianos (Zhu, Ghahramani y Lafferty, Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions, ICML 2003), con una regularización y etiquetas con ruido en vez de fijas; no es una copia literal del artículo. | `engine/graph/gff.py` | `python -m pytest engine/graph -q` |
 | Una sola cuenta por clave para varios agentes | `engine/detector/ledger.py` | `python demo/run_split.py --swarm --out-dir demo/out` y `python -m pytest engine/detector/tests/test_ledger.py -q` |
 | Ningún LLM decide | `engine/` no importa ningún cliente de modelos | `grep -rn "anthropic\|openai" engine/` no devuelve nada |
 | Si el gestor de secretos no responde, se bloquean las salidas | `proxy/live.py` (`fail_safe`) | `python -m pytest proxy/tests -q` |
@@ -137,4 +138,5 @@ Solo secretos sintéticos y servidores simulados con nombres `.test`. Las herram
   - La configuración evaluada, con el modelo de evidencia, rota al primer envío y no deja pasar más de 12 bits.
   - Cifras: [results/short_fragments/summary.md](results/short_fragments/summary.md).
 - Rotar limita el daño; no impide que el agente lo intente.
+- Alicanto supone que toda clave se puede rotar: el campo `rotatable` del manifiesto existe, pero hoy ningún código lo lee. Una clave que no se puede rotar sin romper algo, como una llave de firma, solo se protegería bloqueando y avisando a una persona; eso no está hecho.
 - La cuenta compartida cubre a varios agentes en una misma máquina, cada uno con su propio proceso, a través de un archivo común, y se conserva entre sesiones; coordinar varias máquinas queda como trabajo futuro.
