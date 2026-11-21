@@ -6,7 +6,7 @@
 
 Los agentes que programan leen todo tu repositorio, incluido el `.env`. Basta un issue o una página web con una instrucción escondida para que el agente empiece a sacar una clave hacia afuera.
 
-El atacante paciente no la pide entera. La saca **de a 4 caracteres**, entre decenas de llamadas normales, o disfrazada en base64. Cada mensaje por separado se ve inocente, y los filtros de hoy, que buscan el secreto completo, lo dejan pasar todas las veces.
+El atacante paciente no la pide entera. La saca **de a 4 caracteres**, entre decenas de llamadas normales, o disfrazada en base64. Cada mensaje por separado se ve inocente: los filtros que revisan mensaje por mensaje buscan el secreto completo y no lo encuentran. Las pocas herramientas que ya juntan fragmentos entre llamadas declaran que pierden los fragmentos cortos o codificados, y cuando detectan algo solo bloquean: lo que ya salió, salió.
 
 Diez mensajes después, tiene la clave.
 
@@ -19,6 +19,8 @@ En cada llamada:
 - 🔬 **Mide.** Cuenta cuántos bits de cada clave ya salieron, sumando gota por gota a lo largo de la sesión, aunque vengan en base64, hexadecimal, al revés o separados por guiones.
 - 🧭 **Sigue el rastro.** Sabe qué archivo se leyó, qué contenido no confiable influyó y por dónde salió.
 - 🔁 **Rota.** Antes de que la fuga se complete, cambia la clave en el gestor de secretos. Lo que el atacante juntó ya no abre nada.
+
+Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.
 
 ## La demo: el mismo ataque, dos finales
 

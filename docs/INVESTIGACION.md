@@ -191,3 +191,33 @@ El investigador web encontró una nota de prensa sobre un ciberataque a un hospi
 - La nota sobre el ciberataque a un hospital en noviembre de 2026.
 - Page (1954), que no consulté directamente.
 - Lo que dicen los artículos más allá de sus resúmenes: no leí ninguno completo.
+
+---
+
+## Actualización de H10 (sábado 21 de noviembre, 09:30)
+
+Segunda pasada de investigación, hecha por otro agente. «Abierto» significa que leyó la página; lo demás va como **[no verificado]**. Corrige tres cosas de este mismo documento.
+
+### Correcciones
+
+1. **Ya existen herramientas que acumulan fragmentos entre llamadas.** La afirmación de la sección A.3 («ninguna cuenta fragmentos codificados ni acumula en el tiempo») es falsa tal como está escrita.
+   - **Pipelock** (código abierto, v1.2.0, 11 de marzo de 2026): reensambla fragmentos por sesión y lleva un presupuesto de entropía en bits por ventana de tiempo, también en el camino MCP. Según su propia documentación, los fragmentos codificados evaden el reensamblado, el estado es por sesión, solo bloquea, y su guía de canarios dice que no detecta particiones en tres o más requests. Abierto: https://raw.githubusercontent.com/luckyPipewrench/pipelock/main/README.md y https://pipelab.org/blog/cross-request-exfiltration/
+   - **AgentBrake** (proxy MCP, proyecto pequeño): compara huellas de datos protegidos tras decodificar base64, hex, URL e invertido. Declara que pierde fragmentos de menos de 20 caracteres. Abierto: https://github.com/Ujjwaljain16/AgentBrake
+2. **OCELOT**: el presupuesto es por tarea o trayectoria, no por secreto, y el LLM solo propone: decide un verificador determinista. Abierto: https://arxiv.org/html/2606.12341v1
+3. **Chauhan y Revankar (Nimbus)**: la cifra de 0,90 de detección contra 0,12 de LlamaGuard **sí** está en el artículo (tabla 3, sobre 50 conversaciones propias). La sección A.2 decía que no aparecía. Que una persona abra la tabla antes de citarla. Abierto: https://arxiv.org/html/2606.04141
+
+### Trabajos que faltaban
+
+- **«Capacity ledger»** (Metere, arXiv 2605.20734, 20 de mayo de 2026): libro de capacidad por destino de salida, tipo balde con fugas; demora o cancela. No conoce el secreto, mira mensajes salientes y no rota. Con esto, «un presupuesto de bits de salida» ya no es novedad. Abierto: https://arxiv.org/html/2605.20734
+- **Monitores entre agentes**: Brown et al. (arXiv 2605.31593, 29 de mayo de 2026) y Makins et al. (arXiv 2607.07368, 8 de julio de 2026), que describe el «efecto fragmentación» contra monitores por instancia. Usan un LLM o agrupamiento, no cuentan bits por secreto. Makins sirve de cita para la lámina del enjambre. Abiertos los resúmenes: https://arxiv.org/abs/2605.31593 y https://arxiv.org/abs/2607.07368
+
+### Qué se puede decir y qué no
+
+- **Sí:** «Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.»
+- **No:** «ningún filtro detecta una clave sacada en fragmentos», «somos los primeros en contar fuga acumulada», ni «persistente entre sesiones» como novedad.
+
+### Comprador y marco legal (verificado en fuente)
+
+- La ANCI lista como servicios esenciales la «prestación institucional de salud: hospitales, clínicas, consultorios y centros médicos» y también los «servicios de TI gestionados por terceros». Abierto: https://anci.gob.cl/documents/4692/PPT_Presentacion_SE_y_OIV_VF.pdf
+- Plazos de reporte de 3 horas, 72 horas y 15 días corridos; no reportar es infracción grave, hasta 10.000 UTM (20.000 para operadores de importancia vital). La multa es por no reportar, no por la fuga. Abierto: https://www.cariola.cl/app/uploads/2025/03/Alerta-Legal_04.03.2025.pdf
+- Precios de comparables: Docker MCP Gateway y el núcleo de Pipelock son gratuitos; GitGuardian publica solo su plan gratuito. Las demás cifras de precios quedaron **[no verificado]**: no usarlas.
