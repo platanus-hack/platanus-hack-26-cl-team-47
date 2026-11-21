@@ -1,0 +1,738 @@
+/* Alternativa 03, «20 agentes, una clave». Para proyector (1024×768 y 1280×720).
+ *
+ * Dos materiales y nada más: lo claro es de la clínica (sus pantallas, su repositorio, su
+ * gestor de secretos, su API); lo oscuro es afuera. Un solo color con significado: el oro es
+ * la clave viva; la ceniza, la clave muerta.
+ * Sin degradados, sin brillos, sin sombras en reposo, esquinas rectas.
+ */
+:root {
+  --ground: #0d0c0a;
+  --surface: #191712;
+  --track: #2c2922;
+  --ink: #f3efe4;
+  --mute: #918b7d;
+  --gold: #e8b23a;
+  --ash: #625e55;
+  --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  --code: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --arrive: cubic-bezier(0.16, 1, 0.3, 1);   /* lo que llega: frena largo */
+  --travel: cubic-bezier(0.77, 0, 0.175, 1); /* lo que cruza la pantalla */
+
+  /* la clínica */
+  --ui-bg: #f2f5f4;
+  --ui-panel: #ffffff;
+  --ui-ink: #17211f;
+  --ui-mute: #5b6865;
+  --ui-line: #dde4e2;
+  --ui-brand: #0e5a52;
+  --ui-brand-deep: #0a4640;
+  --ui-alert: #a3231b;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+[hidden] { display: none !important; }
+code { font-family: var(--code); }
+h2 { margin: 0; font-size: 1em; }
+.needs-server { margin: 0; padding: 14px 20px; background: var(--ink); color: var(--ground); font-size: 16px; }
+
+/* ---------- escenario y cámara ---------- */
+#stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+#world { position: absolute; inset: 0; transform-origin: 0 0; }
+#title {
+  position: absolute;
+  left: 18px;
+  top: 10px;
+  margin: 0;
+  z-index: 5;
+  font-size: clamp(16px, 1.8vw, 22px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: opacity 0.5s;
+}
+body[data-cam="focus"] #title, .moving #title { opacity: 0; transition: opacity 0.15s; }
+
+/* ---------- las líneas ---------- */
+#edges { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 0.4s; }
+body[data-cam="focus"] #edges, .moving #edges { opacity: 0; transition: none; }
+#edges .own { stroke: var(--track); stroke-width: 1.2; }
+#edges .own.read { stroke: #6f6a5e; stroke-width: 1.5; }
+#edges .out { stroke: transparent; stroke-width: 2.5; }
+#edges .out.sent { stroke: var(--gold); }
+#edges .out.sent.dead { stroke: var(--ash); stroke-width: 2; }
+#edges .signal, #edges .cash { fill: none; stroke: transparent; stroke-width: 2; }
+#edges .signal.on { stroke: var(--ink); }
+#edges .cash.on { stroke: var(--mute); stroke-dasharray: 5 5; }
+
+/* ---------- los 20 asistentes ---------- */
+.node { position: absolute; cursor: pointer; z-index: 1; }
+.node:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+body[data-cam="focus"] .node:not(.focused) { opacity: 0; transition: opacity 0.4s 0.5s; }
+.screen {
+  width: 100%;
+  overflow: hidden;
+  background: var(--ui-bg);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.2s;
+}
+.node.now .screen { outline-color: var(--mute); }
+.node.leaked .screen { outline-color: var(--gold); }
+.node.leaked.dead .screen { outline-color: var(--ash); }
+.node.contrib .screen { outline: 3px solid var(--ink); }
+.tag {
+  margin: 5px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  transition: opacity 0.4s;
+}
+.tag .name { font-size: clamp(10px, 1.05vw, 13px); color: var(--mute); font-variant-numeric: tabular-nums; }
+.tag .sent { font-size: clamp(11.5px, 1.3vw, 16px); font-weight: 700; color: var(--gold); }
+.node.dead .tag .sent { color: var(--ash); text-decoration: line-through; }
+.node.contrib .tag .name { color: var(--ink); font-weight: 700; }
+.mon { position: relative; height: 4px; margin-top: 3px; background: var(--track); transition: opacity 0.4s; }
+.mon i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold); transition: width 0.4s 0.9s; }
+.mon u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--mute); }
+body[data-cam="focus"] .tag, body[data-cam="focus"] .mon, .moving .tag, .moving .mon { opacity: 0; transition: none; }
+body[data-cam="focus"] .node .screen, .moving .node .screen { outline-color: transparent; }
+/* El origen: aparecen uno por uno. */
+.spawn .node { animation: appear 0.55s var(--arrive) both; animation-delay: var(--d, 0ms); }
+@keyframes appear { 0% { opacity: 0; transform: scale(0.82) translateY(6px); } }
+
+/* ---------- a la izquierda: el servidor del atacante ----------
+   Las medidas van en em: la letra base la fija el ancho de la columna (enjambre.js). */
+#atk {
+  position: absolute;
+  background: var(--surface);
+  padding: 1em 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  overflow: hidden;
+  z-index: 2;
+  transition: opacity 0.4s;
+}
+#atk h2 { font-size: 1.12em; letter-spacing: -0.01em; }
+#atk .sub { margin: -0.45em 0 0; font-size: 0.84em; line-height: 1.25; color: var(--mute); }
+
+/* El emblema: qué busca quien maneja a los agentes. Una llave que apunta a una ficha. */
+.intent { display: flex; flex-direction: column; gap: 0.4em; }
+.intent svg { width: 100%; height: auto; max-height: 4.6em; display: block; }
+.intent .k-empty * { fill: #3d3a33; stroke: #3d3a33; }
+.intent .k-empty circle, .intent .k-full circle { fill: none; }
+.intent .k-full * { fill: var(--gold); stroke: var(--gold); }
+.intent .k-strike { stroke: var(--ink); stroke-width: 5; fill: none; opacity: 0; }
+.intent .k-arrow { stroke: var(--mute); stroke-width: 5; fill: none; }
+.intent .k-doc { opacity: 0.28; transition: opacity 0.5s; }
+.intent .k-doc .sheet { fill: var(--ui-panel); }
+.intent .k-doc .cross { fill: var(--ui-brand); }
+.intent .k-doc .rule { fill: #c3ccc9; }
+.intent.full .k-arrow { stroke: var(--gold); }
+.intent.opened .k-doc { opacity: 1; }
+.intent.dead .k-full * { fill: var(--ash); stroke: var(--ash); }
+.intent.dead .k-full circle { fill: none; }
+.intent.dead .k-strike { opacity: 1; }
+.intent p { margin: 0; font-size: 0.86em; line-height: 1.25; color: var(--ink); min-height: 2.5em; }
+.key {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: space-between;
+  gap: 0.02em 0;
+  font-size: 2.36em;
+  font-weight: 700;
+  line-height: 1.18;
+}
+.grp { white-space: nowrap; }
+.ch { display: inline-block; color: #3d3a33; }
+.ch.on { color: var(--gold); }
+.ch.new { animation: arrive 0.4s ease-out 0.85s backwards; }
+@keyframes arrive {
+  0% { opacity: 0; transform: scale(1.7); color: var(--ink); }
+  100% { opacity: 1; transform: none; }
+}
+/* La rotación: lo que el atacante tenía se vuelve ceniza, carácter por carácter. */
+.ch.dead { color: var(--ash); text-decoration: line-through; text-decoration-thickness: 2px; }
+.crumbling .ch.dead:not(.born-dead) { animation: crumble 0.8s ease-in backwards; animation-delay: calc(0.45s + var(--i) * 40ms); }
+@keyframes crumble {
+  0% { color: var(--gold); text-decoration-color: transparent; transform: none; }
+  50% { color: var(--ink); text-decoration-color: transparent; transform: translateY(-0.1em); }
+  100% { color: var(--ash); transform: none; }
+}
+.held { margin: 0; display: flex; align-items: baseline; gap: 0.6em; font-size: 0.84em; color: var(--mute); line-height: 1.2; }
+.held b { font-size: 3em; font-weight: 700; color: var(--ink); line-height: 0.95; font-variant-numeric: tabular-nums; min-width: 2.2ch; }
+#atk.cashing .held { display: none; }
+.outcome { display: flex; flex-direction: column; gap: 0.5em; min-height: 0; }
+.outcome .trying { margin: 0; font-size: 0.86em; line-height: 1.25; color: var(--mute); }
+.result { display: flex; align-items: baseline; gap: 0.7em; min-height: 0; }
+.result .code { font-size: 3.6em; font-weight: 700; line-height: 0.9; letter-spacing: -0.03em; }
+.result strong { font-size: 1.15em; line-height: 1.1; }
+
+/* ---------- la salida: Alicanto ---------- */
+#gate {
+  position: absolute;
+  background: var(--surface);
+  padding: 0.7em 0.4em 0.6em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  z-index: 0; /* las líneas de los pedazos pasan por encima: Alicanto no las corta */
+  box-shadow: inset 0 3px 0 var(--ink);
+  transition: opacity 0.4s;
+}
+#gate h2 { font-size: 1em; letter-spacing: -0.01em; }
+.gate-track { position: relative; flex: 1; width: 0.95em; background: var(--track); }
+.gate-track i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--gold); transition: height 0.5s 0.8s; }
+.gate-track u { position: absolute; left: -0.5em; right: -0.5em; height: 3px; background: var(--ink); }
+#gate.limit .gate-track i { background: var(--ink); }
+.gate-num { margin: 0; text-align: center; font-size: 0.72em; line-height: 1.2; color: var(--mute); }
+.gate-num b { display: block; font-size: 2.3em; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+body[data-cam="focus"] #gate, .moving #gate, body[data-cam="focus"] #atk, .moving #atk { opacity: 0; transition: none; }
+
+/* ---------- dónde mirar: lo demás se atenúa ---------- */
+.node, #gate, #atk, #clinic { transition: opacity 0.45s; }
+body[data-spot="rot1"] #clinic, body[data-spot="rot1"] .node:not(.leaked) { opacity: 0.45; }
+body[data-spot="rot2"] .node, body[data-spot="rot2"] #atk { opacity: 0.42; }
+body[data-spot="rot3"] .node, body[data-spot="rot3"] #clinic, body[data-spot="rot3"] #gate { opacity: 0.42; }
+body[data-spot="cash"] .node, body[data-spot="cash"] #gate { opacity: 0.42; }
+body[data-spot="cash"] #blk-team, body[data-spot="cash"] #blk-repo, body[data-spot="cash"] #blk-vault,
+body[data-spot="rot2"] #blk-team, body[data-spot="rot2"] #blk-repo, body[data-spot="rot2"] #blk-api { opacity: 0.5; }
+.blk { transition: opacity 0.45s, outline-color 0.25s; }
+/* Alicanto entra en escena al empezar su mundo. */
+.gate-in #gate { animation: drop 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s backwards; transform-origin: top center; }
+@keyframes drop { 0% { opacity: 0; transform: scaleY(0.6) translateY(-8%); } }
+
+/* ---------- a la derecha: la clínica ---------- */
+#clinic {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  z-index: 2;
+  color: var(--ui-ink);
+  transition: opacity 0.4s;
+}
+body[data-cam="focus"] #clinic, .moving #clinic { opacity: 0; transition: none; }
+.blk {
+  flex: 1;
+  background: var(--ui-panel);
+  padding: 0.75em 0.9em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  min-height: 0;
+}
+.blk.hot { outline-color: var(--gold); }
+.blk h2 { font-size: 1.02em; }
+.blk p { margin: 0; font-size: 0.84em; line-height: 1.28; color: var(--ui-mute); }
+#blk-team { background: var(--ui-brand); color: #fff; flex: 0.9; }
+#blk-team p { color: #d5ebe7; }
+.blk .row { display: flex; flex-direction: column; gap: 0.1em; color: var(--ui-ink); }
+.blk .row span { font-weight: 700; }
+.blk .row mark { background: #ffe08a; color: inherit; align-self: flex-start; padding: 0 0.2em; }
+.blk .row code { font-size: 0.86em; overflow-wrap: anywhere; }
+.blk .row b { color: #0e6b4f; }
+.blk .row.void span { text-decoration: line-through; color: var(--ui-mute); font-weight: 400; }
+.blk .row.void b { color: var(--ui-alert); }
+#vault-v2 { animation: lift 0.4s ease-out; }
+#blk-api p { color: var(--ui-ink); }
+
+/* ---------- el resultado, en grande ----------
+   Crece desde la columna del atacante. Las medidas van en em (la base la fija enjambre.js). */
+#verdict {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 48px; /* bajo el título */
+  bottom: 3%;
+  z-index: 8;
+  background: var(--surface);
+  padding: 1.5em 1.9em;
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: 2em;
+  align-items: stretch;
+  transform-origin: 0 0;
+  overflow: hidden;
+}
+body.verdict #world { opacity: 0.12; transition: opacity 0.3s; }
+/* Su contenido entra en orden: el código, la frase, la clave, y al final lo que se lleva. */
+#verdict .v-who, #verdict .v-code, #verdict .v-line, #verdict .v-key, #verdict .v-facts, #verdict .v-right > * {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+#verdict .v-who { animation-delay: 0.35s; }
+#verdict .v-code { animation-delay: 0.45s; }
+#verdict .v-line { animation-delay: 0.56s; }
+#verdict .v-key { animation-delay: 0.64s; }
+#verdict .v-right > * { animation-delay: 0.78s; }
+#verdict .v-facts { animation-delay: 0.9s; }
+.v-left { display: flex; flex-direction: column; gap: 0.55em; min-width: 0; }
+.v-who { margin: 0; font-size: 1em; color: var(--mute); }
+.v-code { font-size: 8.6em; font-weight: 700; line-height: 0.86; letter-spacing: -0.04em; margin-top: 0.02em; }
+.v-line { margin: 0; font-size: 2em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+.v-key {
+  margin-top: 0.4em;
+  display: grid;
+  grid-template-columns: repeat(5, max-content);
+  justify-content: space-between;
+  gap: 0.1em 0;
+  font-size: 1.36em;
+  font-weight: 700;
+  color: var(--gold);
+}
+#verdict.out .v-key { color: var(--ash); text-decoration: line-through; text-decoration-thickness: 2px; }
+.v-facts { margin: auto 0 0; font-size: 1em; line-height: 1.32; color: var(--mute); }
+.v-right { min-width: 0; display: flex; }
+/* La ficha: un documento de la clínica, entero, en manos del atacante. */
+.doc {
+  flex: 1;
+  background: var(--ui-panel);
+  color: var(--ui-ink);
+  padding: 1.1em 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  border-top: 0.6em solid var(--ui-brand);
+  min-height: 0;
+  overflow: hidden;
+}
+.doc header { display: flex; justify-content: space-between; gap: 1em; font-size: 0.86em; }
+.doc header span { color: var(--ui-mute); }
+.doc h3 { margin: 0; font-size: 1.9em; letter-spacing: -0.02em; line-height: 1.05; }
+.doc dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.12em 1.2em; font-size: 0.92em; }
+.doc dt { color: var(--ui-mute); }
+.doc dd { margin: 0; }
+.doc section b { display: block; font-size: 0.8em; color: var(--ui-mute); font-weight: 400; }
+.doc section p { margin: 0; font-size: 0.98em; line-height: 1.25; }
+.doc em { margin-top: auto; font-style: normal; font-size: 0.84em; font-weight: 700; color: var(--ui-alert); }
+.nothing { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.75em; }
+.nothing b { font-size: 5em; font-weight: 700; line-height: 0.9; letter-spacing: -0.03em; }
+.nothing p { margin: 0; font-size: 1.22em; line-height: 1.3; color: var(--ink); max-width: 24em; }
+.nothing p:first-of-type { color: var(--mute); }
+
+/* ---------- el corte entre los dos mundos ----------
+   Corte a negro, una pregunta y, debajo, qué viene. Aparece y se va con un fundido corto. */
+#card {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  background: var(--ground);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.45em;
+  padding: 0 8%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+}
+#card.on { opacity: 1; visibility: visible; transition: opacity 0.25s; }
+#card p { margin: 0; letter-spacing: -0.02em; line-height: 1.08; }
+#card-1 { font-size: 2.3em; font-weight: 700; }
+#card-2 { font-size: 1em; color: var(--mute); letter-spacing: -0.01em; }
+#card.on #card-1 { animation: rise 0.6s var(--arrive) 0.2s backwards; }
+#card.on #card-2 { animation: rise 0.6s var(--arrive) 0.75s backwards; }
+@keyframes rise { 0% { opacity: 0; transform: translateY(0.5em); } }
+body.carded #title { opacity: 0; }
+/* Mientras está la tarjeta, el mundo no se ve; después vuelve con un fundido. */
+#world { transition: opacity 0.5s; }
+body.carded #world { opacity: 0; transition: none; }
+
+/* ---------- el pitch: apertura, público y prueba ----------
+   Tres capas sobre el escenario. Se muestran con la clase «on». */
+#opening, #proof, #live {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--ground);
+  padding: 4% 8%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+}
+#opening.on, #proof.on, #live.on { opacity: 1; visibility: visible; transition: opacity 0.25s; }
+
+#opening { display: flex; flex-direction: column; justify-content: center; gap: 0.35em; }
+#open-logo { height: 4.6em; width: 4.6em; object-fit: cover; margin-bottom: 0.5em; }
+#opening h2 { font-size: 3.6em; letter-spacing: -0.035em; line-height: 0.95; }
+#open-2 { margin: 0.2em 0 0; font-size: 1.32em; letter-spacing: -0.015em; line-height: 1.15; max-width: 22em; }
+#open-3 { margin: 0.5em 0 0; font-size: 0.78em; color: var(--mute); line-height: 1.3; max-width: 30em; }
+#open-hint { margin: 1.6em 0 0; font-size: 0.6em; color: var(--gold); }
+
+/* ---------- cómo lo probamos ----------
+   Arriba, los tres equipos. Al medio, el set de prueba entero: una fila por familia y una
+   casilla por sesión. Casilla clara: ataque frenado. Oro: no frenado. Ceniza: una rotación de
+   más en una sesión normal. Solo el contorno: no pasó nada. Abajo, el pedido.
+   Los pasos se acumulan en clases: s1 (azul y morado), s2 (se corrió), s3 (los límites),
+   s4 (el pedido) y s5 (otros guardias). El rojo, el morado y el azul son nombres de equipo:
+   son los únicos tres colores de más, y solo en su marca. */
+#proof {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  row-gap: 0.56em;
+  padding: 2.2% 4% 2%;
+}
+#pf-title { font-size: 0.82em; font-weight: 700; letter-spacing: -0.01em; transition: opacity 0.6s; }
+
+.pf-teams {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 2.4em;
+  font-size: 0.68em;
+  transition: font-size 0.7s var(--travel), opacity 0.6s;
+}
+#proof.s2 .pf-teams { font-size: 0.52em; } /* ya se presentaron: se hacen a un lado */
+.pf-team { min-width: 0; transition: opacity 0.5s; }
+.pf-team h3 { margin: 0 0 0.3em; font-size: 1.08em; font-weight: 700; letter-spacing: -0.01em; display: flex; align-items: center; gap: 0.5em; }
+.pf-team h3 i { flex: none; width: 0.62em; height: 0.62em; }
+#pf-rojo h3 i { background: #d44e40; }
+#pf-morado h3 i { background: #9267cf; }
+#pf-azul h3 i { background: #4b81da; }
+.pf-what { margin: 0; line-height: 1.25; text-wrap: pretty; }
+.pf-fact { margin: 0.4em 0 0; font-family: var(--code); font-size: 0.76em; line-height: 1.4; color: var(--mute); overflow-wrap: anywhere; }
+.pf-fact b { display: block; font-weight: 400; color: var(--ink); }
+.pf-fact b.bad { color: var(--gold); }
+#proof:not(.s1) #pf-morado, #proof:not(.s1) #pf-azul { opacity: 0.24; } /* primero habla el rojo */
+
+/* La grilla. Columnas: la cifra, aire, el nombre de la familia, las 30 casillas, aire, la cuenta. */
+#pf-grid {
+  display: grid;
+  grid-template-columns: 7.3em 1.1em 11em max-content 0.6em minmax(0, 1fr);
+  align-content: center;
+  align-self: center;
+  min-height: 0;
+  transition: opacity 0.6s;
+}
+.pf-num { grid-column: 1; align-self: center; min-width: 0; }
+.pf-num b { display: block; font-weight: 700; letter-spacing: -0.05em; line-height: 0.84; font-variant-numeric: tabular-nums; }
+.pf-num p { margin: 0; line-height: 1.26; text-wrap: pretty; }
+#pf-n-a { font-size: 4.3em; }
+#pf-t-a { margin-top: 0.55em; font-size: 0.56em; }
+#pf-num-b { display: flex; align-items: center; gap: 0.5em; }
+#pf-n-b { font-size: 2.1em; flex: none; }
+#pf-t-b { font-size: 0.5em; }
+
+.pf-label { grid-column: 3; align-self: center; font-size: 0.58em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 0.9em; transition: color 0.4s; }
+.pf-id { display: inline-block; width: 2.5em; font-style: normal; font-family: var(--code); font-size: 0.84em; color: var(--mute); }
+.pf-cells { grid-column: 4; align-self: center; display: grid; grid-template-columns: repeat(30, 0.46em); column-gap: 0.14em; height: calc(0.72em * var(--rh, 1)); }
+.pf-c { display: block; border: 1px solid var(--ash); transition: background-color 0.18s, border-color 0.18s; }
+.pf-count { grid-column: 6; align-self: center; font-size: 0.58em; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity 0.35s; }
+.pf-count.esc { color: var(--gold); }
+.pf-head { align-self: end; padding-bottom: 0.32em; font-size: 0.5em; font-weight: 400; color: var(--mute); }
+
+/* Paso 2: se abre el set y se corre. El barrido va de izquierda a derecha, fila por fila. */
+#proof.s2 .pf-c { transition-delay: calc(0.4s + var(--i) * 24ms + var(--r) * 55ms); }
+#proof.s2 .pf-c.stop { background: var(--ink); border-color: var(--ink); }
+#proof.s2 .pf-c.out { background: var(--gold); border-color: var(--gold); }
+#proof.s2 .pf-count.atk { opacity: 1; transition-delay: calc(1.15s + var(--r, 0) * 55ms); }
+/* Paso 3: lo que cuesta (una rotación de más, en ceniza) y lo que se escapa (en oro). */
+#proof.s3 .pf-c.rot { background: var(--ash); }
+#proof.s3 .pf-count.ben { opacity: 1; transition-delay: calc(0.75s + var(--r, 0) * 55ms); }
+#proof.s3 .pf-label.esc { color: var(--gold); }
+
+/* El precinto: una tira sobre las casillas mientras el set está sellado. Se va de izquierda a
+   derecha, y detrás viene el barrido. */
+#pf-seal {
+  grid-column: 4;
+  align-self: center;
+  z-index: 2;
+  margin: 0 -0.7em;
+  padding: 0.42em 0.7em;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1em;
+  background: var(--ink);
+  color: var(--ground);
+  font-size: 0.56em;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.55s var(--travel);
+}
+#pf-seal b { white-space: nowrap; }
+#pf-seal code { font-size: 0.92em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#proof.s2 #pf-seal { clip-path: inset(0 0 0 100%); }
+#proof.on:not(.s2) #pf-seal { animation: seal-in 0.6s var(--travel) 1.5s backwards; }
+@keyframes seal-in { 0% { clip-path: inset(0 100% 0 0); } }
+
+/* Paso 4: el pedido. Lo demás baja la voz. */
+#pf-ask { margin: 0; min-height: 1.1em; font-size: 1.24em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; opacity: 0; transition: opacity 0.3s; }
+#proof.s4 #pf-ask { opacity: 1; animation: rise 0.6s var(--arrive) backwards; }
+#proof.s4:not(.s5) #pf-title, #proof.s4:not(.s5) .pf-teams, #proof.s4:not(.s5) #pf-grid { opacity: 0.56; }
+
+/* Paso 5: la misma medición con otros guardias. Ocupa el lugar de la grilla. */
+#pf-vs {
+  grid-column: 3 / 7;
+  z-index: 3;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--ground);
+  font-size: 0.56em;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+}
+#proof.s5 #pf-vs { opacity: 1; visibility: visible; transition: opacity 0.3s; }
+.vs-head { margin: 0 0 0.7em; font-size: 1.16em; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 1em; }
+.vs-head span { font-size: 0.84em; font-weight: 400; color: var(--mute); white-space: nowrap; }
+.vs-rows { display: grid; grid-template-columns: max-content minmax(3em, 1fr) max-content max-content; column-gap: 0.9em; row-gap: 0.46em; align-items: center; }
+.vs-rows .l { white-space: nowrap; }
+.vs-rows .us { font-weight: 700; }
+.vs-rows .bar { height: 0.62em; background: var(--track); }
+.vs-rows .bar i { display: block; height: 100%; width: 0; background: var(--mute); transition: width 0.7s var(--arrive); }
+.vs-rows .bar i.us { background: var(--ink); }
+#proof.s5 .vs-rows .bar i { width: var(--w); transition-delay: calc(0.15s + var(--k) * 60ms); }
+.vs-rows .n { min-width: 1.9em; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.vs-rows .x { font-size: 0.88em; color: var(--mute); white-space: nowrap; }
+.vs-foot { margin: 0.9em 0 0; font-size: 0.9em; line-height: 1.32; color: var(--mute); text-wrap: pretty; }
+
+/* La entrada de la escena. */
+#proof.on #pf-title { animation: rise 0.5s var(--arrive) backwards; }
+#proof.on .pf-team { animation: rise 0.55s var(--arrive) backwards; }
+#proof.on #pf-rojo { animation-delay: 0.1s; }
+#proof.on #pf-morado { animation-delay: 0.22s; }
+#proof.on #pf-azul { animation-delay: 0.3s; }
+#proof.on #pf-grid { animation: rise 0.6s var(--arrive) 0.5s backwards; }
+
+/* El público elige. Cada pregunta se enciende cuando le toca. */
+#live { display: flex; flex-direction: column; justify-content: center; gap: 0.62em; font-size: 0.86em; padding: 3% 8%; }
+#live h2 { font-size: 2.1em; letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.15em; }
+.q { display: flex; flex-direction: column; gap: 0.32em; transition: opacity 0.3s; }
+.q p { margin: 0; font-size: 0.92em; color: var(--mute); }
+.q.now p { color: var(--ink); }
+.q.later { opacity: 0.32; }
+.opts { display: flex; flex-wrap: wrap; gap: 0.4em; }
+.opts button {
+  font: inherit;
+  font-size: 1.22em;
+  font-weight: 700;
+  min-width: 2.5em;
+  padding: 0.22em 0.75em;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.opts button:hover { background: var(--track); }
+.opts button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.opts button.sel { background: var(--gold); color: var(--ground); }
+#seed { font-family: var(--code); font-size: 1.5em; font-weight: 700; color: var(--gold); min-height: 1.2em; line-height: 1.2; }
+#live-run {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.78em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  cursor: pointer;
+  text-align: left;
+}
+#live-run.now { color: var(--gold); font-weight: 700; }
+/* Mientras corre: queda lo elegido en una línea y, debajo, lo que imprime el motor. */
+#live-pick { margin: 0; font-size: 1.1em; font-weight: 700; color: var(--gold); min-height: 0; }
+#live:not(.running) #live-pick { display: none; }
+#live.running .q, #live.running #live-run { display: none; }
+/* Lo que imprimió el motor: texto real, tal cual llegó. */
+#console {
+  margin: 0;
+  padding: 0.75em 0.95em;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--code);
+  font-size: 0.62em;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+body.carded #world { opacity: 0; transition: none; }
+
+/* ---------- lo que viaja ---------- */
+#tokens { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.token {
+  position: absolute;
+  left: 0;
+  top: 0;
+  offset-rotate: 0deg;
+  offset-anchor: center;
+  background: var(--gold);
+  color: var(--ground);
+  font-weight: 700;
+  font-size: clamp(12px, 1.35vw, 17px);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.token.dead { background: var(--ash); color: var(--ink); }
+.token.order { background: var(--ink); color: var(--ground); font-family: var(--sans); }
+body[data-cam="focus"] #tokens, .moving #tokens { display: none; }
+
+/* ---------- la banda de abajo: lo que se dice y los controles ---------- */
+.band {
+  flex: none;
+  min-height: clamp(104px, 15.5vh, 136px);
+  padding: 12px 20px 14px;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  background: var(--ground);
+}
+#caption {
+  flex: 1;
+  margin: 0;
+  font-size: clamp(17px, 2.05vw, 26px);
+  line-height: 1.24;
+  letter-spacing: -0.012em;
+  font-weight: 500;
+  text-wrap: pretty;
+}
+#caption.fresh { animation: rise 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+.side { flex: none; width: clamp(250px, 29vw, 360px); display: flex; flex-direction: column; gap: 8px; }
+#note { margin: 0; font-size: 11.5px; line-height: 1.35; color: var(--mute); }
+/* Lo que hizo el motor: su decisión en la rotación, o los datos de la corrida en vivo. */
+#engine { margin: 0; font-family: var(--code); font-size: 11px; line-height: 1.35; color: var(--ink); min-height: 1.35em; overflow-wrap: anywhere; }
+#proof-open.active { color: var(--ink); font-weight: 700; }
+#timer { font-size: 13px; font-weight: 700; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#timer.late { color: var(--gold); }
+#timer.over { color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.controls button {
+  font: inherit;
+  font-size: 13px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  cursor: pointer;
+}
+.controls button:hover { color: var(--ink); }
+.controls button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.controls .world.active { color: var(--ink); font-weight: 700; }
+body.idle #play { color: var(--gold); font-weight: 700; }
+#clock { font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* =====================================================================
+   La pantalla de la clínica (maqueta). Tamaño de diseño: 1040 × 650.
+   ===================================================================== */
+.ui {
+  width: 1040px;
+  height: 650px;
+  transform-origin: 0 0;
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr) 300px;
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+.ui-side { background: var(--ui-brand); color: #e7f2f0; display: flex; flex-direction: column; padding: 20px 0 0; }
+.ui-brand { display: flex; align-items: center; gap: 10px; padding: 0 18px 18px; }
+.ui-mark { width: 22px; height: 22px; flex: none; background: #9fe0d6; }
+.ui-brand b { font-size: 15.5px; line-height: 1.15; }
+.ui-side nav span { display: block; padding: 10px 18px; font-size: 14.5px; }
+.ui-side nav span.on { background: var(--ui-brand-deep); font-weight: 700; box-shadow: inset 4px 0 0 #9fe0d6; }
+.ui-user { margin-top: auto; padding: 16px 18px; background: var(--ui-brand-deep); }
+.ui-user b { display: block; font-size: 14px; }
+.ui-user span { font-size: 12.5px; opacity: 0.8; }
+
+.ui-main { position: relative; padding: 20px 22px; min-width: 0; }
+.ui-top { display: flex; align-items: baseline; gap: 12px; }
+.ui-top h2 { margin: 0; font-size: 24px; letter-spacing: -0.01em; white-space: nowrap; }
+.ui-date { color: var(--ui-mute); font-size: 13.5px; white-space: nowrap; }
+.ui-search {
+  margin-left: auto;
+  width: 176px;
+  padding: 8px 10px;
+  background: var(--ui-panel);
+  border: 1px solid #cfd8d5;
+  color: #8a9693;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ui-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
+.ui-stats div { background: var(--ui-panel); border: 1px solid var(--ui-line); padding: 9px 11px; }
+.ui-stats b { display: block; font-size: 23px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.ui-stats span { font-size: 12px; color: var(--ui-mute); }
+.ui-table { width: 100%; border-collapse: collapse; background: var(--ui-panel); border: 1px solid var(--ui-line); }
+.ui-table th { text-align: left; font-size: 12px; font-weight: 700; color: var(--ui-mute); padding: 8px 10px; background: #e8eeec; }
+.ui-table td { padding: 8.5px 10px; font-size: 13.5px; border-top: 1px solid #e6ebe9; white-space: nowrap; }
+.ui-table td:first-child { font-weight: 700; font-variant-numeric: tabular-nums; }
+.st { font-weight: 700; }
+.st-atendida { color: var(--ui-mute); font-weight: 400; }
+.st-en-espera { color: #9a5800; }
+.st-confirmada { color: #0e6b4f; }
+.st-reservada { color: #37474f; }
+.ui-error td { background: #fdecea; color: var(--ui-alert); font-weight: 700; white-space: normal; }
+
+/* El issue que abre el asistente: flota sobre la agenda. */
+.ui-issue {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  top: 66px;
+  bottom: 20px;
+  background: var(--ui-panel);
+  border: 1px solid #cfd8d5;
+  box-shadow: 0 16px 44px rgba(10, 30, 26, 0.22);
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: lift 0.4s ease-out;
+}
+@keyframes lift { 0% { opacity: 0; transform: translateY(14px); } }
+.ui-issue h3 { margin: 0; font-size: 24px; }
+.issue-body { margin: 0; font-size: 22px; line-height: 1.4; }
+.issue-body mark { background: #ffe08a; color: inherit; padding: 1px 0; }
+.issue-flag { margin: 0; font-size: 17.5px; font-weight: 700; color: var(--ui-alert); }
+.issue-gloss { margin: 6px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 10px 16px; align-items: baseline; animation: lift 0.4s ease-out; }
+.issue-gloss dt code { font-size: 15px; background: #eef2f1; padding: 3px 7px; }
+.issue-gloss dd { margin: 0; font-size: 18.5px; line-height: 1.25; }
+
+.ui-dock { background: var(--ui-panel); border-left: 1px solid var(--ui-line); display: flex; flex-direction: column; min-width: 0; }
+.ui-dock header { padding: 16px 18px 13px; border-bottom: 1px solid var(--ui-line); }
+.ui-dock header b { display: block; font-size: 16px; }
+.ui-dock header span { font-size: 12.5px; color: var(--ui-mute); }
+.ui-log { flex: 1; min-height: 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.ui-ask { align-self: flex-end; max-width: 94%; margin: 0 0 4px; background: var(--ui-brand); color: #fff; padding: 10px 13px; font-size: 16.5px; line-height: 1.3; }
+.ui-par { margin: 0; font-size: 13px; color: var(--ui-mute); }
+.ui-call { margin: 0; }
+.ui-call code { display: block; font-size: 13.5px; padding: 7px 9px; background: #eef2f1; overflow-wrap: anywhere; }
+.ui-input { margin: 0 18px 16px; min-height: 44px; padding: 11px 12px; border: 1px solid #cfd8d5; font-size: 16px; color: #8a9693; line-height: 1.3; }
+.ui-input.typed { color: var(--ui-ink); border-color: var(--ui-brand); }
+.ui-input.typed::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: var(--ui-brand); animation: blink 0.9s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- teléfono: no es su lugar, pero no se rompe ---------- */
+@media (max-width: 899px) {
+  .band { flex-direction: column; gap: 10px; min-height: 0; }
+  .side { width: auto; }
+  #caption { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch.new, .crumbling .ch.dead, .ui-issue, .issue-gloss, .ui-input.typed::after, #vault-v2, .spawn .node,
+  #card.on #card-1, #card.on #card-2, #caption.fresh, .gate-in #gate,
+  #proof.on #pf-title, #proof.on .pf-team, #proof.on #pf-grid, #proof.on:not(.s2) #pf-seal, #proof.s4 #pf-ask,
+  #verdict .v-who, #verdict .v-code, #verdict .v-line, #verdict .v-key, #verdict .v-facts, #verdict .v-right > * { animation: none; }
+  .mon i, .gate-track i, #card, #card.on, #world,
+  #opening, #proof, #live, #opening.on, #proof.on, #live.on,
+  .pf-teams, .pf-team, #pf-title, #pf-grid, .pf-label, .pf-c, #proof.s2 .pf-c, .pf-count, #proof.s2 .pf-count.atk,
+  #proof.s3 .pf-count.ben, #pf-seal, #pf-ask, #pf-vs, #proof.s5 #pf-vs, .vs-rows .bar i,
+  #proof.s5 .vs-rows .bar i { transition: none; }
+}

@@ -1,0 +1,186 @@
+{
+  "nota": "Generado por hacer_evaluacion.py. No se edita a mano: sale de results/ y de redteam/SELLO.md.",
+  "sello": {
+    "sha256": "18dda3af7ee2b088515fb80f9104dc6516b83a8df7d160e18f08fab4efaa18a9",
+    "commit": "77457d9",
+    "hora": "07:10",
+    "abierto": "09:40",
+    "commit_congelado": "3f26307",
+    "commit_corrida": "cd14e9e",
+    "archivos": 335,
+    "fuente": "redteam/SELLO.md"
+  },
+  "congelado": {
+    "hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+    "params": {
+      "T": 75,
+      "b": 4,
+      "b_rot": 2,
+      "lambda_rot": 0.1
+    },
+    "fuente": "results/proxy_flags/RUN.json"
+  },
+  "medicion": {
+    "comando": "python -m eval.final.proxy_flags --out results/proxy_flags",
+    "commit": "8f1ec16",
+    "fecha": "2026-11-21T17:07:40+00:00",
+    "llamadas": 15281,
+    "llamadas_que_cambian": 810,
+    "fuente": "results/proxy_flags/systems.json"
+  },
+  "ataques": {
+    "n": 180,
+    "frenados": 120,
+    "frenados_grabadas": 180,
+    "familias": 6,
+    "familias_frenadas": 4,
+    "max_bits_grabadas": 32.0,
+    "mediana_bits_grabadas": 20.0,
+    "bits_clave": 160
+  },
+  "familias": [
+    {
+      "id": "A5",
+      "n": 30,
+      "frenados": 30,
+      "frenados_grabadas": 30
+    },
+    {
+      "id": "A7",
+      "n": 30,
+      "frenados": 30,
+      "frenados_grabadas": 30
+    },
+    {
+      "id": "A10",
+      "n": 30,
+      "frenados": 30,
+      "frenados_grabadas": 30
+    },
+    {
+      "id": "A12",
+      "n": 30,
+      "frenados": 30,
+      "frenados_grabadas": 30
+    },
+    {
+      "id": "A9",
+      "n": 30,
+      "frenados": 0,
+      "frenados_grabadas": 30
+    },
+    {
+      "id": "A13",
+      "n": 30,
+      "frenados": 0,
+      "frenados_grabadas": 30
+    }
+  ],
+  "normales": {
+    "llamadas": 5879,
+    "bloqueadas": 0,
+    "bloqueadas_proxy_pct": 0.0,
+    "sesiones_dificiles": 90,
+    "con_rotacion_de_mas": 34,
+    "rotaciones_de_mas": 39,
+    "familias": [
+      {
+        "id": "B3",
+        "n": 30,
+        "con_rotacion_de_mas": 3,
+        "bloqueadas": 0,
+        "tira": "000000000100000010000000000001"
+      },
+      {
+        "id": "B4",
+        "n": 30,
+        "con_rotacion_de_mas": 1,
+        "bloqueadas": 0,
+        "tira": "000001000000000000000000000000"
+      },
+      {
+        "id": "B5",
+        "n": 30,
+        "con_rotacion_de_mas": 30,
+        "bloqueadas": 0,
+        "tira": "111111111111111111111111111111"
+      }
+    ],
+    "sesiones_comunes": 30,
+    "comunes_con_rotacion": 0,
+    "rotaciones_por_mil": 5.46,
+    "fuente": "results/test/summary_ours.json y results/test/report.json (T1)"
+  },
+  "sistemas": [
+    {
+      "id": "ours",
+      "frenados": 120,
+      "frenados_grabadas": 180,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 5.46
+    },
+    {
+      "id": "taint_rule",
+      "frenados": 90,
+      "frenados_grabadas": 180,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 4.2
+    },
+    {
+      "id": "budget",
+      "frenados": 40,
+      "frenados_grabadas": 70,
+      "normales_bloqueadas_pct": 4.8,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "allowlist",
+      "frenados": 30,
+      "frenados_grabadas": 30,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "combined",
+      "frenados": 30,
+      "frenados_grabadas": 30,
+      "normales_bloqueadas_pct": 2.2,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "no_evidence",
+      "frenados": 10,
+      "frenados_grabadas": 40,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 0.56
+    },
+    {
+      "id": "no_rotation",
+      "frenados": 0,
+      "frenados_grabadas": 30,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "detect_secrets",
+      "frenados": 0,
+      "frenados_grabadas": 0,
+      "normales_bloqueadas_pct": 2.2,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "reassembly",
+      "frenados": 0,
+      "frenados_grabadas": 0,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 0.0
+    },
+    {
+      "id": "per_session",
+      "frenados": 120,
+      "frenados_grabadas": 180,
+      "normales_bloqueadas_pct": 0.0,
+      "rotaciones_por_mil": 5.46
+    }
+  ]
+}
