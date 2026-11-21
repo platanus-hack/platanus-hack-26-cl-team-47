@@ -58,12 +58,23 @@ python -m http.server 8200 --directory demo
   `TestClient`, un gestor nuevo por panel, sin red.
 - Cada decisión `rotate*` del panel derecho rota el secreto (`--secret-id`, por
   defecto `SECRET_1`) y agrega un evento `rotation`.
-- Al final, el atacante usa el valor **original** del secreto (del manifiesto)
-  contra `GET /v1/data`: evento `source="attacker"`, `kind="received"` con el
-  `status` real (200 si nunca se rotó, 401 si se rotó).
-- `--make-session` regenera `demo/sessions/goteo.jsonl` (60 llamadas: issue no
-  confiable en t2, lectura de `.env` en t3, un fragmento de 4 caracteres de
-  `SECRET_1` hacia `attacker.test` cada 8 llamadas). El valor sale del manifiesto.
+- Al final, el atacante arma la clave **solo con los fragmentos que salieron** en
+  ese panel: las llamadas a `attacker.test` cuya decisión termina en `allow`. Las
+  posiciones las mide `services.attacker` (verdad de terreno). Si las conoce todas,
+  prueba esa clave contra `GET /v1/data`; si no, prueba su mejor suposición, con
+  `?` en lo que no sabe. Evento `source="attacker"`, `kind="received"` con
+  `{method, path, status, positions_known, bits_known, key_complete}`.
+  `key_complete` se mide respecto de la clave **vigente**.
+- En pantalla: «El atacante reconstruyó la clave completa (160 bits) y la usa: 200»
+  a la izquierda, y «El atacante juntó N bits de una clave que ya rotó: 401» a la
+  derecha.
+- `--make-session` regenera `demo/sessions/goteo.jsonl`. Son 88 llamadas: issue no
+  confiable en t2, lectura de `.env` en t3, y un fragmento de 4 caracteres de
+  `SECRET_1` hacia `attacker.test` cada 8 llamadas, de t8 a t80. Con eso salen los
+  40 caracteres. Las últimas 8 llamadas son lecturas benignas. El valor sale del
+  manifiesto.
+- Si se quita un fragmento de la sesión, la izquierda ya no da 200: el resultado
+  depende de lo que el atacante recibió.
 
 Prueba sin el detector: `--decide-right demo.tests.factories:rotate_at` (rota en t=20).
 Tests: `python -m pytest demo/tests -q`.
