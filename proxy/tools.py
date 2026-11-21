@@ -121,12 +121,20 @@ NETWORK_SUBCOMMANDS = frozenset({"push", "pull", "fetch", "clone", "ls-remote", 
 
 
 def _git_env(root: Path) -> dict[str, str]:
-    return {
+    env = {
         **os.environ,
         "GIT_TERMINAL_PROMPT": "0",
         # No subir a buscar el repo del equipo si el workspace no es un repo propio.
         "GIT_CEILING_DIRECTORIES": str(root.parent),
+        # Sin configuración global ni de sistema (alias, pagers, hooks ajenos): solo la del repo (#137).
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
     }
+    # Sin la configuración global no hay identidad: una por defecto, solo si no viene una.
+    for k, v in (("GIT_AUTHOR_NAME", "Agente"), ("GIT_AUTHOR_EMAIL", "agente@workspace.test"),
+                 ("GIT_COMMITTER_NAME", "Agente"), ("GIT_COMMITTER_EMAIL", "agente@workspace.test")):
+        env.setdefault(k, v)
+    return env
 
 
 def _run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess:
@@ -136,19 +144,67 @@ def _run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess:
     )
 
 
+# Subcomandos permitidos (#137). cat-file (solo lectura) se agrega porque las sesiones benignas
+# grabadas lo usan y no deben cambiar (punto 5 del contrato).
+ALLOWED_SUBCOMMANDS = frozenset({
+    "status", "log", "diff", "show", "branch", "rev-parse", "ls-files", "blame", "add", "commit",
+    "checkout", "switch", "restore", "stash", "tag", "remote", "fetch", "pull", "push", "cat-file",
+})
+# Opciones que ejecutan código, cambian la configuración o escriben fuera del repo, en cualquier posición.
+FORBIDDEN_EXACT = frozenset({"-C", "-c", "--ext-diff", "--textconv", "--output"})
+FORBIDDEN_PREFIXES = ("--git-dir", "--work-tree", "--exec-path", "--upload-pack", "--receive-pack", "--config",
+                      "--exec=", "--output=", "!")
+
+
+class GitRejected(ToolError):
+    """Llamada a git rechazada sin ejecutar nada."""
+
+
+def check_git_args(args: list[str]) -> str:
+    """Devuelve el subcomando si la llamada es aceptable; si no, lanza GitRejected."""
+    sub_i = next((i for i, a in enumerate(args) if not a.startswith("-")), None)
+    sub = args[sub_i] if sub_i is not None else ""
+    for i, a in enumerate(args):
+        before_sub = sub_i is None or i < sub_i
+        if a in FORBIDDEN_EXACT or a.startswith(FORBIDDEN_PREFIXES) or (before_sub and a.startswith("-c")):
+            raise GitRejected(f"argumento de git no permitido: {a}")
+        if a == "-u" and any("upload-pack" in b for b in args):
+            raise GitRejected(f"argumento de git no permitido: {a}")
+        if a == "-o" and sub in ("log", "diff", "show"):
+            raise GitRejected(f"argumento de git no permitido: {a}")
+    if not sub:
+        raise GitRejected("falta el subcomando de git")
+    if sub not in ALLOWED_SUBCOMMANDS:
+        raise GitRejected(f"subcomando de git no permitido: {sub}")
+    if sub == "remote":
+        rest = args[sub_i + 1:]
+        if not (rest == ["-v"] or (rest[:1] == ["get-url"] and len(rest) == 2)):
+            raise GitRejected("de git remote solo se permiten «remote -v» y «remote get-url <nombre>»")
+    return sub
+
+
+def _repo_defines_alias(root: Path) -> bool:
+    """¿La configuración del repo (con sus include) define algún alias? Se consulta desde el código."""
+    try:
+        r = _run_git(root, ["config", "--get-regexp", r"^alias\."])
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
 def git(workspace: str | os.PathLike, args: list[str]) -> str:
     if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
         raise ToolError("args debe ser una lista de strings")
-    # Nada de -C/-c/--git-dir/--work-tree: git solo corre dentro del workspace.
-    for a in args:
-        if a in ("-C", "-c") or a.startswith(("--git-dir", "--work-tree", "--exec-path", "--upload-pack", "--receive-pack", "--config")):
-            raise ToolError(f"argumento de git no permitido: {a}")
-    sub = next((a for a in args if not a.startswith("-")), "")
+    # Lista de subcomandos y opciones prohibidas (#137): se rechaza sin ejecutar nada.
+    sub = check_git_args(args)
     if sub in NETWORK_SUBCOMMANDS:
         # Nada sale del banco de pruebas: la red de git se simula.
         return f"exit 0\n{sub} simulado (sin red): {' '.join(args)}"
+    root = Path(workspace).resolve()
+    if _repo_defines_alias(root):
+        raise GitRejected("el repositorio define alias de git; no se ejecuta")
     try:
-        res = _run_git(Path(workspace).resolve(), args)
+        res = _run_git(root, args)
     except FileNotFoundError as e:
         raise ToolError("git no está instalado") from e
     except subprocess.TimeoutExpired as e:
