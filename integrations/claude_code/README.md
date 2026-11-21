@@ -90,6 +90,12 @@ El 21 de noviembre de 2026, con Claude Code 2.1.330 (`claude -p`, modelo `claude
 
 - **En la sesión real solo se vieron dos de los tres caminos** (sección anterior). El contador de bits sobre envíos de a trozos se probó con `simulate.py` y los tests, no con un modelo real: el modelo se negó a hacer ese envío.
 - **La regla directa tiene falsos positivos:** mira el texto del comando, así que niega un `curl` a cualquier sitio que vaya en la misma línea que el nombre de `.env`, aunque el comando no envíe el archivo (pedido 4 de la prueba).
+- **Pedazos de 1 a 3 caracteres no cuentan.**
+  - El hook usa el contador de bits solo, sin modelo de evidencia, y el contador no cuenta pedazos de menos de 4 caracteres.
+  - En una medición aparte con sesiones sintéticas, esta configuración dejó salir más de 96 bits de una versión de la clave en 10 de 18 combinaciones de envíos de 1 a 3 caracteres.
+  - Con 1 carácter por llamada salió la clave entera, antes de la rotación periódica.
+  - Con pedazos de 4 caracteres o más, el máximo fue 84 bits.
+  - Cifras: [results/short_fragments/summary.md](../../results/short_fragments/summary.md).
 - **Solo mira las tres herramientas.**
   - `Edit`, `Write`, las herramientas MCP y los subagentes pasan sin contar.
   - Un `Bash` que escribe un archivo y otro que lo envía después solo se ve si el segundo comando lleva la URL.
