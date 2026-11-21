@@ -81,16 +81,28 @@ Detalle de «Caught in the Act(ivation)», según lo que el investigador web ley
 
 ### A.5 Qué es realmente nuevo y qué conviene dejar de decir
 
+**Actualizado el sábado 21 de noviembre a las 10:00 (H11).** La versión de H4 de esta sección quedó obsoleta: desde entonces se implementaron el modelo de evidencia y la cuenta compartida, aparecieron competidores que no conocíamos y se corrió la evaluación final. Lo que sigue reemplaza a la versión anterior.
+
 Defendible, con la frase «hasta donde encontramos»:
 
-1. Fuga contada en bits **por secreto**, sobre los **argumentos estructurados** de las herramientas, después de decodificar, sin acceso al modelo.
-2. **Rotación disparada por la información medida**, con el reinicio exacto de lo filtrado.
-3. La combinación de rotación y prueba secuencial: obligar al atacante a ir rápido (y que la evidencia lo delate) o lento (y que la rotación lo anule). Ojo: la mitad «rápido, lo delata la evidencia» todavía no existe en el código, porque S = 0.
+1. **La frase de novedad, una sola:** nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para **rotarla** antes de que se complete. Lo nuevo es la respuesta, no el conteo.
+2. **Leer fragmentos cortos y codificados.** Las herramientas que ya juntan fragmentos entre llamadas declaran que pierden los codificados (Pipelock) o los de menos de 20 caracteres (AgentBrake). Cuentagotas cuenta fragmentos de 4 caracteres en seis codificaciones. Respaldo: `engine/bits/tests/test_short_encoded.py`.
+3. **Rotar ante la sospecha en vez de bloquear.** En la evaluación final, sobre 180 ataques de seis familias nuevas, ninguno sacó más de 32 de 160 bits de la clave vigente, sin bloquear ninguna de 5.879 llamadas benignas. Sin rotación, el ataque triunfa en 150 de 180. Respaldo y límites: `results/test/LECTURA.md`.
+4. **Una cuenta por clave entre varios agentes,** en un mismo proceso y con persistencia en disco (`engine/detector/ledger.py`). Existen monitores entre agentes (Brown et al.; Makins et al.), pero usan un LLM o agrupamiento, no una cuenta de bits por secreto.
 
-Dejar de decir mientras no esté implementado:
+Cambió respecto de H4:
 
-- «Persistente entre sesiones»: no está en el código y NeuroTaint ya lo hace en modo offline.
-- «Acoplar el GFF con el DAG conecta pasos lejanos»: hoy el GFF no influye en ninguna decisión y las aristas de sospecha (R⁺) no están conectadas al detector.
+- «La mitad *lo delata la evidencia* todavía no existe, porque S = 0»: **ya no es cierto en la configuración evaluada.** El modelo de evidencia existe, está congelado, y en la evaluación final es lo que generaliza a familias nuevas (con el contador de bits solo se previenen 40 de 180). **Sigue siendo cierto en la demo y en el proxy en vivo,** que corren sin modelo: ahí decide solo el contador, con rotación al 30 % de la clave.
+- «Persistente entre sesiones no está en el código»: **ya está** (`SharedLedger.save` y `load_state`, con tests). Lo que falta es conectarlo al proxy en vivo (tarea #138). Y no se presenta como novedad.
+
+Dejar de decir:
+
+- «Ningún filtro junta fragmentos» o «nadie acumula en el tiempo»: falso (Pipelock, AgentBrake, y los presupuestos de fuga de Chauhan y Revankar, OCELOT y Metere).
+- «Somos los primeros en contar fuga acumulada» y «un presupuesto de bits de salida es nuevo».
+- «Detiene el 100 % de los ataques», sin decir que son ataques grabados y no un atacante que se adapta a la rotación.
+- «El contador de bits detecta codificaciones desconocidas»: no; eso lo cubre la evidencia de comportamiento, al costo de rotar de más en casos benignos difíciles (34 de 90 sesiones).
+- «Acoplar el GFF con el DAG conecta pasos lejanos»: el grafo de archivos no influye en ninguna decisión, las aristas de sospecha (R⁺) no están conectadas al detector, y la prueba que mediría su aporte (T6) no se calculó. Sigue igual que en H4.
+- «Persistente entre sesiones» como novedad.
 
 ---
 ---
