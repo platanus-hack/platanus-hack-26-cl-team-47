@@ -7,6 +7,30 @@ Servicios simulados del banco de pruebas (área Servicios). Todo es local, con h
 | Gestor de secretos con rotación | `vault.test` | 8101 | `services.vault.app:app` |
 | API protegida | `api.empresa.test` | 8102 | `services.api.app:app` |
 | Servidor del atacante (verdad de terreno) | `attacker.test` | 8103 | `services.attacker.app:app` |
+| GitHub simulado (issues y comentarios) | `github.test` | 8104 | `services.github_sim.app:app` |
+| Web simulada (páginas) | `web.test` | 8105 | `services.web_sim.app:app` |
+
+## GitHub y web simulados (2c)
+
+```
+uvicorn services.github_sim.app:app --port 8104
+uvicorn services.web_sim.app:app --port 8105
+```
+
+- **GitHub** (`github.test`): `POST/GET /repos/{owner}/{repo}/issues`, `GET .../issues/{n}`,
+  `POST/GET .../issues/{n}/comments`. Es lo que llaman las herramientas `github_issue` y
+  `github_comment` del proxy. `GET /_admin/published` devuelve lo que escribieron los
+  clientes (no las semillas): los comentarios e issues son un sumidero.
+- **Web** (`web.test`): `GET /{ruta}` sirve la página (o 404; `/` sirve `index.html`);
+  `PUT /_admin/pages/{ruta}` con el contenido en el cuerpo planta una página;
+  `GET /_admin/pages` lista las rutas.
+- **Semillas** (contenido legítimo o envenenado; el texto de los ataques es del área Rojo):
+  - GitHub: `GITHUB_SIM_SEEDS=<carpeta>` con `*.json` de la forma
+    `{"repo": "owner/repo", "issues": [{"title", "body", "comments": [...]}]}`.
+  - Web: `WEB_SIM_SEEDS=<carpeta>`; cada archivo se sirve en su ruta relativa.
+  - En código: `load_seeds(store, carpeta)` en `services.github_sim.app` y `services.web_sim.app`.
+- Todo en memoria: al reiniciar se pierde lo escrito. `python -m services.stack` todavía
+  no los levanta (sigue con los tres servicios del paso 9).
 
 Instalación: `pip install -r services/requirements.txt` (más `contracts/`, `engine/` y `proxy/` para el escenario en vivo).
 
