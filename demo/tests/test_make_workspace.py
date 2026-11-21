@@ -87,3 +87,19 @@ def test_proxy_git_log_works_on_copy(ws, tmp_path, monkeypatch):
     assert decision.allowed
     assert "Estructura inicial del proyecto" in output
     assert "128" not in output.splitlines()[0]
+
+
+def test_rerun_with_read_only_files(tmp_path):
+    """Como en Windows: archivos de solo lectura (los objetos de git) no impiden rehacer la copia."""
+    import os
+    import stat
+    out = tmp_path / "w"
+    mw.make_workspace(str(out))
+    for p in (out / ".git" / "objects").rglob("*"):
+        if p.is_file():
+            os.chmod(p, stat.S_IREAD)
+    (out / "solo_lectura.txt").write_text("x")
+    os.chmod(out / "solo_lectura.txt", stat.S_IREAD)
+    mw.make_workspace(str(out))
+    assert not (out / "solo_lectura.txt").exists()
+    assert 5 <= len(git(out, "log", "--oneline").splitlines()) <= 8
