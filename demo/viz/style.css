@@ -597,3 +597,6 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
   .results-hashes dd { margin-bottom: 6px; }
 }
 
+
+/* Nombre del producto: la leyenda en una línea */
+.home-page .home-myth { margin: -6px 0 0; font-size: 15px; font-style: italic; color: var(--muted); max-width: 60ch; }

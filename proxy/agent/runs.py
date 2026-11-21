@@ -1,4 +1,4 @@
-"""Corridas con un LLM real a través del proxy (#139): con y sin Cuentagotas, tres registros por corrida.
+"""Corridas con un LLM real a través del proxy (#139): con y sin Alicanto, tres registros por corrida.
 
     python -m proxy.agent.runs --n 10 --out logs/llm [--model <id>] [--max-steps 30] [--seed 0]
 

@@ -32,7 +32,7 @@ que se despliega desde el repo espejo **`jplira2/platanus-hack-26-cl-team-47`**.
    `https://<proyecto>.vercel.app`): debe mostrar la portada, y «Ver la demo»
    debe abrir la pantalla dividida con el 200 y el 401 al final.
 
-Cada push a `main` del espejo vuelve a desplegar.
+(Esto era el plan. El despliegue quedó a mano por línea de comandos; ver «Cómo quedó desplegado» más abajo.)
 
 ## Después del despliegue
 

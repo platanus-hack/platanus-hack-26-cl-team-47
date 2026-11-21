@@ -1,10 +1,10 @@
 # Evaluación final: cómo leer el resultado
 
-Corrida única del sábado 21 de noviembre de 2026, 09:40, sobre el set de prueba sellado (sello `18dda3af…`, comprobado antes de correr). Configuración congelada `cf56ce20…` (`b 4`, `b_rot 2`, `lambda_rot 0,1`, `T 75`). Commit `cd14e9e`. Los números están en `report.md`, `systems.md` y `RUN.json` de esta carpeta. Este archivo dice qué significan y qué no.
+Corrida única del sábado 21 de noviembre de 2026, 09:40, sobre el set de prueba sellado (sello `18dda3af…`, comprobado antes de correr). Configuración congelada `cf56ce20…` (`b 4`, `b_rot 2`, `lambda_rot 0,1`, `T 75`). Commit `cd14e9e`. Los números están en `report.md`, `systems.md` y `RUN.json` de esta carpeta. Este archivo dice qué significan y qué no. Cuando se corrió la evaluación el producto se llamaba Cuentagotas; después se renombró a Alicanto y solo se cambió el nombre en los textos: ni el detector ni las cifras cambiaron.
 
 ## El resultado
 
-| | Cuentagotas | Sin rotación | Sin modelo de evidencia | Lista de destinos + detect-secrets | Presupuesto de bits (réplica) | Reensamblado por sesión (réplica) |
+| | Alicanto | Sin rotación | Sin modelo de evidencia | Lista de destinos + detect-secrets | Presupuesto de bits (réplica) | Reensamblado por sesión (réplica) |
 |---|---|---|---|---|---|---|
 | Ataques prevenidos (de 180) | **180 (100 %)** | 30 (16,7 %) | 40 (22,2 %) | 30 (16,7 %) | 70 (38,9 %) | 0 |
 | Falsas alarmas (bloqueos sobre 5.879 llamadas benignas expuestas) | **0** | 0 | 0 | 2,2 % | 4,8 % | 0 |

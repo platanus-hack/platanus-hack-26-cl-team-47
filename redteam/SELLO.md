@@ -1,6 +1,8 @@
 # Sello del set de prueba (issue #120, paso 11)
 
-**Sellado hasta el congelamiento de H20; lo abre el líder.**
+**Estado: abierto el sábado 21 de noviembre de 2026 a las 09:40, después de congelar la configuración. El sello se comprobó al abrirlo y coincide (ver «Apertura», al final).** Lo que sigue es el registro tal como se publicó mientras el set estaba sellado.
+
+*Texto original:* sellado hasta el congelamiento de H20; lo abre el líder.
 
 El set de prueba y su generador viven en la rama `11-set-sellado` y **no entran a `main`**
 hasta H20. Este archivo solo publica su sello para que, al abrirlo, se compruebe que no cambió.

@@ -5,9 +5,9 @@ const SOURCE = "fixtures/results.json";
 
 /** Una frase por sistema; las réplicas se marcan como réplicas. */
 const SYSTEMS = {
-  ours: ["Cuentagotas", "La configuración congelada: cuenta de bits por clave, evidencia de comportamiento y rotación."],
-  no_rotation: ["Sin rotación (ablación)", "Cuentagotas con la rotación apagada; los bloqueos siguen."],
-  per_session: ["Cuenta por sesión (ablación)", "Cuentagotas sin la cuenta compartida entre sesiones."],
+  ours: ["Alicanto", "La configuración congelada: cuenta de bits por clave, evidencia de comportamiento y rotación."],
+  no_rotation: ["Sin rotación (ablación)", "Alicanto con la rotación apagada; los bloqueos siguen."],
+  per_session: ["Cuenta por sesión (ablación)", "Alicanto sin la cuenta compartida entre sesiones."],
   no_evidence: ["Sin modelo de evidencia (ablación)", "Solo el contador de bits y las reglas."],
   allowlist: ["Lista de destinos", "Línea de base: solo deja salir a dominios aprobados."],
   detect_secrets: ["detect-secrets", "Línea de base: expresiones regulares y entropía sobre cada envío."],

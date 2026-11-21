@@ -37,7 +37,7 @@ y las cuatro acciones. Es sintético: no son resultados del detector.
 
 ## Pantalla dividida (15b)
 
-El mismo ataque en dos paneles sincronizados: «Sin protección» y «Con el medidor».
+El mismo ataque en dos paneles sincronizados: «Sin protección» y «Con Alicanto».
 
 ```
 python -m http.server 8200 --directory demo/viz

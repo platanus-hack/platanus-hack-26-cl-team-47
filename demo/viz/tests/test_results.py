@@ -76,4 +76,4 @@ console.log(JSON.stringify({n: rows.length, first: rows[0].name, ours: ad.find(x
 """ % (json.dumps(str(VIZ / "results.js")), json.dumps(str(FIXTURE)))
     out = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8",
                                     check=True).stdout)
-    assert out == {"n": 9, "first": "Cuentagotas", "ours": "180 de 180"}
+    assert out == {"n": 9, "first": "Alicanto", "ours": "180 de 180"}

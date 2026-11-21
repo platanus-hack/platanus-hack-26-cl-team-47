@@ -1,5 +1,7 @@
 # Plan operativo: medidor de información filtrada para agentes de IA
 
+**Este es el plan original.** El proyecto terminó llamándose Alicanto, el escenario se decidió (hospital ficticio, `docs/ESCENARIO.md`), y el congelamiento y la evaluación final se adelantaron al sábado a las 09:40 (`redteam/SELLO.md`, `results/test/`). Lo que sigue se conserva como registro de lo planificado; el estado real está en `docs/ESTADO.md`.
+
 Resumen para agentes del documento «Medidor de información filtrada para agentes de IA», versión 4.0 (21 de noviembre de 2026). Si este resumen y el documento difieren, manda el documento. El orquestador reparte el trabajo desde aquí (ver `AGENTS.md`, sección 7).
 
 ## Qué se construye
@@ -101,7 +103,7 @@ Simplificación del nivel 0: la regla de bloqueo por evidencia usa los ancestros
 | 17 | Enjambre: cuenta global por secreto compartida entre varios agentes y sesiones, con persistencia en disco (`SharedLedger`, issue #114) | H7–H12 | Proxy | Con la fuga repartida entre 5 agentes, sin cuenta global salen los 160 bits sin rotación; con cuenta global rota a más tardar en el tercer fragmento y de ninguna versión salen más de H − β bits |
 | 18 | Demo del enjambre en la pantalla dividida: cuenta por agente contra cuenta global (issue #115) | H9–H15 | Demo | Corrida real: izquierda 200 sin rotaciones, derecha 401 con al menos una rotación |
 
-**Enjambre (decisión del líder, H7).** Que Cuentagotas funcione con un enjambre de agentes es objetivo del proyecto y está prometido en la descripción. Los pasos 17 y 18 deben entrar antes del congelamiento de H20. El paso 17 cambia el detector: lleva fila en `docs/BITACORA_DETECTOR.md` y, por ser una capacidad general, no cuenta como regla para un ataque concreto. Alcance: varios agentes en un mismo proceso y persistencia entre sesiones; varios procesos o máquinas a la vez quedan fuera. Si el paso 17 no está en `main` en H20, la descripción y el pitch dicen «cuenta por sesión» y el enjambre se presenta como trabajo futuro: no se promete lo que no corre.
+**Enjambre (decisión del líder, H7).** Que Alicanto funcione con un enjambre de agentes es objetivo del proyecto y está prometido en la descripción. Los pasos 17 y 18 deben entrar antes del congelamiento de H20. El paso 17 cambia el detector: lleva fila en `docs/BITACORA_DETECTOR.md` y, por ser una capacidad general, no cuenta como regla para un ataque concreto. Alcance: varios agentes en un mismo proceso y persistencia entre sesiones; varios procesos o máquinas a la vez quedan fuera. Si el paso 17 no está en `main` en H20, la descripción y el pitch dicen «cuenta por sesión» y el enjambre se presenta como trabajo futuro: no se promete lo que no corre.
 
 ### Nivel 2: solo si sobra
 

@@ -39,7 +39,7 @@ def default_proxy() -> Proxy:
 
 def build_server(proxy: Proxy | None = None):
     proxy = proxy or default_proxy()
-    server = _Server("cuentagotas")
+    server = _Server("alicanto")
 
     @server.tool()
     def read_file(path: str) -> str:

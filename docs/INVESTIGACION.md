@@ -65,7 +65,7 @@ Detalle de «Caught in the Act(ivation)», según lo que el investigador web ley
   - Respuesta corta: «OCELOT presupuesta lo que el agente revela; nosotros medimos credenciales en los argumentos de herramientas, sin LLM en la decisión, y respondemos rotando en el gestor».
 - **PRISM** (arXiv 2605.10614, mayo de 2026) [24]: detección de fuga de secretos durante la decodificación en sistemas de varios agentes. Necesita acceso al modelo y no rota.
 - **Pasarelas MCP con bloqueo de secretos**: Docker MCP Gateway con `--block-secrets` (patrones regex que rechazan la llamada completa), Lasso y TrueFoundry (redactan), GitGuardian con ggshield y su servidor MCP, e Invariant Guardrails (Snyk compró Invariant Labs en junio de 2025) [25][26][27].
-  - Todas buscan el secreto **completo** en cada mensaje. Ninguna cuenta fragmentos codificados ni acumula en el tiempo.
+  - Todas buscan el secreto **completo** en cada mensaje. ~~Ninguna cuenta fragmentos codificados ni acumula en el tiempo.~~ (Falso: ver «Actualización de H10», más abajo. Pipelock y AgentBrake sí acumulan entre llamadas.)
   - Es el competidor que un jurado de la industria conoce. La respuesta es la demo misma: cuatro caracteres por llamada pasan cualquier regex.
 - **Brokers de credenciales** (Aembit MCP Identity Gateway, secretos dinámicos de Vault) [22][28]: el agente nunca ve la clave.
   - Es la crítica más fuerte: «¿por qué no simplemente no darle el secreto al agente?».
@@ -86,14 +86,14 @@ Detalle de «Caught in the Act(ivation)», según lo que el investigador web ley
 Defendible, con la frase «hasta donde encontramos»:
 
 1. **La frase de novedad, una sola:** nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para **rotarla** antes de que se complete. Lo nuevo es la respuesta, no el conteo.
-2. **Leer fragmentos cortos y codificados.** Las herramientas que ya juntan fragmentos entre llamadas declaran que pierden los codificados (Pipelock) o los de menos de 20 caracteres (AgentBrake). Cuentagotas cuenta fragmentos de 4 caracteres en seis codificaciones. Respaldo: `engine/bits/tests/test_short_encoded.py`.
+2. **Leer fragmentos cortos y codificados.** Las herramientas que ya juntan fragmentos entre llamadas declaran que pierden los codificados (Pipelock) o los de menos de 20 caracteres (AgentBrake). Alicanto cuenta fragmentos de 4 caracteres en seis codificaciones. Respaldo: `engine/bits/tests/test_short_encoded.py`.
 3. **Rotar ante la sospecha en vez de bloquear.** En la evaluación final, sobre 180 ataques de seis familias nuevas, ninguno sacó más de 32 de 160 bits de la clave vigente, sin bloquear ninguna de 5.879 llamadas benignas. Sin rotación, el ataque triunfa en 150 de 180. Respaldo y límites: `results/test/LECTURA.md`.
 4. **Una cuenta por clave entre varios agentes,** en un mismo proceso y con persistencia en disco (`engine/detector/ledger.py`). Existen monitores entre agentes (Brown et al.; Makins et al.), pero usan un LLM o agrupamiento, no una cuenta de bits por secreto.
 
 Cambió respecto de H4:
 
 - «La mitad *lo delata la evidencia* todavía no existe, porque S = 0»: **ya no es cierto en la configuración evaluada.** El modelo de evidencia existe, está congelado, y en la evaluación final es lo que generaliza a familias nuevas (con el contador de bits solo se previenen 40 de 180). **Sigue siendo cierto en la demo y en el proxy en vivo,** que corren sin modelo: ahí decide solo el contador, con rotación al 30 % de la clave.
-- «Persistente entre sesiones no está en el código»: **ya está** (`SharedLedger.save` y `load_state`, con tests). Lo que falta es conectarlo al proxy en vivo (tarea #138). Y no se presenta como novedad.
+- «Persistente entre sesiones no está en el código»: **ya está** (`SharedLedger.save` y `load_state`, con tests). También está conectado al proxy en vivo, entre procesos de una misma máquina (`LEDGER_PATH`, tarea #138). Y no se presenta como novedad.
 
 Dejar de decir:
 
@@ -101,7 +101,7 @@ Dejar de decir:
 - «Somos los primeros en contar fuga acumulada» y «un presupuesto de bits de salida es nuevo».
 - «Detiene el 100 % de los ataques», sin decir que son ataques grabados y no un atacante que se adapta a la rotación.
 - «El contador de bits detecta codificaciones desconocidas»: no; eso lo cubre la evidencia de comportamiento, al costo de rotar de más en casos benignos difíciles (34 de 90 sesiones).
-- «Acoplar el GFF con el DAG conecta pasos lejanos»: el grafo de archivos no influye en ninguna decisión, las aristas de sospecha (R⁺) no están conectadas al detector, y la prueba que mediría su aporte (T6) no se calculó. Sigue igual que en H4.
+- «Acoplar el GFF con el DAG conecta pasos lejanos»: el grafo de archivos entra solo como señal por llamada en el modelo de evidencia, las aristas de sospecha (R⁺) no están conectadas al detector, y la prueba que mediría su aporte (T6) no se calculó en el set de prueba (en validación, la diferencia de AUC es +0,0045). Detalle en `results/test/LECTURA.md`.
 - «Persistente entre sesiones» como novedad.
 
 ---
