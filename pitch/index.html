@@ -11,49 +11,16 @@
 
     <section class="slide slide-title" data-n="1">
       <h1>Cuentagotas</h1>
-      <p class="sub">Medidor de información filtrada para agentes de IA</p>
+      <p class="sub pregunta">«Si el agente que corre en tu máquina quisiera hacer daño, ¿cómo te darías cuenta?»</p>
+      <p class="sub">Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva.</p>
       <p class="sub">Team-47 · track AI Security</p>
     </section>
 
-    <section class="slide" data-n="2">
-      <h2>El problema</h2>
-      <p>Un agente de código con acceso a archivos, shell y red puede ser manipulado para sacar secretos en muchos pasos, cada uno inocente por sí solo.</p>
-      <p class="strong">Los filtros que evalúan cada llamada aislada no lo ven.</p>
-      <p class="nota-pie track">AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya</p>
-    </section>
-
-    <section class="slide" data-n="3">
-      <h2>El ejemplo</h2>
-      <p>El goteo: 4 caracteres por salida, separados por decenas de llamadas normales.</p>
-    </section>
-
-    <section class="slide slide-quote" data-n="4">
-      <h2>La idea</h2>
-      <blockquote class="cita">«No adivinamos la intención del atacante. Medimos cuánto sabe, y hacemos que robar despacio no sirva.»</blockquote>
-    </section>
-
-    <section class="slide" data-n="5">
-      <h2>Cómo funciona</h2>
-      <div class="two">
-        <div class="box"><span class="k">Bits</span>cuánto sabe el atacante del secreto</div>
-        <div class="box"><span class="k">Evidencia</span>cuánto sabe el defensor del ataque</div>
-      </div>
-      <p class="strong">Cuando el atacante se acerca, se rota la clave.</p>
-    </section>
-
-    <section class="slide" data-n="6">
-      <h2>La pinza</h2>
-      <div class="two">
-        <div class="box"><span class="k">Filtra lento</span>la rotación lo anula</div>
-        <div class="box"><span class="k">Filtra rápido</span>la evidencia lo delata</div>
-      </div>
-    </section>
-
-    <section class="slide slide-demo" data-n="7">
+    <section class="slide slide-demo" data-n="2">
       <a class="demo-link" href="../demo/viz/split.html">Demo</a>
     </section>
 
-    <section class="slide slide-swarm" data-n="8">
+    <section class="slide slide-swarm" data-n="3">
       <h2>Y si atacan en enjambre</h2>
       <p>Cinco agentes se reparten la fuga: cada uno saca solo dos fragmentos.</p>
       <table class="results swarm">
@@ -66,7 +33,73 @@
       <a class="swarm-link" href="../demo/viz/split.html?demo=enjambre">Ver la demo del enjambre</a>
     </section>
 
-    <section class="slide slide-compare" data-n="9">
+    <section class="slide slide-real" data-n="4">
+      <h2>Qué es real y qué es simulado</h2>
+      <div class="two">
+        <div class="box"><span class="k">Real, corre aquí</span>El proxy, el motor, el gestor de secretos y el servidor del atacante.</div>
+        <div class="box"><span class="k">Simulado</span>Claves sintéticas, servidores locales, hospital ficticio. El agente de la demo es un guion reproducible.</div>
+      </div>
+    </section>
+
+    <section class="slide slide-resultados" data-n="5">
+      <h2>180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h2>
+      <table class="results resultados">
+        <tr><th></th><th>Cuentagotas</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
+        <tr><th>Ataques de familias nuevas prevenidos, de 180</th><td class="good">100 % (180)</td><td>16,7 % (30)</td><td>38,9 % (70)</td></tr>
+        <tr><th>El ataque triunfa, de 180</th><td class="good">0 % (0)</td><td class="bad">83,3 % (150)</td><td>61,1 % (110)</td></tr>
+        <tr><th>Llamadas benignas bloqueadas, de 5.879</th><td class="good">0 % (0)</td><td>0 % (0)</td><td>4,8 % (283)</td></tr>
+      </table>
+      <p class="limite">Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna.</p>
+      <p class="limite">Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas tras tres rotaciones.</p>
+    </section>
+
+    <section class="slide" data-n="6">
+      <h2>Usuario y cierre</h2>
+      <p><span class="k">Quién compra</span> Seguridad y plataforma en salud y sus proveedores de software.</p>
+      <p><span class="k">Por qué ahora</span> Alerta a la ANCI en 3 horas; el informe dice qué salió y cuándo rotó.</p>
+      <p class="strong">Pedimos dos equipos de TI de salud para un piloto.</p>
+    </section>
+
+    <section class="slide slide-respaldo" data-n="7">
+      <h2>Respaldo</h2>
+      <p class="sub">Láminas para las preguntas.</p>
+    </section>
+
+    <section class="slide" data-n="8">
+      <h2>El problema</h2>
+      <p>Un agente de código con acceso a archivos, shell y red puede ser manipulado para sacar secretos en muchos pasos, cada uno inocente por sí solo.</p>
+      <p class="strong">Los filtros que evalúan cada llamada aislada no lo ven.</p>
+      <p class="nota-pie track">AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya</p>
+    </section>
+
+    <section class="slide slide-ejemplo" data-n="9">
+      <h2>El ejemplo</h2>
+      <p>El goteo: 4 caracteres por salida, separados por decenas de llamadas normales.</p>
+    </section>
+
+    <section class="slide slide-quote" data-n="10">
+      <h2>La idea</h2>
+      <blockquote class="cita">«No adivinamos la intención del atacante. Medimos cuánto sabe, y hacemos que robar despacio no sirva.»</blockquote>
+    </section>
+
+    <section class="slide" data-n="11">
+      <h2>Cómo funciona</h2>
+      <div class="two">
+        <div class="box"><span class="k">Bits</span>cuánto sabe el atacante del secreto</div>
+        <div class="box"><span class="k">Evidencia</span>cuánto sabe el defensor del ataque</div>
+      </div>
+      <p class="strong">Cuando el atacante se acerca, se rota la clave.</p>
+    </section>
+
+    <section class="slide" data-n="12">
+      <h2>Filtrar lento o rápido</h2>
+      <div class="two">
+        <div class="box"><span class="k">Filtra lento</span>la rotación lo anula</div>
+        <div class="box"><span class="k">Filtra rápido</span>la evidencia lo delata</div>
+      </div>
+    </section>
+
+    <section class="slide slide-compare" data-n="13">
       <h2>Qué hace cada uno</h2>
       <table class="compare">
         <tr><th></th><th>Junta fragmentos entre llamadas</th><th>Lee fragmentos cortos o codificados</th><th>Cuenta por credencial</th><th>Entre varios agentes</th><th>Rota la clave</th></tr>
@@ -79,25 +112,13 @@
       <p class="nota-pie">Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026.</p>
     </section>
 
-    <section class="slide slide-resultados" data-n="10">
-      <h2>180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h2>
-      <table class="results resultados">
-        <tr><th></th><th>Cuentagotas</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
-        <tr><th>Ataques de familias nuevas prevenidos, de 180</th><td class="good">100 % (180)</td><td>16,7 % (30)</td><td>38,9 % (70)</td></tr>
-        <tr><th>El ataque triunfa, de 180</th><td class="good">0 % (0)</td><td class="bad">83,3 % (150)</td><td>61,1 % (110)</td></tr>
-        <tr><th>Llamadas benignas bloqueadas, de 5.879</th><td class="good">0 % (0)</td><td>0 % (0)</td><td>4,8 % (283)</td></tr>
-      </table>
-      <p class="limite">Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna.</p>
-      <p class="limite">Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas tras tres rotaciones.</p>
-    </section>
-
-    <section class="slide" data-n="11">
+    <section class="slide" data-n="14">
       <h2>Límites, dichos de frente</h2>
       <p>Es una cota inferior: decimos «al menos X bits», no «bits exactos».</p>
       <p>Una transformación que los decodificadores no conocen no se ve: por eso existen la evidencia y la rotación.</p>
     </section>
 
-    <section class="slide" data-n="12">
+    <section class="slide" data-n="15">
       <h2>¿Dónde está la IA?</h2>
       <p>La IA es el blanco y el vector: sin agente que obedezca texto ajeno, no hay ataque.</p>
       <p>El monitor no es un LLM: un guardia que se convence con texto no sirve.</p>
@@ -105,7 +126,7 @@
       <p class="pendiente">PENDIENTE: corridas en vivo con un LLM (aún no hechas)</p>
     </section>
 
-    <section class="slide slide-cifras" data-n="13">
+    <section class="slide slide-cifras" data-n="16">
       <h2>36 horas en cifras</h2>
       <ul class="cifras">
         <li><span class="num">635</span> tests automáticos</li>
@@ -116,18 +137,11 @@
       </ul>
     </section>
 
-    <section class="slide" data-n="14">
-      <h2>Usuario y cierre</h2>
-      <p><span class="k">Quién compra</span> Seguridad y plataforma en salud y sus proveedores de software.</p>
-      <p><span class="k">Por qué ahora</span> Alerta a la ANCI en 3 horas; el informe dice qué salió y cuándo rotó.</p>
-      <p class="strong">Pedimos dos equipos de TI de salud para un piloto.</p>
-    </section>
-
   </main>
 
   <nav class="hud" aria-label="Navegación">
     <button id="prev" title="Anterior (←)">◀</button>
-    <span id="counter">1 / 14</span>
+    <span id="counter">1 / 16</span>
     <button id="next" title="Siguiente (→)">▶</button>
   </nav>
 

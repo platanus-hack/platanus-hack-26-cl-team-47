@@ -160,3 +160,10 @@ td.pendiente { border-radius: 0; }
 .slide-resultados .results.resultados td.good { color: #3fb950; font-weight: 700; }
 .slide-resultados .results.resultados td.bad { color: #ff7b72; font-weight: 700; }
 .slide-resultados .limite { font-size: 28px; color: var(--muted); margin: 6px 0; }
+
+/* Formato de finales (16e): portada con la pregunta del track, real y simulado, separador de respaldo. */
+.slide-title .pregunta { font-size: 40px; color: var(--text); font-style: italic; margin-top: 28px; }
+.slide-real .box { font-size: 32px; line-height: 1.35; }
+.slide-respaldo { justify-content: center; }
+.slide-respaldo h2 { font-size: 96px; }
+

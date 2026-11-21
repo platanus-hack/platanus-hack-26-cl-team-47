@@ -9,9 +9,9 @@ const ESCENARIO = {
          "con agentes de IA, y las claves de la ficha clínica están en el mismo repositorio que el agente lee.",
 };
 
-/** Lámina 3: reemplaza el marcador del escenario por la frase y el nombre (con nota de ficticio). */
+/** Lámina «El ejemplo» (respaldo): agrega la frase y el nombre del escenario (con nota de ficticio). */
 function aplicarEscenario(doc) {
-  const s3 = doc.querySelector('.slide[data-n="3"]');
+  const s3 = doc.querySelector(".slide.slide-ejemplo");
   if (!s3) return;
   const marker = s3.querySelector(".pendiente");
   const frase = doc.createElement("p");
