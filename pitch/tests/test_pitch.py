@@ -258,3 +258,25 @@ def test_anthropic_no_fue_un_enjambre():
     for f in _pitch_files():
         t = f.read_text(encoding="utf-8").lower()
         assert not re.search(r"anthropic[^.]{0,120}\benjambre\b(?![»\"])", t) or "no fue un «enjambre»" in t, f.name
+
+
+# ------------------------------------------------ guion a 3 minutos (15m)
+
+def _texto_hablado(guion):
+    """Las secciones numeradas (## N. …), sin «Si sobra tiempo o preguntan» ni las tablas."""
+    partes = re.split(r"^(## .*)$", guion, flags=re.M)
+    return " ".join(cuerpo for titulo, cuerpo in zip(partes[1::2], partes[2::2])
+                    if re.match(r"## \d+\. ", titulo))
+
+
+def test_texto_hablado_cabe_en_tres_minutos():
+    assert "## Si sobra tiempo o preguntan" in GUION
+    assert len(words(_texto_hablado(GUION))) <= 450
+
+
+def test_tabla_de_tiempos_con_total():
+    assert re.search(r"^## Tiempos", GUION, flags=re.M)
+    m = re.search(r"Total sin la demo\*\* \| \*\*(\d+)\*\* \| \*\*(\d+) min (\d+) s", GUION)
+    assert m and int(m.group(2)) * 60 + int(m.group(3)) <= 180
+    for clave in ("problema", "Cuentagotas", "200", "401", "enjambre", "Límites"):
+        assert clave in _texto_hablado(GUION) or clave in GUION, clave

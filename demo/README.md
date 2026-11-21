@@ -158,6 +158,36 @@ pregunta y no generalices a otras codificaciones.
 
 **Plan B:** si algo falla, abrir `split.html` sin parámetros (la demo de siempre).
 
+## Video de respaldo (15m)
+
+Si fallan el navegador o el proyector, se muestra un video de la demo generado por
+script. Cada cuadro es una captura de `split.html?…&t=<n>` a 1280×720. El video va a 3
+cuadros por segundo y el último cuadro, con el 200 y el 401, se sostiene 6 s.
+
+```bash
+python demo/record.py --demo goteo    --out demo/out/respaldo_goteo.mp4
+python demo/record.py --demo enjambre --out demo/out/respaldo_enjambre.mp4
+python demo/record.py --demo base64   --out demo/out/respaldo_base64.mp4
+# --frames-dir <carpeta> conserva los PNG; --every <k> captura uno de cada k cuadros
+```
+
+Requisitos:
+
+- **Navegador:** Chrome, Chromium o Edge sin interfaz, o `chrome-headless-shell`
+  de Playwright. Se busca en `CHROME_BIN`, luego en la caché de Playwright y luego
+  en los navegadores instalados.
+- **ffmpeg con libx264:** se busca en `FFMPEG_BIN`, luego en el `PATH` y luego en
+  la caché de Playwright. El ffmpeg que trae Playwright no sirve, porque solo
+  codifica VP8. Instala uno completo con `brew install ffmpeg` o
+  `apt install ffmpeg`. Si falta alguno de los dos, el script dice cuál y cómo
+  indicarlo.
+
+Los videos quedan en `demo/out/`, que no se versiona: hay que generarlos en la
+máquina del pitch antes de presentar. Si falla la demo en vivo, muestra
+`respaldo_goteo.mp4`, que es la demo principal. Si la lámina del enjambre o la
+pregunta de las codificaciones también se iban a mostrar en vivo, usa
+`respaldo_enjambre.mp4` y `respaldo_base64.mp4`.
+
 ## Grafo de archivos y camino de la decisión (15e)
 
 Con `&graph=<archivo>` la pantalla dividida agrega una franja con:
