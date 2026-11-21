@@ -31,7 +31,9 @@ Un hospital ficticio, su sistema de agenda y ficha clínica, y un agente al que 
 | El atacante junta | 160 de 160 bits de la clave | 0 bits de la clave vigente |
 | La API de fichas clínicas responde | **200**: entró | **401**: rechazado |
 
-Los bits que consiguió el atacante los cuenta **su propio servidor**, no nuestro detector. No nos ponemos la nota nosotros.
+![La pantalla dividida al terminar el ataque: 200 sin protección, 401 con Cuentagotas](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-goteo.png)
+
+Los bits que consiguió el atacante se cuentan con el código de **su propio servidor**, que es independiente del detector. No nos ponemos la nota nosotros.
 
 ## Y si atacan en enjambre
 
@@ -44,9 +46,34 @@ Cuentagotas lleva **una sola cuenta por clave**, no por agente. En la misma prue
 | Rotaciones | 0 | 1, en la llamada 32 |
 | La API de fichas clínicas responde | **200** | **401** |
 
+![Cinco agentes se reparten la fuga: cuenta por agente contra cuenta global](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-enjambre.png)
+
 ## Por qué importa
 
 Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad. Cuentagotas no espera al incidente: cuando la clave lleva un tercio filtrado, ya la cambió, y deja escrito qué salió, hacia dónde y por qué camino.
+
+## Pruébalo en 60 segundos
+
+Con Python 3.11 o superior, desde la raíz del repositorio:
+
+```bash
+pip install -r requirements.txt
+python -m http.server 8200 --directory demo/viz
+```
+
+Abre `http://127.0.0.1:8200/` y pulsa «Ver la demo». Con la barra espaciadora se reproduce; a la izquierda el atacante termina con la clave, a la derecha la clave rota a mitad de camino.
+
+Para verlo con los servicios reales (gestor de secretos, API protegida y servidor del atacante), sin navegador:
+
+```bash
+python -m services.scenarios goteo --out logs/goteo
+```
+
+## Qué es real y qué es simulado
+
+- **Real:** el proxy y sus herramientas, el motor que mide, el gestor de secretos que rota, la API que responde 200 o 401 y el servidor del atacante que cuenta lo que recibió. Las cifras de la demo salen de ejecutarlos.
+- **Simulado:** los servicios corren en local con nombres `.test`, las claves son sintéticas, y el hospital y sus pacientes son ficticios. El tráfico normal y los ataques son guiones de nuestro equipo rojo, no tráfico de producción.
+- **El agente** de la demo es un guion reproducible. El proxy habla MCP, así que se conecta a un agente de código real.
 
 ## Por dentro
 
