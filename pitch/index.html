@@ -53,13 +53,26 @@
       <a class="demo-link" href="../demo/viz/split.html">Demo</a>
     </section>
 
-    <section class="slide slide-quote" data-n="8">
+    <section class="slide slide-swarm" data-n="8">
+      <h2>Y si atacan en enjambre</h2>
+      <p>Cinco agentes se reparten la fuga: cada uno saca solo dos fragmentos.</p>
+      <table class="results swarm">
+        <tr><th></th><th>Cuenta por agente</th><th>Cuenta global de Cuentagotas</th></tr>
+        <tr><th>Lo máximo que ve un monitor</th><td>32 de 160 bits</td><td>—</td></tr>
+        <tr><th>Rotaciones</th><td>0</td><td>1, en la llamada 32</td></tr>
+        <tr><th>El atacante</th><td class="bad">arma la clave: 200</td><td class="good">401</td></tr>
+      </table>
+      <p class="strong">La cuenta es por clave, no por agente.</p>
+      <a class="swarm-link" href="../demo/viz/split.html?demo=enjambre">Ver la demo del enjambre</a>
+    </section>
+
+    <section class="slide slide-quote" data-n="9">
       <h2>Qué es nuevo</h2>
       <blockquote class="cita">«Trabajos de este año muestran que contar la fuga acumulada ve lo que los detectores por turno no ven. Nosotros lo hacemos sin acceso al modelo, con falsas alarmas medidas, y rotamos el secreto para que lo filtrado deje de servir.»</blockquote>
       <p class="nota" style="font-size: 26px; color: var(--muted);">Hasta donde encontramos, es nuevo: fuga en bits por secreto en los argumentos de las herramientas, sin acceso al modelo; rotación disparada por lo medido; y rotación combinada con prueba secuencial.</p>
     </section>
 
-    <section class="slide" data-n="9">
+    <section class="slide" data-n="10">
       <h2>Resultados</h2>
       <table class="results">
         <tr><th>Falsas alarmas por llamada expuesta</th><td class="pendiente">PENDIENTE: T1, eval/metrics</td></tr>
@@ -69,13 +82,13 @@
       </table>
     </section>
 
-    <section class="slide" data-n="10">
+    <section class="slide" data-n="11">
       <h2>Límites, dichos de frente</h2>
       <p>Es una cota inferior: decimos «al menos X bits», no «bits exactos».</p>
       <p>Una transformación que los decodificadores no conocen no se ve: por eso existen la evidencia y la rotación.</p>
     </section>
 
-    <section class="slide" data-n="11">
+    <section class="slide" data-n="12">
       <h2>¿Dónde está la IA?</h2>
       <p>La IA es el blanco y el vector: sin agente que obedezca texto ajeno, no hay ataque.</p>
       <p>El monitor no es un LLM: un guardia que se convence con texto no sirve.</p>
@@ -83,7 +96,7 @@
       <p class="pendiente">PENDIENTE: corridas en vivo con un LLM (aún no hechas)</p>
     </section>
 
-    <section class="slide" data-n="12">
+    <section class="slide" data-n="13">
       <h2>Usuario y cierre</h2>
       <p>Equipos de plataforma o seguridad de empresas que usan agentes de código sobre repositorios con credenciales.</p>
       <p class="pendiente">PENDIENTE: qué pedimos o qué sigue (decisión del equipo)</p>
@@ -93,7 +106,7 @@
 
   <nav class="hud" aria-label="Navegación">
     <button id="prev" title="Anterior (←)">◀</button>
-    <span id="counter">1 / 12</span>
+    <span id="counter">1 / 13</span>
     <button id="next" title="Siguiente (→)">▶</button>
   </nav>
 
