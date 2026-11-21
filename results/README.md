@@ -61,5 +61,7 @@ Lectura: contra este atacante, `ours` resiste porque, tras `max_rotations` rotac
 
 ## Banderas del proxy (#167): análisis aparte
 
+`results/short_fragments/` (`python -m eval.final.short_fragments --out results/short_fragments`): la cota de la rotación periódica con pedazos de 1, 2, 3, 4 y 7 caracteres, en sesiones sintéticas propias, con la configuración congelada, sin modelo de evidencia y con la de la demo (#189). Cómo leerla: punto 8 de «Lo que este resultado no dice» en `results/test/LECTURA.md`.
+
 `results/proxy_flags/` (`python -m eval.final.proxy_flags --out results/proxy_flags`): la evaluación del set de prueba con las banderas `is_sink` y `untrusted` que calcula el proxy en vivo, en vez de las que escribió el generador, y la regla simple como línea de base. Cómo leerla: `results/test/LECTURA.md`, «Las banderas de cada llamada venían de las grabaciones».
 
