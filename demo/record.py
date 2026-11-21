@@ -12,7 +12,8 @@ con ffmpeg (3 cuadros por segundo, el último sostenido 6 s, H.264 yuv420p, sin 
 Binarios: CHROME_BIN, o chrome-headless-shell de la caché de Playwright, o Chrome,
 Chromium o Edge instalados. FFMPEG_BIN, o ffmpeg del PATH, o el de la caché de
 Playwright. Con libx264 graba MP4 (H.264); si el ffmpeg solo trae libvpx (el de
-Playwright), graba WebM con VP8 y cambia la extensión de salida a .webm, avisando.
+Playwright), graba WebM con VP8, y si solo trae libvpx-vp9 (el de Playwright reciente),
+WebM con VP9; en los dos casos cambia la extensión de salida a .webm, avisando.
 """
 
 from __future__ import annotations
@@ -128,43 +129,58 @@ def find_chrome(env=os.environ, home: Path | None = None, which=shutil.which) ->
                         "Instala uno o indica la ruta con CHROME_BIN=/ruta/al/chrome.")
 
 
+# Códecs que sabemos usar, en orden de preferencia: MP4 con H.264, WebM con VP8, WebM con VP9.
+CODECS = ("libx264", "libvpx", "libvpx-vp9")
+WEBM = {"libvpx": "VP8", "libvpx-vp9": "VP9"}
+
+
 def encoders(ffmpeg: Path) -> str:
     """Salida de `ffmpeg -encoders` ("" si no se puede ejecutar)."""
     try:
-        r = subprocess.run([str(ffmpeg), "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=20)
+        r = subprocess.run([str(ffmpeg), "-hide_banner", "-encoders"], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=20)
     except (OSError, subprocess.TimeoutExpired):
         return ""
-    return r.stdout
+    return r.stdout or ""
+
+
+def encoder_names(listing: str) -> set[str]:
+    """Nombres de la lista de `ffmpeg -encoders`: la segunda columna de cada línea
+    (" V....D libvpx-vp9   libvpx VP9 (codec vp9)" -> "libvpx-vp9"), nunca la descripción."""
+    names = set()
+    for line in listing.splitlines():
+        cols = line.split()
+        if len(cols) >= 2 and len(cols[0]) == 6 and set(cols[0]) <= set("VASFXBD."):
+            names.add(cols[1])
+    return names
 
 
 def codec_of(listing: str) -> str | None:
-    """libx264 si está; si no, libvpx (VP8, WebM); si no, None."""
-    for codec in ("libx264", "libvpx"):
-        if codec in listing.split():
-            return codec
-    return None
+    """El mejor códec de CODECS que trae el ffmpeg (libx264, libvpx o libvpx-vp9), o None."""
+    names = encoder_names(listing)
+    return next((c for c in CODECS if c in names), None)
 
 
 def find_ffmpeg(env=os.environ, home: Path | None = None, which=shutil.which, probe=encoders) -> tuple[Path, str]:
-    """(ruta, códec). Orden: FFMPEG_BIN, PATH, caché de Playwright. Prefiere uno con libx264;
-    si ninguno lo tiene, el primero con libvpx."""
+    """(ruta, códec). Orden: FFMPEG_BIN, PATH, caché de Playwright. Entre los candidatos elige el
+    mejor códec según CODECS (libx264, luego libvpx, luego libvpx-vp9)."""
     if env.get("FFMPEG_BIN"):
         p = Path(env["FFMPEG_BIN"])
         if not p.is_file():
             raise MissingBinary(f"FFMPEG_BIN apunta a {p}, que no existe.")
         codec = codec_of(probe(p))
         if not codec:
-            raise MissingBinary(f"FFMPEG_BIN={p} no trae libx264 ni libvpx.")
+            raise MissingBinary(f"FFMPEG_BIN={p} no trae libx264 ni libvpx ni libvpx-vp9.")
         return p, codec
     cands = [Path(which("ffmpeg"))] if which("ffmpeg") else []
     cands += [p for p in _globs(_playwright_caches(env, home), ["ffmpeg-*/ffmpeg*"]) if p.suffix in ("", ".exe")]
     found = [(p, codec_of(probe(p))) for p in cands]
-    for want in ("libx264", "libvpx"):
+    for want in CODECS:
         for p, codec in found:
             if codec == want:
                 return p, codec
-    extra = f" Probé sin libx264 ni libvpx: {', '.join(str(p) for p in cands)}." if cands else ""
-    raise MissingBinary("Falta ffmpeg (con libx264 para MP4, o al menos libvpx para WebM)." + extra +
+    extra = f" Probé sin libx264 ni libvpx ni libvpx-vp9: {', '.join(str(p) for p in cands)}." if cands else ""
+    raise MissingBinary("Falta ffmpeg (con libx264 para MP4, o al menos libvpx o libvpx-vp9 para WebM)." + extra +
                         " Instálalo (brew install ffmpeg, apt install ffmpeg) o indica la ruta con "
                         "FFMPEG_BIN=/ruta/al/ffmpeg.")
 
@@ -194,15 +210,16 @@ def chrome_cmd(chrome: Path, shell: bool, png: Path, url: str) -> list[str]:
     return cmd
 
 
-def webm_cmd(ffmpeg: Path, out: Path) -> list[str]:
-    """VP8 en WebM leyendo JPEG por la entrada estándar (el ffmpeg de Playwright no lee PNG
-    ni archivos sueltos: solo image2pipe con mjpeg). El final se sostiene repitiendo el cuadro."""
+def webm_cmd(ffmpeg: Path, out: Path, codec: str = "libvpx") -> list[str]:
+    """VP8 (libvpx) o VP9 (libvpx-vp9) en WebM leyendo JPEG por la entrada estándar (el ffmpeg de
+    Playwright no lee PNG ni archivos sueltos: solo image2pipe con mjpeg). El final se sostiene
+    repitiendo el cuadro."""
     return [str(ffmpeg), "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg",
-            "-i", "pipe:0", "-c:v", "libvpx", "-b:v", "1M", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an", str(out)]
+            "-i", "pipe:0", "-c:v", codec, "-b:v", "1M", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an", str(out)]
 
 
 def output_path(out: Path, codec: str) -> Path:
-    return out.with_suffix(".webm") if codec == "libvpx" and out.suffix != ".webm" else out
+    return out.with_suffix(".webm") if codec in WEBM and out.suffix != ".webm" else out
 
 
 def ffmpeg_cmd(ffmpeg: Path, frames: Path, n: int, out: Path) -> list[str]:
@@ -215,10 +232,10 @@ def ffmpeg_cmd(ffmpeg: Path, frames: Path, n: int, out: Path) -> list[str]:
 def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1) -> Path:
     chrome, shell = find_chrome()
     ffmpeg, codec = find_ffmpeg()
-    webm = codec == "libvpx"
+    webm = codec in WEBM
     if webm:
         new = output_path(out, codec)
-        print(f"aviso: {ffmpeg} no trae libx264; grabo WebM (VP8) en {new}", file=sys.stderr)
+        print(f"aviso: {ffmpeg} no trae libx264; grabo WebM ({WEBM[codec]}) en {new}", file=sys.stderr)
         out = new
     ext = "jpeg" if webm else "png"
     ts = sample(times(demo), every)
@@ -245,11 +262,11 @@ def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1)
             imgs = [frames_dir / f"f{i:05d}.jpeg" for i in range(1, len(ts) + 1)]
             imgs += [imgs[-1]] * (HOLD_S * FPS)  # el último cuadro, sostenido 6 s
             data = b"".join(p.read_bytes() for p in imgs)
-            r = subprocess.run(webm_cmd(ffmpeg, out), input=data, capture_output=True)
+            r = subprocess.run(webm_cmd(ffmpeg, out, codec), input=data, capture_output=True)
             err = r.stderr.decode("utf-8", "replace")
         else:
-            r = subprocess.run(ffmpeg_cmd(ffmpeg, frames_dir, len(ts), out), capture_output=True, text=True)
-            err = r.stderr
+            r = subprocess.run(ffmpeg_cmd(ffmpeg, frames_dir, len(ts), out), capture_output=True)
+            err = r.stderr.decode("utf-8", "replace")
         if r.returncode != 0 or not out.is_file():
             raise RuntimeError(f"ffmpeg falló: {err.strip()}")
     finally:
@@ -260,7 +277,18 @@ def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1)
     return out
 
 
+def safe_console() -> None:
+    """Que imprimir no tumbe el grabador en una consola que no es UTF-8 (cp1252 en Windows):
+    lo que la consola no puede mostrar sale reemplazado. Misma idea que eval/final/run.py."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None) -> int:
+    safe_console()
     ap = argparse.ArgumentParser(prog="python demo/record.py")
     ap.add_argument("--demo", choices=sorted(DEMOS), required=True)
     ap.add_argument("--out", type=Path, required=True)

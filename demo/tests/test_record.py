@@ -67,6 +67,44 @@ def test_codec_de_la_lista_de_encoders():
     assert record.codec_of(" V..... mjpeg") is None
 
 
+# Líneas literales del ffmpeg de Playwright: ffmpeg-1011 (VP8) y ffmpeg-1013 (solo VP9).
+LINEA_VP8 = " V....D libvpx               libvpx VP8 (codec vp8)"
+LINEA_VP9 = " V....D libvpx-vp9           libvpx VP9 (codec vp9)"
+LINEA_X264 = " V....D libx264              libx264 H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 (codec h264)"
+CABECERA = "Encoders:\n V..... = Video\n A..... = Audio\n ------\n"
+
+
+def test_codec_mira_el_nombre_y_no_la_descripcion():
+    # «libvpx» aparece en la descripción de libvpx-vp9: no por eso hay VP8.
+    assert record.codec_of(CABECERA + LINEA_VP9) == "libvpx-vp9"
+    assert record.codec_of(CABECERA + LINEA_VP8) == "libvpx"
+    assert record.codec_of(CABECERA + LINEA_X264) == "libx264"
+    assert record.codec_of(CABECERA + " V....D mjpeg                MJPEG (Motion JPEG)") is None
+    assert record.codec_of("") is None
+    # Orden de preferencia cuando hay varios.
+    assert record.codec_of("\n".join([LINEA_VP9, LINEA_VP8])) == "libvpx"
+    assert record.codec_of("\n".join([LINEA_VP9, LINEA_VP8, LINEA_X264])) == "libx264"
+
+
+def test_ffmpeg_elige_el_mejor_codec_entre_candidatos(tmp_path):
+    sistema = fake(tmp_path, "bin/ffmpeg")
+    nuevo = fake(tmp_path, ".cache/ms-playwright/ffmpeg-1013/ffmpeg-linux")
+    viejo = fake(tmp_path, ".cache/ms-playwright/ffmpeg-1011/ffmpeg-linux")
+    listas = {str(sistema): " V....D mjpeg   MJPEG", str(nuevo): LINEA_VP9, str(viejo): LINEA_VP8}
+    probe = lambda p: listas.get(str(p), "")
+    assert record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: str(sistema), probe=probe) == (viejo, "libvpx")
+    listas[str(viejo)] = ""
+    assert record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: str(sistema), probe=probe) == (nuevo, "libvpx-vp9")
+    assert record.find_ffmpeg(env={"FFMPEG_BIN": str(nuevo)}, home=tmp_path, which=lambda n: None,
+                              probe=probe) == (nuevo, "libvpx-vp9")
+
+
+def test_vp9_graba_webm():
+    assert record.output_path(Path("demo/out/v.mp4"), "libvpx-vp9") == Path("demo/out/v.webm")
+    j = " ".join(record.webm_cmd(Path("ffmpeg"), Path("o.webm"), "libvpx-vp9"))
+    assert "-c:v libvpx-vp9" in j and "image2pipe" in j and "pipe:0" in j
+
+
 def test_ffmpeg_prefiere_libx264_y_si_no_webm(tmp_path):
     bueno = fake(tmp_path, "bin/ffmpeg")
     pw = fake(tmp_path, "Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac")
@@ -102,11 +140,38 @@ def test_comando_de_ffmpeg():
     assert "stop_duration=6" in j
 
 
+def _run(args, env=None, **kw):
+    """El grabador como subproceso, en UTF-8 y leyendo con errors="replace" (Windows usa cp1252)."""
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", **(env or {})}
+    return subprocess.run([sys.executable, str(ROOT / "demo" / "record.py"), *args], capture_output=True,
+                          text=True, encoding="utf-8", errors="replace", env=env, **kw)
+
+
 def test_mensaje_y_salida_si_falta_un_binario(tmp_path):
-    env = {**os.environ, "CHROME_BIN": str(tmp_path / "no-existe")}
-    r = subprocess.run([sys.executable, str(ROOT / "demo" / "record.py"), "--demo", "goteo",
-                        "--out", str(tmp_path / "v.mp4")], capture_output=True, text=True, encoding="utf-8", env=env)
+    r = _run(["--demo", "goteo", "--out", str(tmp_path / "v.mp4")], env={"CHROME_BIN": str(tmp_path / "no-existe")})
     assert r.returncode != 0 and "CHROME_BIN" in r.stderr
+
+
+def test_lee_la_salida_de_una_consola_cp1252(tmp_path):
+    # Lo que falló en Windows: el grabador escribe en cp1252 («ó» es el byte 0xf3) y el test leía
+    # UTF-8 estricto. Con errors="replace" se lee igual y el resultado se puede comprobar.
+    r = _run(["--demo", "goteo", "--out", str(tmp_path / "v.mp4")],
+             env={"CHROME_BIN": str(tmp_path / "navegación"), "PYTHONIOENCODING": "cp1252"})
+    assert r.returncode == 2 and "CHROME_BIN" in r.stderr and "Traceback" not in r.stderr
+
+
+def test_safe_console_no_deja_que_imprimir_tumbe_el_grabador(monkeypatch):
+    import io
+
+    out = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+    monkeypatch.setattr(sys, "stdout", out)
+    monkeypatch.setattr(sys, "stderr", out)
+    with pytest.raises(UnicodeEncodeError):
+        print("v→.webm")  # sin el arreglo, «→» tumba el print en cp1252
+    record.safe_console()
+    print("v→.webm: 12 KB")
+    out.flush()
+    assert out.buffer.getvalue().rstrip() == b"v?.webm: 12 KB"
 
 
 def _binarios():
@@ -118,11 +183,10 @@ def _binarios():
         return False
 
 
-@pytest.mark.skipif(not _binarios(), reason="falta un navegador o un ffmpeg con libx264 o libvpx")
+@pytest.mark.skipif(not _binarios(), reason="falta un navegador o un ffmpeg con libx264, libvpx o libvpx-vp9")
 def test_graba_goteo(tmp_path):
     out = tmp_path / "respaldo_goteo.mp4"
-    r = subprocess.run([sys.executable, str(ROOT / "demo" / "record.py"), "--demo", "goteo", "--every", "20",
-                        "--out", str(out)], capture_output=True, text=True, encoding="utf-8", timeout=600)
+    r = _run(["--demo", "goteo", "--every", "20", "--out", str(out)], timeout=600)
     assert r.returncode == 0, r.stderr
     hecho = out if out.is_file() else out.with_suffix(".webm")  # sin libx264 sale en WebM
     assert hecho.is_file() and hecho.stat().st_size > 10 * 1024
