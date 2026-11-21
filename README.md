@@ -16,7 +16,7 @@ En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el 
 - Victoria Guerriero ([@VictoriaGuerriero](https://github.com/VictoriaGuerriero))
 - Matías Morgado ([@matix3000](https://github.com/matix3000))
 
-**Demo en línea:** https://cuentagotas-gamma.vercel.app · [resultados y sus límites](https://cuentagotas-gamma.vercel.app/results.html)
+**Demo en línea:** https://alicanto.vercel.app · [resultados y sus límites](https://alicanto.vercel.app/results.html)
 
 ## Qué es
 

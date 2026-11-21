@@ -39,7 +39,7 @@ En la demostración se hace el mismo robo dos veces, y la cerradura cambia cuand
 | Letras útiles que junta el ladrón | 40 de 40 | 0 de la contraseña nueva |
 | Lo que responde la puerta | «Pasa» (código 200) | «No entras» (código 401) |
 
-Se puede ver en línea, sin instalar nada: https://cuentagotas-gamma.vercel.app
+Se puede ver en línea, sin instalar nada: https://alicanto.vercel.app
 
 ## Dos trucos del ladrón, y la respuesta
 

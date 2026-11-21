@@ -37,7 +37,7 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 **En curso ahora:** nada técnico. No queda ninguna tarea abierta: el pitch ya tiene las cifras, está armado para 3 minutos con corte, y hay página de resultados en el sitio. Lo que falta depende de personas (ver más abajo).
 
 **Dónde verlo:**
-- **Demo en línea:** https://cuentagotas-gamma.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
+- **Demo en línea:** https://alicanto.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
 - Demo en local: `python -m http.server 8200 --directory demo/viz` y abrir `http://127.0.0.1:8200/`.
 - Láminas: `pitch/index.html`. Guion: `pitch/GUION.md`. Preguntas del jurado: `pitch/PREGUNTAS.md`.
 - Descripción pública: `project-description.md`.
@@ -58,7 +58,7 @@ Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orques
 
 Ningún agente puede hacer esto. Ordenado por importancia.
 
-1. ~~Deploy en Vercel~~ **Hecho** (10:40): https://cuentagotas-gamma.vercel.app, y la URL ya está en `platanus-hack-project.jsonc`. Queda activar el segundo factor en la cuenta de Vercel, que la propia plataforma recomienda.
+1. ~~Deploy en Vercel~~ **Hecho** (10:40): https://alicanto.vercel.app, y la URL ya está en `platanus-hack-project.jsonc`. Queda activar el segundo factor en la cuenta de Vercel, que la propia plataforma recomienda.
 2. **Clave de API para correr un LLM real** a través del proxy. El comando ya está listo y probado sin clave: `python -m proxy.agent.runs --n 10 --out logs/llm` (detalle en `docs/LLM_EN_VIVO.md`). Hoy todas las corridas son guiones sin LLM, y las bases excluyen «ciberseguridad tradicional donde la IA no es el blanco». Es el mayor riesgo de encaje con el track. La entrega Juan Pedro.
 3. **Hablar con un posible comprador** (alguien de TI de una clínica o de una healthtech) y llevar su frase a la lámina final. Es lo que más sube el criterio de impacto.
 4. **Preguntar a la organización:** hora exacta de corte del repositorio, cómo se pasa a la final, y si en Santiago hay premio del público o de sponsor.
@@ -134,7 +134,7 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 
 **11:30. Cambio de nombre.**
 - El equipo decidió que el producto se llama **Alicanto**, por el ave de la leyenda de Atacama que deja con las manos vacías a quien la sigue por codicia. Se verificó que el nombre no choca con ningún producto de software o de seguridad conocido.
-- Se cambió en todo el repositorio, el sitio, el pitch y el servidor MCP (que ahora se anuncia como `alicanto`). La URL pública conserva el nombre anterior hasta que se asigne una nueva.
+- Se cambió en todo el repositorio, el sitio, el pitch y el servidor MCP (que ahora se anuncia como `alicanto`). La URL pública pasó a https://alicanto.vercel.app; la anterior sigue funcionando.
 - Pendiente de una persona: el logotipo nuevo. El actual todavía dice Cuentagotas.
 
 **Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas (cambiado a Alicanto a las 11:30); el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.

@@ -9,7 +9,7 @@ Actualizado: sábado 21 de noviembre de 2026, 11:45 (H12,75). Lo mantiene el orq
 ## Qué hay en `main`
 
 - Más de 700 tests en verde (`python -m pytest -q`).
-- Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://cuentagotas-gamma.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
+- Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Pitch con cifras: `pitch/`. Guía para conectar el proxy a un agente real: `docs/QUICKSTART.md`.
 - Comando para corridas con un LLM real, listo y sin ejecutar: `docs/LLM_EN_VIVO.md`.
@@ -23,7 +23,7 @@ Actualizado: sábado 21 de noviembre de 2026, 11:45 (H12,75). Lo mantiene el orq
 - **No decir:** «detiene el 100 %» a secas; que nadie junta fragmentos (existen Pipelock y AgentBrake); que somos los primeros; que los grafos «conectan pasos lejanos»; que se corrió un LLM real.
 - **El enjambre:** la cuenta compartida cubre varios agentes en una misma máquina, por un archivo común (`LEDGER_PATH`); no varias máquinas.
 - **La demo y la evaluación usan configuraciones distintas:** la demo corre sin modelo de evidencia y rota al 30 % de la clave; la evaluación usa `models/search/frozen.json`.
-- **Nombre:** si encuentras «Cuentagotas» en un texto vigente, es un error; corrígelo. Excepción: la URL pública y el proyecto de Vercel conservan el nombre anterior.
+- **Nombre:** si encuentras «Cuentagotas» en un texto vigente, es un error; corrígelo. Excepción: el proyecto de Vercel se sigue llamando `cuentagotas` por dentro; la URL pública ya es https://alicanto.vercel.app.
 - Las tareas de `redteam/` van en una sesión de agente que no haya leído `engine/`.
 - Si cambias algo de `demo/viz`, dilo en tu reporte: hay que redesplegar.
 

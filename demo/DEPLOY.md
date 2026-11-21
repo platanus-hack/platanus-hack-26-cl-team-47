@@ -57,7 +57,7 @@ fixtures coinciden con una corrida nueva.
 
 ## Cómo quedó desplegado (sábado 21 de noviembre, 10:40)
 
-- URL pública: https://cuentagotas-gamma.vercel.app. Proyecto `cuentagotas` en el equipo de Vercel `cuenta-gotas1` (plan Hobby), cuenta `jplira2`.
+- URL pública: https://alicanto.vercel.app. Es un dominio agregado al proyecto de Vercel, que internamente se sigue llamando `cuentagotas` (el primer nombre del producto), en el equipo `cuenta-gotas1` (plan Hobby), cuenta `jplira2`. La dirección anterior, `cuentagotas-gamma.vercel.app`, sigue funcionando y apunta al mismo sitio.
 - Se despliega **a mano desde la línea de comandos**, no por la integración con GitHub:
 
 ```
