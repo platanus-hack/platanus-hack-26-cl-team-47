@@ -17,6 +17,10 @@ Si 2 y 3 se cumplen a la vez, la acción es rotate+block.
 
 Enviar un secreto a un host de sus allowed_hosts no es fuga: lo que el motor de bits contó
 para ese secreto en esa llamada se descarta.
+
+Decision.leak[s] = {bits: confirmadas + candidatas, fraction: bits / H(s)}, con los valores de
+antes de rotar. El bloqueo determinista (regla 1) mira solo las confirmadas.
+Con enforce=False (make_measure_only) se mide todo igual pero la acción es siempre allow y no se rota.
 """
 
 from __future__ import annotations
@@ -61,8 +65,9 @@ def _dest_host(call: ToolCall, files: set[str]) -> str | None:
 class Detector:
     def __init__(self, workspace: str = "demo/repo", manifest_path: str = "demo/secrets_manifest.json",
                  model: FeatureModel | None = None, params: Params = Params(),
-                 rotate: Callable[[str], str] | None = None, seed: int = 0):
+                 rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True):
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        self.enforce = enforce
         self.params = params
         self.model = model
         self._rotate_fn = rotate
@@ -112,7 +117,12 @@ class Detector:
             for sid in self._file_to_secrets.get(r, ()):
                 self.exposed[sid] = True
 
-        leak = {sid: Leak(bits=v["bits"], fraction=min(1.0, v["fraction"])) for sid, v in bits.items()}
+        # leak = confirmadas + candidatas (lo mismo que compara la regla de rotación), antes de rotar.
+        leak = {}
+        for sid, v in bits.items():
+            total = v["bits"] + v["candidate_bits"]
+            H = self.bits.H(sid)
+            leak[sid] = Leak(bits=total, fraction=min(1.0, total / H) if H else 0.0)
         path = list(dag_info.get("path") or [])
         R_plus = 1.0 if path else 0.0
 
@@ -156,8 +166,13 @@ class Detector:
             else:
                 action = "allow"
 
-        for sid in to_rotate:
-            self._do_rotate(sid)
+        reason = "; ".join(reasons) if reasons else "Sin evidencia ni fuga"
+        if self.enforce:
+            for sid in to_rotate:
+                self._do_rotate(sid)
+        else:
+            reason = f"Solo medición: {action} — {reason}"
+            action = "allow"
 
         if call.output is not None:
             self.dag.set_output(call.id, call.output)
@@ -165,7 +180,7 @@ class Detector:
 
         return Decision(
             action=action, S=S, R_plus=R_plus, leak=leak, path=path,
-            reason="; ".join(reasons) if reasons else "Sin evidencia ni fuga",
+            reason=reason,
             latency_ms=(time.perf_counter() - t0) * 1000,
         )
 
@@ -194,3 +209,8 @@ class Detector:
 def make_decide() -> Callable[[ToolCall], Decision]:
     """Fábrica para el arnés: python -m eval.replay --decide engine.detector:make_decide"""
     return Detector().decide
+
+
+def make_measure_only() -> Callable[[ToolCall], Decision]:
+    """Mide igual que el detector pero nunca bloquea ni rota (panel «sin protección»)."""
+    return Detector(enforce=False).decide
