@@ -448,7 +448,7 @@ def generate(split: str, n: int, seed: int, out: Path) -> dict[str, Any]:
         value, seq = build_attack(i, fam, a4_local, split, seed, demo_val)
         sid = f"{split}-{seed}-{i:04d}"
         lines, labels = renumber(seq, sid)
-        (sessions_dir / f"{sid}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (sessions_dir / f"{sid}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         all_labels += labels
         secrets.append({"session_id": sid, "secret_id": SECRET_ID, "value": value})
 
@@ -460,18 +460,18 @@ def generate(split: str, n: int, seed: int, out: Path) -> dict[str, Any]:
         value, seq = build_benign(i, fam, split, seed, demo_val)
         sid = f"{split}-{seed}-{i:04d}"
         lines, _ = renumber(seq, sid)
-        (sessions_dir / f"{sid}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (sessions_dir / f"{sid}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         secrets.append({"session_id": sid, "secret_id": SECRET_ID, "value": value})
 
     labels_path = out / "labels.jsonl"
     labels_path.write_text(
         "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in all_labels),
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
 
     secrets_path = out / "secrets.jsonl"
     secrets_path.write_text(
         "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in secrets),
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
 
     # manifest.json con sha256 de cada archivo generado.
     hashes = {}
@@ -488,7 +488,7 @@ def generate(split: str, n: int, seed: int, out: Path) -> dict[str, Any]:
     }
     (out / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
 
     write_readme(out, split, seed, n, len(benign_plan))
     return manifest
@@ -539,7 +539,7 @@ def write_readme(out: Path, split: str, seed: int, n: int, n_benign: int) -> Non
         "- `manifest.json`: semilla, reparto y sha256 de cada archivo.",
         "",
     ]
-    (out / "README.md").write_text("\n".join(lines), encoding="utf-8")
+    (out / "README.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def main(argv=None):
