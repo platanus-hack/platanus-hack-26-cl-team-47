@@ -524,3 +524,14 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
 .split-page .side-title { font-size: 20px; }
 .home-brand { display: flex; align-items: center; gap: 18px; }
 .home-logo { height: clamp(72px, 9vw, 120px); width: auto; border-radius: 14px; }
+
+/* Demo del enjambre (15k): pastilla por agente y subtítulo */
+.swarm-sub { font-weight: 600; }
+.swarm-sub::before { content: " · "; font-weight: 400; }
+.agent { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 9px; font-size: 11px;
+  line-height: 16px; font-weight: 600; color: #fff; background: #777; }
+.agent-a1 { background: #4e79a7; }
+.agent-a2 { background: #f28e2b; }
+.agent-a3 { background: #59a14f; }
+.agent-a4 { background: #b07aa1; }
+.agent-a5 { background: #e15759; }
