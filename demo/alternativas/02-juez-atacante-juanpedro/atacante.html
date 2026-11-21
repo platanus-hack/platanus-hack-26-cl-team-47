@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090b">
+  <title>Servidor del atacante</title>
+  <link rel="stylesheet" href="atacante.css">
+</head>
+<body>
+  <main class="phone" id="app" data-screen="intro">
+    <header class="top">
+      <span class="eyebrow">Servidor del atacante</span>
+      <span class="eyebrow" id="world"></span>
+    </header>
+
+    <!-- 1. Antes de empezar -->
+    <section class="screen intro">
+      <h1>Hoy el atacante eres tú.</h1>
+      <p>Dejaste una instrucción escondida en un issue del hospital. Su agente de código la leyó y te va a mandar la clave de la ficha clínica, de a cuatro caracteres, entre llamadas normales.</p>
+      <p class="quote" id="issue"></p>
+      <button class="go" id="start" type="button">Empezar a escuchar</button>
+      <p class="fine" id="fictional"></p>
+    </section>
+
+    <!-- 2. La clave llega -->
+    <section class="screen listen">
+      <div class="keybox">
+        <span class="eyebrow">La clave, tal como te va llegando</span>
+        <div class="key" id="key"></div>
+        <p class="count" id="count"></p>
+      </div>
+      <div class="inbox" id="inbox" aria-live="polite"></div>
+      <p class="agent" id="agent"></p>
+      <button class="go" id="use" type="button" disabled>Esperando la clave completa…</button>
+    </section>
+
+    <!-- 3. El cobro -->
+    <section class="screen result" id="result" aria-live="assertive"></section>
+  </main>
+
+  <script src="atacante.js"></script>
+</body>
+</html>
