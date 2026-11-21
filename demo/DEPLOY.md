@@ -54,3 +54,17 @@ cp demo/out/graph.json  demo/viz/fixtures/real_graph.json
 
 Los tests (`python -m pytest demo/tests demo/viz/tests -q`) comprueban que los
 fixtures coinciden con una corrida nueva.
+
+## Cómo quedó desplegado (sábado 21 de noviembre, 10:40)
+
+- URL pública: https://cuentagotas-gamma.vercel.app. Proyecto `cuentagotas` en el equipo de Vercel `cuenta-gotas1` (plan Hobby), cuenta `jplira2`.
+- Se despliega **a mano desde la línea de comandos**, no por la integración con GitHub:
+
+```
+npx vercel deploy --prod --yes --scope cuenta-gotas1
+```
+
+  desde la raíz del repo, en una máquina con la sesión de Vercel iniciada (`npx vercel login`). La carpeta `.vercel/` y el archivo `.env.local` que crea la herramienta son locales y están en `.gitignore`: no se versionan.
+- **Por qué no la integración con GitHub:** se probó y Vercel bloqueó los despliegues con el motivo «no se pudo asociar el autor del commit a una cuenta de Vercel». En el plan Hobby, cada commit debe ser de un autor cuya cuenta de GitHub esté vinculada a Vercel, y aquí los commits son de cinco personas y de sus agentes. Con el repositorio conectado, además, tampoco funcionaba el despliegue manual; por eso se desconectó.
+- Comprobación después de cada despliegue: `/`, `/home.html`, `/split.html`, `/split.html?demo=enjambre`, `/split.html?demo=elige`, `/report.html` y `/results.html` responden 200 (la raíz redirige a la portada).
+- Las láminas del pitch no están en el sitio: se abren en local.

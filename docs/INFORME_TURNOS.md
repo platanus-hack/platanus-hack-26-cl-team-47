@@ -37,7 +37,7 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 **En curso ahora:** nada técnico. No queda ninguna tarea abierta: el pitch ya tiene las cifras, está armado para 3 minutos con corte, y hay página de resultados en el sitio. Lo que falta depende de personas (ver más abajo).
 
 **Dónde verlo:**
-- **Demo en línea:** https://cuentagotas-gamma.vercel.app (portada, tres demos, informe de incidente y resultados). Se vuelve a desplegar sola con cada push a `main` del espejo.
+- **Demo en línea:** https://cuentagotas-gamma.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
 - Demo en local: `python -m http.server 8200 --directory demo/viz` y abrir `http://127.0.0.1:8200/`.
 - Láminas: `pitch/index.html`. Guion: `pitch/GUION.md`. Preguntas del jurado: `pitch/PREGUNTAS.md`.
 - Descripción pública: `project-description.md`.
