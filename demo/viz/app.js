@@ -111,7 +111,9 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
   function load(text) {
     stop();
     state.frames = buildFrames(parseJsonl(text));
-    state.secrets = secretIds(state.frames);
+    // Solo los secretos que alguna vez tienen bits (el detector reporta todos, casi siempre en 0).
+    const withBits = secretIds(state.frames).filter((sid) => state.frames.some((f) => bitsAt(f, sid) > 0));
+    state.secrets = withBits.length ? withBits : secretIds(state.frames);
     state.idx = state.frames.length ? 0 : -1;
     renderList();
     render();
@@ -329,7 +331,9 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
   window.addEventListener("resize", () => renderCharts());
 
   const params = new URLSearchParams(location.search);
-  const log = params.get("log");
+  // Sin ?log=, el registro real del panel derecho (para el sitio estático).
+  const DEFAULT_LOG = "fixtures/real_right.jsonl";
+  const log = params.get("log") || DEFAULT_LOG;
   if (log) loadUrl(log);
   if (params.get("t")) {
     // ?t=N salta a la llamada N una vez cargado (útil para capturas).
