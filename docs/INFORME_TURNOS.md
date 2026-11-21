@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 10:15 (hora 11,25 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 11:00 (hora 12 de 34).
 
 **El proyecto.** Cuentagotas es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -34,9 +34,7 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 - **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
 - **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
-**En curso ahora:**
-- #151 (Victoria): las cifras en la lámina de resultados y una página de resultados en el sitio.
-- La configuración quedó congelada (etiqueta `congelamiento`) y el set de prueba ya se abrió: el detector no cambia más.
+**En curso ahora:** nada técnico. No queda ninguna tarea abierta: el pitch ya tiene las cifras, está armado para 3 minutos con corte, y hay página de resultados en el sitio. Lo que falta depende de personas (ver más abajo).
 
 **Dónde verlo:**
 - Demo en local: `python -m http.server 8200 --directory demo/viz` y abrir `http://127.0.0.1:8200/`.
@@ -47,8 +45,8 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | Sin tarea abierta. Es el único que toca el detector y la evaluación |
-| Victoria (`VictoriaGuerriero`) | Activa | #142: pitch para 3 minutos con corte. #151: cifras finales en el pitch y página de resultados. #138: enjambre en vivo y guía de inicio |
+| José Carlos (`JCBasulto`) | Activo | Sin tarea abierta. Es el único agente del equipo que sigue respondiendo |
+| Victoria (`VictoriaGuerriero`) | Sin señales desde las 09:05 | Sus tareas pasaron a José Carlos. Falta confirmar con ella si sigue disponible |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
 | Matías (`matix3000`) | Sin tokens | No recibe tareas |
 | Juan Pedro (`jplira2`), líder | Activo | Corre el orquestador y la sesión del equipo rojo |
@@ -73,7 +71,7 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 - **No decir:** que nadie junta fragmentos entre llamadas (existen Pipelock y AgentBrake), que somos los primeros, ni que detectamos esteganografía.
 - **Qué es real y qué es simulado:** el proxy, el motor, el gestor de secretos y el servidor del atacante son reales y corren en local. Las claves son sintéticas, el hospital es ficticio y el agente de la demo es un guion, no un LLM.
 - **La demo y la evaluación usan configuraciones distintas.** La demo rota cuando se filtró el 30 % de la clave y corre sin el modelo de evidencia. La evaluación usa la configuración congelada.
-- **El enjambre** funciona en la demo y en los tests. Conectarlo al proxy en vivo es la tarea #138, en curso.
+- **El enjambre** funciona en la demo, en los tests y también en vivo: dos agentes en procesos distintos comparten la cuenta por un archivo (`LEDGER_PATH`). Límite: un archivo local, no varias máquinas. Cómo conectarlo a un agente real: `docs/QUICKSTART.md`.
 - **Agenda del domingo sin confirmar:** planificar con el cierre más temprano (08:30).
 
 ## Reglas de trabajo vigentes
@@ -125,5 +123,12 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 - Se reajustó el modelo solo con la parte de entrenamiento del tráfico benigno y se repitió la búsqueda de umbrales con las rotaciones bien contadas. Esa configuración quedó congelada.
 - Se abrió el set sellado (el sello coincidió) y se corrió la evaluación final: 180 de 180 ataques prevenidos, 0 llamadas benignas bloqueadas.
 - Quedó listo el comando para correr un LLM real a través del proxy; falta la clave.
+
+**09:55 a 11:00. Lo que faltaba.**
+- Atacante que se adapta a la rotación, medido aparte: 180 de 180 no pasan de 96 bits; lo frena llegando al tope de tres rotaciones y bloqueando las salidas.
+- Cifras finales en el pitch y página de resultados en el sitio (`demo/viz/results.html`). Pitch rearmado en cinco bloques y 300 palabras, con láminas de respaldo.
+- Enjambre en vivo entre procesos y guía de inicio (`docs/QUICKSTART.md`).
+- Investigación con experimentos: el acoplamiento del grafo de archivos con el de llamadas no aporta nada medible a las decisiones; se deja sin conectar y se dice. La demo se queda con su configuración propia, porque con la evaluada rota en el primer fragmento y se pierde lo que muestra.
+- Victoria dejó de responder cerca de las 09:05; sus tareas las tomó José Carlos.
 
 **Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas; el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.
