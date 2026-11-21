@@ -31,3 +31,6 @@ demo/out/
 .vercel
 .env.local
 .env*.local
+
+# Copia de las láminas que hace el build de Vercel (vercel.json); no se versiona
+demo/viz/pitch/

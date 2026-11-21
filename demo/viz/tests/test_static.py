@@ -50,4 +50,5 @@ def test_vercel_json():
     cfg = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     assert cfg["outputDirectory"] == "demo/viz"
     assert {"source": "/", "destination": "/home.html", "permanent": False} in cfg["redirects"]
-    assert not cfg.get("buildCommand")
+    # El único paso de build copia las láminas al sitio (tarea 15n; detalle en test_legible.py).
+    assert cfg["buildCommand"].startswith("mkdir -p demo/viz/pitch && cp pitch/")
