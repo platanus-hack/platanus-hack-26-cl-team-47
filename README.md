@@ -78,6 +78,7 @@ Cada afirmación del proyecto, con el archivo que la sostiene y un comando que l
 | Si el gestor de secretos no responde, se bloquean las salidas | `proxy/live.py` (`fail_safe`) | `python -m pytest proxy/tests -q` |
 | Los ataques de prueba se sellaron con hash antes de evaluar | `redteam/SELLO.md` | El comando de verificación está en ese archivo |
 | Quien escribió los ataques no vio el detector | `docs/PLAN.md` («Equipo morado»), `docs/BITACORA_DETECTOR.md` | Cada cambio al detector está anotado con hora y motivo |
+| Los ataques son un benchmark que cualquiera puede correr contra su propia defensa | [`redteam/README.md`](redteam/README.md), `eval/bench.py` | `python -m eval.bench --defense eval.baselines.example_defense:make_decide --set val --out /tmp/x` |
 
 ### De dónde sale cada umbral
 
