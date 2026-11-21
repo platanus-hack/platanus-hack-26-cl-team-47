@@ -8,9 +8,9 @@ Pasos (iguales para val y test):
      cálculo que eval.search) y todas las de redteam/<split>/sessions, con sus labels y secrets.
   b. Unidades: las sesiones cuyas etiquetas traen el mismo `group` forman una unidad (comparten secreto);
      el resto son unidades de una sesión. Dentro de una unidad se reproducen en orden de session_id.
-  c. Ocho sistemas, cada uno escribe events_<sistema>.jsonl (no se versionan):
+  c. Nueve sistemas, cada uno escribe events_<sistema>.jsonl (no se versionan):
      ours (congelado, un SharedLedger por unidad), no_rotation (ours con rotation_enabled=False),
-     per_session (congelado sin ledger) y las líneas de base allowlist, detect_secrets, combined, budget
+     per_session (congelado sin ledger), no_evidence (ours sin modelo de evidencia) y las líneas de base allowlist, detect_secrets, combined, budget
      y reassembly (réplica simplificada del reensamblado por sesión).
   d. Métrica por unidad: merge_units funde cada unidad en una sesión lógica antes de session_summary.
   e. summary_<sistema>.json y la tabla de eval.final (T1–T4 con Holm; T5 y T6 «no calculado»).
@@ -42,16 +42,18 @@ from eval.replay.core import load_sessions, replay, write_events
 from eval.search.__main__ import _read_jsonl, assign_families
 from eval.search.split import split_sessions
 
-SYSTEMS = ("ours", "no_rotation", "per_session", "allowlist", "detect_secrets", "combined", "budget", "reassembly")
+SYSTEMS = ("ours", "no_rotation", "per_session", "no_evidence", "allowlist", "detect_secrets", "combined", "budget", "reassembly")
 MANIFEST = "demo/secrets_manifest.json"
 SEED = 0
 # Sistemas basados en nuestro detector: se reproducen con emit_rotations=True (rotaciones exactas, #133).
-DETECTOR_SYSTEMS = ("ours", "no_rotation", "per_session")
+DETECTOR_SYSTEMS = ("ours", "no_rotation", "per_session", "no_evidence")
+LEDGER_SYSTEMS = ("ours", "no_rotation", "no_evidence")   # un SharedLedger por unidad
 # Una línea por sistema para systems.md.
 DESCRIPTIONS = {
     "ours": "Cuentagotas congelado; por unidad, un SharedLedger con el manifiesto completo y los secretos de la "
             "unidad, y un detector por sesión (la cuenta es por clave, compartida entre sesiones).",
     "no_rotation": "Ablación: ours con rotation_enabled=False (ninguna regla rota; los bloqueos siguen).",
+    "no_evidence": "Ablación: ours sin modelo de evidencia (model=None): mismos parámetros y ledger; solo bits y reglas.",
     "per_session": "Ablación del enjambre: el detector congelado sin ledger, una cuenta por sesión.",
     "allowlist": "Línea de base: egress solo a dominios aprobados.",
     "detect_secrets": "Línea de base: regex y entropía sobre los argumentos de cada sumidero.",
@@ -108,14 +110,15 @@ def run_system(name: str, units: list[tuple[str, list[list]]], secrets: dict[str
     emit = name in DETECTOR_SYSTEMS
     events: list = []
     for _, sess in units:
-        if name in ("ours", "no_rotation"):
+        if name in LEDGER_SYSTEMS:
             unit_secrets: dict[str, str] = {}
             for s in sess:
                 unit_secrets.update(secrets.get(s[0].session_id, {}))
             # Manifiesto completo (con sus allowed_hosts) y encima los secretos de la unidad: lo mismo que ve
             # Detector(secrets=sec) sin ledger, y lo que vio la búsqueda (#133, problema C).
             ledger = SharedLedger({**values, **unit_secrets}, allowed_hosts=allowed)
-            kw: dict[str, Any] = {} if name == "ours" else {"rotation_enabled": False}
+            kw: dict[str, Any] = {"ours": {}, "no_rotation": {"rotation_enabled": False},
+                                  "no_evidence": {"model": None}}[name]
             events += replay(sess, lambda ledger=ledger, kw=kw: frozen(ledger=ledger, seed=SEED, **kw).decide,
                              emit_rotations=True)
             continue

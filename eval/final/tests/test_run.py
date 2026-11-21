@@ -297,3 +297,19 @@ def test_en_validacion_ours_y_per_session_deciden_igual_en_todas_las_sesiones(fr
     ours = R.run_system("ours", units, secrets, frozen)
     per = R.run_system("per_session", units, secrets, frozen)
     assert comparable(ours) == comparable(per)
+
+
+def test_no_evidence_es_ours_sin_modelo(frozen, monkeypatch):
+    seen = []
+    real = frozen
+
+    def spy(**kw):
+        d = real(**kw)
+        seen.append((d.model, d.params, d.ledger is not None))
+        return d
+
+    spy.params, spy.model, spy.frozen = real.params, real.model, real.frozen
+    calls, labels = sender("d-1", range(3), read_env=True)
+    evs = R.run_system("no_evidence", R.make_units([calls], labels), secrets_for("d-1"), spy)
+    assert seen and all(m is None and p == real.params and has_ledger for m, p, has_ledger in seen)
+    assert sum(1 for e in evs if e.kind == "decision") == len(calls)

@@ -26,6 +26,7 @@ Configuración congelada: el `models/search/frozen.json` que haya en `main` (lo 
 | `ours` | Detector congelado. Por unidad, un `SharedLedger` nuevo con el **manifiesto completo** (y sus `allowed_hosts`) y encima los secretos de la unidad, y un detector por sesión: la cuenta es por clave, compartida entre las sesiones de la unidad. |
 | `no_rotation` | `ours` con `rotation_enabled=False`: ninguna regla rota (tampoco la regla 1, que al bloquear rotaba la clave); los bloqueos siguen activos. |
 | `per_session` | Detector congelado sin ledger: una cuenta por sesión (ablación del enjambre). |
+| `no_evidence` | `ours` sin modelo de evidencia (`model=None`): mismos parámetros y ledger; solo el motor de bits y las reglas. Ablación que se muestra aunque prevenga lo mismo o más. |
 | `allowlist`, `detect_secrets`, `combined`, `budget` | Líneas de base de `eval/baselines`, un decide nuevo por sesión. `budget` recibe los secretos del manifiesto con los de la sesión. |
 | `reassembly` | Réplica simplificada del reensamblado por sesión del estado del arte (inspirada en Pipelock y AgentBrake; no es su código ni su producto): junta lo que sale por cada campo, sin decodificar, y bloquea con 16 caracteres seguidos del secreto. Un decide nuevo por sesión. |
 
@@ -39,4 +40,4 @@ Con `--split test`, si `results/test/RUN.json` existe el comando se niega (códi
 
 ## Rotaciones exactas
 
-Los sistemas basados en nuestro detector (`ours`, `no_rotation`, `per_session`) se reproducen con `eval.replay.replay(..., emit_rotations=True)`: cada rotación queda como evento `rotation` y la métrica no la infiere por la caída de `leak` (que perdía las rotaciones periódicas y por evidencia). `eval.search` cuenta igual.
+Los sistemas basados en nuestro detector (`ours`, `no_rotation`, `per_session`, `no_evidence`) se reproducen con `eval.replay.replay(..., emit_rotations=True)`: cada rotación queda como evento `rotation` y la métrica no la infiere por la caída de `leak` (que perdía las rotaciones periódicas y por evidencia). `eval.search` cuenta igual.
