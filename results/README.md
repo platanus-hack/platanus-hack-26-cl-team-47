@@ -7,7 +7,7 @@ python -m eval.final.run --split val  --out results/val     # validación: se pu
 python -m eval.final.run --split test --out results/test    # prueba (set sellado): lo corre el orquestador UNA vez
 ```
 
-Configuración congelada: `models/search/frozen.json` (hash `42cfa5e4610ae99b0d5af2f0a2bbf1800f7cfe87414ff46a0302400227e0432b`; `b 4`, `b_rot 5`, `lambda_rot 0.1`, `T 75`) con `models/model.json`. `engine.detector.make_frozen()` comprueba el sha256 del modelo contra `frozen.json` antes de correr.
+Configuración congelada: el `models/search/frozen.json` que haya en `main` (lo deja el orquestador tras reajustar el modelo solo con la parte de entrenamiento y repetir la búsqueda) con `models/model.json`; `RUN.json` registra su `hash` y sus `params`. `engine.detector.make_frozen()` comprueba el sha256 del modelo contra `frozen.json` antes de correr.
 
 ## Qué hay en cada carpeta
 
@@ -23,8 +23,8 @@ Configuración congelada: `models/search/frozen.json` (hash `42cfa5e4610ae99b0d5
 
 | Sistema | Qué es |
 |---|---|
-| `ours` | Detector congelado. Por unidad, un `SharedLedger` nuevo con los secretos de la unidad y un detector por sesión: la cuenta es por clave, compartida entre las sesiones de la unidad. |
-| `no_rotation` | `ours` con las reglas de rotación de la regla 2 apagadas (`b_rot=1e9`, `lambda_rot=2`, `T=10⁹`, `check_params=False`); mismos `b` y modelo. Los bloqueos siguen activos. El bloqueo determinista (regla 1) rota la clave al bloquear, porque el motor une las dos cosas: esas rotaciones siguen. |
+| `ours` | Detector congelado. Por unidad, un `SharedLedger` nuevo con el **manifiesto completo** (y sus `allowed_hosts`) y encima los secretos de la unidad, y un detector por sesión: la cuenta es por clave, compartida entre las sesiones de la unidad. |
+| `no_rotation` | `ours` con `rotation_enabled=False`: ninguna regla rota (tampoco la regla 1, que al bloquear rotaba la clave); los bloqueos siguen activos. |
 | `per_session` | Detector congelado sin ledger: una cuenta por sesión (ablación del enjambre). |
 | `allowlist`, `detect_secrets`, `combined`, `budget` | Líneas de base de `eval/baselines`, un decide nuevo por sesión. `budget` recibe los secretos del manifiesto con los de la sesión. |
 | `reassembly` | Réplica simplificada del reensamblado por sesión del estado del arte (inspirada en Pipelock y AgentBrake; no es su código ni su producto): junta lo que sale por cada campo, sin decodificar, y bloquea con 16 caracteres seguidos del secreto. Un decide nuevo por sesión. |
@@ -36,3 +36,7 @@ Las sesiones cuyas etiquetas traen el mismo `group` forman una **unidad** (un at
 ## Una sola corrida sobre prueba
 
 Con `--split test`, si `results/test/RUN.json` existe el comando se niega (código de salida 2) y no hay opción para forzarlo. Como `RUN.json` se escribe al empezar, una corrida interrumpida tampoco se repite sin borrar el archivo a mano, a sabiendas.
+
+## Rotaciones exactas
+
+Los sistemas basados en nuestro detector (`ours`, `no_rotation`, `per_session`) se reproducen con `eval.replay.replay(..., emit_rotations=True)`: cada rotación queda como evento `rotation` y la métrica no la infiere por la caída de `leak` (que perdía las rotaciones periódicas y por evidencia). `eval.search` cuenta igual.
