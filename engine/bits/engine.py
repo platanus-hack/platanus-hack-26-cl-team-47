@@ -137,6 +137,27 @@ class BitsEngine:
         """Reinicia lo filtrado de ese secreto: el valor nuevo no ha salido."""
         self._s[secret_id].reset(new_value)
 
+    def export_state(self) -> dict:
+        """Posiciones filtradas por secreto y reloj, sin valores: se puede guardar en disco (#114)."""
+        return {
+            "step": self._step,
+            "secrets": {
+                sid: {"K": sorted(st.K), "cand": sorted(st.cand), "last_new": st.last_new}
+                for sid, st in self._s.items()
+            },
+        }
+
+    def import_state(self, state: dict) -> None:
+        """Restaura lo de export_state(). Ignora los secretos que este motor no conoce."""
+        self._step = int(state.get("step", 0))
+        for sid, s in (state.get("secrets") or {}).items():
+            st = self._s.get(sid)
+            if st is None:
+                continue
+            st.K = {int(p) for p in s.get("K", [])}
+            st.cand = {int(p) for p in s.get("cand", [])}
+            st.last_new = int(s.get("last_new", 0))
+
     def observe(self, call: Any) -> dict[str, dict]:
         self._step += 1
         found_conf: dict[str, set[int]] = {sid: set() for sid in self._s}
