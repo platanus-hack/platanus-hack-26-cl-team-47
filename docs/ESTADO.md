@@ -1,14 +1,14 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 13:45 (H14,75). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 14:10 (H15,2). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
-**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #167 (evaluación con las banderas del proxy), #168 (legibilidad de la demo y láminas en el sitio) y #169 (hook de Claude Code).
+**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #167 (evaluación con las banderas del proxy), #169 (hook de Claude Code), #173 (grabador del video de respaldo) y #172 (pitch: apertura, usuario y precedente). La #168 (legibilidad de la demo y láminas en el sitio) ya está en `main` y desplegada.
 
 ## Qué hay en `main`
 
-- Más de 700 tests en verde (`python -m pytest -q`).
+- 749 tests en verde y uno en rojo: `demo/tests/test_record.py::test_graba_goteo` falla según el ffmpeg y la consola de cada máquina (lo arregla #173). No es un defecto del producto.
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Pitch con cifras: `pitch/`. Guía para conectar el proxy a un agente real: `docs/QUICKSTART.md`.
