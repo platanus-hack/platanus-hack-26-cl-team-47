@@ -18,7 +18,7 @@ Track: 🛡️ AI Security
 
 Un proxy entre un agente de IA y sus herramientas. En cada llamada mide cuántos bits de cada clave ya salieron hacia afuera, aunque salgan de a pocos caracteres o codificados, y rota la clave en el gestor de secretos antes de que la fuga se complete. No modifica el agente y no usa un LLM para decidir.
 
-La descripción completa está en [project-description.md](project-description.md).
+La descripción completa está en [project-description.md](project-description.md). El estado del trabajo, turno a turno, está en [docs/INFORME_TURNOS.md](docs/INFORME_TURNOS.md).
 
 ## Verlo funcionar
 
