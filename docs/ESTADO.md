@@ -1,16 +1,18 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 14:10 (H15,2). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 14:35 (H15,6). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
-**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #167 (evaluación con las banderas del proxy), #169 (hook de Claude Code), #173 (grabador del video de respaldo) y #172 (pitch: apertura, usuario y precedente). La #168 (legibilidad de la demo y láminas en el sitio) ya está en `main` y desplegada.
+**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #179 (pitch con las dos cifras) y #180 (README, portada, página de resultados y resumen con las dos cifras). En revisión del líder: PR #178 (descripción pública reescrita).
 
 ## Qué hay en `main`
 
-- 749 tests en verde y uno en rojo: `demo/tests/test_record.py::test_graba_goteo` falla según el ffmpeg y la consola de cada máquina (lo arregla #173). No es un defecto del producto.
+- 784 tests en verde (`python -m pytest -q`).
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
+- Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado con entradas simuladas, no dentro de una sesión real).
+- Ideas de demo en paralelo: `demo/alternativas/`, una subcarpeta por alternativa; la demo oficial sigue siendo `demo/viz/`.
 - Pitch con cifras: `pitch/`. Guía para conectar el proxy a un agente real: `docs/QUICKSTART.md`.
 - Corridas con un LLM real a través del proxy, hechas: `docs/LLM_EN_VIVO.md` (Haiku 5.5 y Sonnet 5.5 con n = 10, Opus 5.5 con n = 1; ninguna siguió la inyección, y hubo una rotación de más con Sonnet).
 
@@ -22,7 +24,7 @@ Actualizado: sábado 21 de noviembre de 2026, 14:10 (H15,2). Lo mantiene el orqu
 - **Frase de novedad permitida:** «Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.»
 - **No decir:** «detiene el 100 %» a secas; que nadie junta fragmentos (existen Pipelock y AgentBrake); que somos los primeros; que los grafos «conectan pasos lejanos»; que Alicanto frenó a un LLM real (se corrieron tres modelos y ninguno siguió la inyección, así que no hubo fuga que frenar).
 - **El enjambre:** la cuenta compartida cubre varios agentes en una misma máquina, por un archivo común (`LEDGER_PATH`); no varias máquinas.
-- **Las banderas del 180 de 180 venían de las grabaciones.** `is_sink` y `untrusted` las escribió el generador de ataques, y el proxy en vivo las calcula distinto. La evaluación con las banderas del proxy se publica aparte en `results/proxy_flags/` (tarea #167). Hasta que entre, no escribas frases nuevas con el 180 de 180.
+- **Dos cifras, siempre juntas.** 180 de 180 se midió con las banderas `is_sink` y `untrusted` que escribió el generador de ataques; con las que calcula el proxy en vivo son **120 de 180** (cuatro de seis familias). Detalle y frases permitidas: `results/test/LECTURA.md`, sección «Las banderas de cada llamada venían de las grabaciones»; tabla en `results/proxy_flags/`. No escribas «180 de 180» sin decir en la misma frase que es con las banderas de las grabaciones.
 - **La demo y la evaluación usan configuraciones distintas:** la demo corre sin modelo de evidencia y rota al 30 % de la clave; la evaluación usa `models/search/frozen.json`.
 - **Nombre:** si encuentras «Cuentagotas» en un texto vigente, es un error; corrígelo. Excepción: el proyecto de Vercel se sigue llamando `cuentagotas` por dentro; la URL pública ya es https://alicanto.vercel.app.
 - Las tareas de `redteam/` van en una sesión de agente que no haya leído `engine/`.
