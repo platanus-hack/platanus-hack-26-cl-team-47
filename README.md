@@ -18,6 +18,8 @@ En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el 
 
 **Demo en línea:** https://alicanto.vercel.app · [resultados y sus límites](https://alicanto.vercel.app/results.html)
 
+**Evaluación:** con las banderas que calcula el proxy en vivo, 120 de 180 ataques grabados: cuatro de las seis familias; las dos que no se cubren son la clave enviada a su propio destino permitido y la fuga por commits de git. Cero llamadas benignas bloqueadas en 5.879, con las banderas del generador y con las del proxy. Cómo leer las cifras: [results/test/LECTURA.md](results/test/LECTURA.md).
+
 ## Qué es
 
 Un proxy entre un agente de IA y sus herramientas. En cada llamada mide cuántos bits de cada clave ya salieron hacia afuera, aunque salgan de a pocos caracteres o codificados, y rota la clave en el gestor de secretos antes de que la fuga se complete. No modifica el agente y no usa un LLM para decidir.
@@ -63,6 +65,8 @@ python -m pytest -q
 
 **Conectarlo a tu agente de código** (servidor MCP, con la cuenta compartida entre agentes): [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
+**Como hook de Claude Code** (cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, sin cambiar las herramientas del agente): [integrations/claude_code/README.md](integrations/claude_code/README.md). Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y no se probó dentro de una sesión real de Claude Code.
+
 ## Para quien evalúa (y para su agente)
 
 Cada afirmación del proyecto, con el archivo que la sostiene y un comando que la comprueba en menos de un minuto. Todo corre en local, sin claves ni servicios externos.
@@ -76,6 +80,7 @@ Cada afirmación del proyecto, con el archivo que la sostiene y un comando que l
 | Una sola cuenta por clave para varios agentes | `engine/detector/ledger.py` | `python demo/run_split.py --swarm --out-dir demo/out` y `python -m pytest engine/detector/tests/test_ledger.py -q` |
 | Ningún LLM decide | `engine/` no importa ningún cliente de modelos | `grep -rn "anthropic\|openai" engine/` no devuelve nada |
 | Si el gestor de secretos no responde, se bloquean las salidas | `proxy/live.py` (`fail_safe`) | `python -m pytest proxy/tests -q` |
+| La cifra con las banderas que calcula el proxy | `results/proxy_flags/systems.md`, `results/test/LECTURA.md` | `python -m eval.final.proxy_flags --out /tmp/pf` |
 | Los ataques de prueba se sellaron con hash antes de evaluar | `redteam/SELLO.md` | El comando de verificación está en ese archivo |
 | Quien escribió los ataques no vio el detector | `docs/PLAN.md` («Equipo morado»), `docs/BITACORA_DETECTOR.md` | Cada cambio al detector está anotado con hora y motivo |
 | Los ataques son un benchmark que cualquiera puede correr contra su propia defensa | [`redteam/README.md`](redteam/README.md), `eval/bench.py` | `python -m eval.bench --defense eval.baselines.example_defense:make_decide --set val --out /tmp/x` |

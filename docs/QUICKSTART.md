@@ -84,3 +84,9 @@ Los registros quedan en `logs/`: `proxy.jsonl` (cada llamada y su decisión), `a
 - **La cuenta compartida es un archivo local.** Sirve para varios agentes en la misma máquina (con un cerrojo de archivo); no coordina varias máquinas.
 - **Si el cerrojo o el gestor no responden, falla cerrado:** bloquea las salidas hasta poder decidir con la cuenta.
 - **Es una cota inferior:** una codificación que el motor no sabe leer no se ve por contenido; ahí actúan la evidencia de comportamiento y la rotación periódica. Cómo leer los resultados de la evaluación: `results/test/LECTURA.md`.
+
+## Como hook de Claude Code
+
+Si prefieres no cambiar las herramientas del agente, Alicanto también corre como hook `PreToolUse` de Claude Code: cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, rota la clave en el gestor y, si no puede rotar, niega la llamada. Instalación en tres pasos: [integrations/claude_code/README.md](../integrations/claude_code/README.md).
+
+Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y no se probó dentro de una sesión real de Claude Code.
