@@ -105,3 +105,17 @@ Con `&graph=<archivo>` la pantalla dividida agrega una franja con:
 `python demo/export_graph.py --out demo/out/graph.json` genera el grafo
 (nodos `{id, kind, mu, sd}` y aristas, sin valores de secretos);
 `run_split.py` también lo escribe en `<out-dir>/graph.json`.
+
+## Workspace git real para la demo en vivo (15g)
+
+`demo/repo/` no es un repositorio git, y el proxy aísla `git`. Por eso el agente recibe código 128 si trabaja directo sobre él. Para la demo en vivo se prepara una copia con historial:
+
+```
+python demo/make_workspace.py --out demo/out/workspace [--seed 0]
+AGENT_WORKSPACE=demo/out/workspace PROXY_MODE=live python -m proxy.server
+```
+
+- Copia `demo/repo/` a `--out`. Si la carpeta ya existe, la reemplaza, y nunca borra nada fuera de ella. Se niega a correr si `--out` es `demo/repo`, está dentro de `demo/repo` o la contiene.
+- Hace `git init` (rama `main`) y 6 commits por grupos, con autor `Banco de Pruebas <banco@empresa.test>` y fechas derivadas de la semilla. No usa la configuración git del usuario. Misma semilla, mismos SHA.
+- `.env` y `config/secrets.yaml` quedan en disco para que el agente los lea, pero van al `.gitignore` de la copia y no entran en ningún commit.
+- `demo/out/` está ignorado por el repo del equipo.
