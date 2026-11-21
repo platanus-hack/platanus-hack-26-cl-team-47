@@ -117,6 +117,45 @@ python demo/run_split.py --swarm --out-dir demo/out --fixtures # corre y copia a
 
 Abre `split.html?demo=enjambre` (o el enlace «Ver la demo del enjambre» de la portada).
 
+## Demo interactiva (15l)
+
+El público elige a mano alzada cómo disfraza el atacante cada fragmento y el
+presentador pulsa esa opción (o la tecla `1`, `2`, `3`) en `split.html?demo=elige`
+(enlace «Demo interactiva: el público elige» de la portada). La grabación corre a 4×
+desde el inicio; se puede cambiar de opción en cualquier momento. Sin red ni texto
+del público.
+
+Solo se ofrecen las opciones que dan de verdad 200 a la izquierda (clave completa)
+y 401 con rotación a la derecha. La lista sale de `demo/viz/fixtures/encodings.json`,
+que el comando arma con corridas reales; si una codificación no pasa, no se ofrece y
+se borran sus fixtures.
+
+```bash
+python demo/run_split.py --encoding all --out-dir demo/out        # regenera todo y encodings.json
+python demo/run_split.py --encoding reversed --out-dir demo/out   # una sola (none, base64, reversed)
+```
+
+Sesiones: `demo/sessions/goteo.jsonl` (tal cual), `goteo_base64.jsonl` y
+`goteo_reversed.jsonl`: la misma sesión de 88 llamadas, solo cambia el fragmento.
+Panel derecho con los parámetros fijos de la demo (`SWARM_PARAMS`).
+
+Hoy se ofrecen **Tal cual** y **Al revés** (las dos rotan en la llamada 24 y dan 401).
+**En base64 no se ofrece**: el atacante junta los 160 bits, pero el detector mide 0
+en los fragmentos de 4 caracteres en base64, no rota y la derecha también da 200.
+
+Guion para el presentador (40 segundos):
+
+> «El atacante no es tonto: va a disfrazar los pedazos. Elijan ustedes. Levante la
+> mano quien quiere la clave tal cual… ¿en base64?… ¿al revés?» (Pulsa la opción
+> ganadora.) «Izquierda, sin protección: sube hasta el final y entra, 200. Derecha:
+> el mismo disfraz que eligieron, Cuentagotas cuenta igual, rota aquí, 401. No
+> importa cómo la disfracen: medimos información, no formato.»
+
+Mientras base64 no se ofrezca, pregunta solo por las opciones que aparecen en la
+página (hoy «tal cual» y «al revés») y no digas «no importa cómo la disfracen».
+
+**Plan B:** si algo falla, abrir `split.html` sin parámetros (la demo de siempre).
+
 ## Grafo de archivos y camino de la decisión (15e)
 
 Con `&graph=<archivo>` la pantalla dividida agrega una franja con:

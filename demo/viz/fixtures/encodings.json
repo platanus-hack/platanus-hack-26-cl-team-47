@@ -1,0 +1,15 @@
+[
+  {
+    "id": "none",
+    "label": "Tal cual",
+    "left": "fixtures/real_left.jsonl",
+    "right": "fixtures/real_right.jsonl",
+    "graph": "fixtures/real_graph.json"
+  },
+  {
+    "id": "reversed",
+    "label": "Al revés",
+    "left": "fixtures/enc_reversed_left.jsonl",
+    "right": "fixtures/enc_reversed_right.jsonl"
+  }
+]

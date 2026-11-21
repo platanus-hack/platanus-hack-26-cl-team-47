@@ -81,8 +81,36 @@ const DEMOS = {
   },
 };
 
+/**
+ * Demo interactiva (?demo=elige, tarea 15l): el público elige cómo disfraza el atacante cada
+ * fragmento. Las opciones salen de fixtures/encodings.json, que solo lista las corridas que dan
+ * de verdad 200 a la izquierda y 401 con rotación a la derecha.
+ */
+const CHOOSER = {
+  id: "elige",
+  index: "fixtures/encodings.json",
+  question: "¿Cómo disfraza el atacante cada fragmento?",
+  empty: "Elijan una opción",
+  speed: 4,
+};
+
+/** Función pura: texto de ayuda de las teclas para n opciones ("Teclas 1 y 2 · espacio pausa"). */
+function keysHint(n) {
+  const keys = Array.from({ length: Math.min(n, 9) }, (_, i) => String(i + 1));
+  if (!keys.length) return "";
+  const list = keys.length === 1 ? keys[0] : `${keys.slice(0, -1).join(", ")} y ${keys[keys.length - 1]}`;
+  return `${keys.length === 1 ? "Tecla" : "Teclas"} ${list} · espacio pausa`;
+}
+
+/** Función pura: índice de la opción que elige una tecla ("1" -> 0), o null si no hay opción. */
+function choiceForKey(key, options) {
+  if (!/^[1-9]$/.test(String(key))) return null;
+  const i = Number(key) - 1;
+  return i < (options || []).length ? i : null;
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { finalStatus, finalFractions, resultText, agentOf, maxAgentBits, DEMOS };
+  module.exports = { finalStatus, finalFractions, resultText, agentOf, maxAgentBits, DEMOS, CHOOSER, choiceForKey, keysHint };
 }
 
 /* ------------------------------------------------------------------ página */
@@ -377,11 +405,16 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
   $("btn-fwd").addEventListener("click", () => { stop(); step(1); });
   $("btn-back").addEventListener("click", () => { stop(); step(-1); });
   $("btn-start").addEventListener("click", () => { stop(); clock.idx = clock.ts.length ? 0 : -1; render(); });
-  document.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
-    clock.speed = Number(b.dataset.speed);
-    document.querySelectorAll("[data-speed]").forEach((o) => o.classList.toggle("active", o === b));
-  }));
+  function setSpeed(speed) {
+    clock.speed = speed;
+    document.querySelectorAll("[data-speed]").forEach((o) => o.classList.toggle("active", Number(o.dataset.speed) === speed));
+  }
+  document.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => setSpeed(Number(b.dataset.speed))));
   document.addEventListener("keydown", (e) => {
+    if (chooser.options.length && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const i = choiceForKey(e.key, chooser.options);
+      if (i != null) { e.preventDefault(); choose(i); return; }
+    }
     if (e.key === " ") { e.preventDefault(); clock.timer ? stop() : play(); }
     if (e.key === "ArrowRight") { stop(); step(1); }
     if (e.key === "ArrowLeft") { stop(); step(-1); }
@@ -402,11 +435,12 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     right: "fixtures/real_right.jsonl",
     graph: "fixtures/real_graph.json",
   };
+  const chooser = { on: params.get("demo") === CHOOSER.id, options: [], active: -1, loading: 0 };
   const demo = DEMOS[params.get("demo")] || null;
   const noParams = !params.get("left") && !params.get("right");
-  const left = params.get("left") || (demo ? demo.left : noParams ? DEFAULTS.left : null);
-  const right = params.get("right") || (demo ? demo.right : noParams ? DEFAULTS.right : null);
-  const graphUrl = params.get("graph") || (noParams && !demo ? DEFAULTS.graph : null);
+  const left = chooser.on ? null : params.get("left") || (demo ? demo.left : noParams ? DEFAULTS.left : null);
+  const right = chooser.on ? null : params.get("right") || (demo ? demo.right : noParams ? DEFAULTS.right : null);
+  const graphUrl = chooser.on ? null : params.get("graph") || (noParams && !demo ? DEFAULTS.graph : null);
   if (demo) {
     document.body.classList.add("demo-swarm");
     for (const side of ["left", "right"]) $(`side-${side}`).querySelector(".side-title").textContent = demo.titles[side];
@@ -417,14 +451,22 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
     return r.json();
   });
-  if (left && right) {
+  // Carga una pareja de registros (y el grafo, si hay) y deja el reloj en el inicio.
+  // isCurrent: si devuelve false al llegar los datos, no se aplica nada (ya se pidió otra pareja).
+  function loadPair(leftUrl, rightUrl, graphSrc, isCurrent = () => true) {
     // Se espera al escenario para que el grafo nazca con las etiquetas (si no carga, sigue igual).
     const ready = typeof scenarioReady !== "undefined" ? scenarioReady.catch(() => null) : null;
-    Promise.all([fetchLog(left), fetchLog(right), graphUrl ? fetchGraph(graphUrl) : null, ready]).then(([l, r, graph]) => {
+    return Promise.all([fetchLog(leftUrl), fetchLog(rightUrl), graphSrc ? fetchGraph(graphSrc) : null, ready]).then(([l, r, graph]) => {
+      if (!isCurrent()) return false;
       if (graph) {
         document.body.classList.add("with-graph");
         $("graph-strip").hidden = false;
+        $("graph-box").innerHTML = "";
         graphView = GraphView($("graph-box"), graph);  // disposición calculada una vez
+      } else if (chooser.on) {
+        document.body.classList.remove("with-graph");
+        $("graph-strip").hidden = true;
+        graphView = null;
       }
       setEvents(panels.left, l);
       setEvents(panels.right, r);
@@ -435,15 +477,68 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
         sub.hidden = false;
       }
       rebuildClock();
+      return true;
+    });
+  }
+  const showError = (err) => {
+    for (const p of Object.values(panels)) { p.detail.textContent = `No se pudo cargar: ${err.message}`; }
+  };
+
+  /* ---- demo interactiva (?demo=elige): el público elige la codificación */
+
+  function choose(i) {
+    const opt = chooser.options[i];
+    if (!opt) return;
+    stop();
+    chooser.active = i;
+    const token = ++chooser.loading;  // si se pulsa otra opción mientras carga, gana la última
+    document.querySelectorAll("#chooser-buttons button").forEach((b, j) => b.classList.toggle("active", j === i));
+    for (const p of Object.values(panels)) p.chart.removeAttribute("data-empty");
+    setSpeed(CHOOSER.speed);
+    loadPair(opt.left, opt.right, opt.graph || null, () => token === chooser.loading).then((applied) => {
+      if (!applied) return;
+      clock.idx = clock.ts.length ? 0 : -1;
+      render();
+      play();
+    }).catch(showError);
+  }
+
+  if (chooser.on) {
+    document.body.classList.add("demo-choose");
+    $("chooser").hidden = false;
+    $("chooser-question").textContent = CHOOSER.question;
+    for (const p of Object.values(panels)) {
+      p.detail.textContent = CHOOSER.empty;
+      p.chart.dataset.empty = CHOOSER.empty;  // se ve sin desplazar la página
+    }
+    fetch(CHOOSER.index).then((r) => {
+      if (!r.ok) throw new Error(`${CHOOSER.index}: ${r.status} ${r.statusText}`);
+      return r.json();
+    }).then((options) => {
+      chooser.options = options;
+      const box = $("chooser-buttons");
+      box.innerHTML = "";
+      options.forEach((opt, i) => {
+        const b = document.createElement("button");
+        b.className = "choice";
+        b.innerHTML = `<span class="choice-key"></span><span class="choice-label"></span>`;
+        b.children[0].textContent = i + 1;
+        b.children[1].textContent = opt.label;
+        b.title = `Tecla ${i + 1}`;
+        b.addEventListener("click", () => choose(i));
+        box.appendChild(b);
+      });
+      $("chooser-hint").textContent = keysHint(options.length);
+    }).catch(showError);
+  } else if (left && right) {
+    loadPair(left, right, graphUrl).then(() => {
       if (params.get("t")) {
         const target = params.get("t") === "end" ? Infinity : Number(params.get("t"));
         const i = clock.ts.findIndex((t) => t >= target);
         clock.idx = i < 0 ? clock.ts.length - 1 : i;
       }
       render();
-    }).catch((err) => {
-      for (const p of Object.values(panels)) { p.detail.textContent = `No se pudo cargar: ${err.message}`; }
-    });
+    }).catch(showError);
   } else {
     for (const p of Object.values(panels)) p.detail.textContent = "Faltan ?left=…&right=… en la URL.";
   }
