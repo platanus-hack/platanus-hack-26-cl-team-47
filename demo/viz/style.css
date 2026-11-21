@@ -522,3 +522,5 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
 .home-page .home-title { background: linear-gradient(90deg, #7aa7ff, #3ddc84); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .split-page .brand { color: var(--current); margin-right: 10px; padding-right: 12px; border-right: 2px solid var(--border); }
 .split-page .side-title { font-size: 20px; }
+.home-brand { display: flex; align-items: center; gap: 18px; }
+.home-logo { height: clamp(72px, 9vw, 120px); width: auto; border-radius: 14px; }
