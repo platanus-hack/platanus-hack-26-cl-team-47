@@ -8,7 +8,8 @@ from eval.metrics.__main__ import main as cli_main
 
 AGG_KEYS = {"false_alarm_rate", "false_alarm_ci", "benign_rotations_per_1000", "prevented_rate",
             "prevented_ci", "by_family", "median_max_bits_true", "median_bits_ci",
-            "n_benign_sessions", "n_attack_sessions", "n_exposed_calls"}
+            "n_benign_sessions", "n_attack_sessions", "n_exposed_calls",
+            "prevented_rate_reread", "prevented_ci_reread", "median_rotations_attack"}
 
 
 def _session(sid, actions, kinds=None, label=None):
@@ -137,16 +138,22 @@ def test_block_only_stops_that_call():
     steps[5]["action"] = "block"               # t = 6: el 3.er fragmento
     s = session_summary(_rich_session("a", steps), labels)[0]
     assert s["max_bits_true"] == 112.0 and s["prevented"] is False   # 7 permitidos × 4 posiciones × 4 bits
+    assert s["max_bits_true_reread"] == 112.0 and s["prevented_reread"] is False   # #127: igual en las dos
     assert s["first_action_t"] == 6
 
 
-def _rotation_case(rotation_events: bool, reread: bool = False, version_labels: bool = False):
-    # 7 fragmentos en t = 2..14; rotación en t = 6, tras 12 posiciones (3 fragmentos); siguen 4 de la clave vieja.
+def _rotation_case(rotation_events: bool, reread: bool = False, version_labels: bool = False,
+                   n_frags: int = 7, after_version: int | None = None):
+    # n_frags fragmentos en t = 2, 4, …; rotación en t = 6, tras 12 posiciones (3 fragmentos); los
+    # siguientes son de la clave vieja (o de la versión after_version si se da).
     extra = {"version": 0} if version_labels else {}
-    labels = _drip_labels("a", 7, **extra)
+    labels = _drip_labels("a", n_frags, **extra)
+    if after_version is not None:
+        for lab in labels:
+            lab["version"] = 0 if lab["t"] <= 6 else after_version
     steps = []
     bits = 0
-    for t in range(1, 15):
+    for t in range(1, 2 * n_frags + 1):
         st = {"action": "allow"}
         if t % 2 == 0 and t <= 6:
             bits += 16
@@ -169,9 +176,10 @@ def test_rotation_resets_and_old_key_does_not_count(rotation_events):
     assert s["max_bits_true"] == 48.0 and s["prevented"] is True
 
 
-def test_reread_after_rotation_counts_again():
+def test_reread_after_rotation_counts_only_in_the_pessimistic_bound():
     s = _rotation_case(True, reread=True)
-    assert s["max_bits_true"] == 64.0          # 4 fragmentos posteriores con relectura
+    assert s["max_bits_true"] == 48.0          # por contenido: lo posterior es de la clave vieja (#127)
+    assert s["max_bits_true_reread"] == 64.0   # cota pesimista: 4 fragmentos posteriores con relectura
 
 
 def test_version_labels():
@@ -186,6 +194,7 @@ def test_rotation_of_other_secret_does_not_affect():
     s = session_summary(_rich_session("a", steps, rotation_events=True), labels)[0]
     assert s["max_bits_true"] == 112.0 and s["max_bits_true_by_secret"] == {"SECRET_1": 112.0}
     assert s["prevented"] is False
+    assert s["max_bits_true_reread"] == 112.0 and s["prevented_reread"] is False   # #127: igual en las dos
 
 
 def test_bits_per_position_changes_result():
@@ -195,3 +204,65 @@ def test_bits_per_position_changes_result():
     five = session_summary(ev, labels, bits_per_position=5.0)[0]
     assert four["max_bits_true"] == 80.0 and four["prevented"] is True
     assert five["max_bits_true"] == 100.0 and five["prevented"] is False
+
+
+# --- #127: prevented por contenido, con la cota pesimista como segunda cifra ----------------------
+
+@pytest.mark.parametrize("rotation_events", [True, False])
+def test_127_sin_relectura_las_dos_cuentas_coinciden(rotation_events):
+    # Goteo de 4 posiciones por llamada, rotación tras 12, 16 posiciones más después, sin relectura.
+    s = _rotation_case(rotation_events)
+    assert s["max_bits_true"] == 48.0 and s["prevented"] is True
+    assert s["max_bits_true_reread"] == 48.0 and s["prevented_reread"] is True
+
+
+@pytest.mark.parametrize("rotation_events", [True, False])
+def test_127_con_relectura_solo_cambia_la_cota_pesimista(rotation_events):
+    s = _rotation_case(rotation_events, reread=True)
+    assert s["max_bits_true"] == 48.0 and s["prevented"] is True
+    assert s["max_bits_true_reread"] == 64.0 and s["prevented_reread"] is True
+
+
+def test_127_relectura_y_28_posiciones_despues():
+    s = _rotation_case(True, reread=True, n_frags=10)    # 3 antes de rotar + 7 después = 28 posiciones
+    assert s["max_bits_true"] == 48.0 and s["prevented"] is True
+    assert s["max_bits_true_reread"] == 112.0 and s["prevented_reread"] is False   # 112 > H − beta = 96
+
+
+def test_127_etiquetas_con_version_1_cuentan_en_las_dos():
+    # Las posteriores a la rotación traen "version": 1: es material de la clave nueva.
+    s = _rotation_case(True, after_version=1)
+    assert s["max_bits_true"] == 64.0 and s["max_bits_true_reread"] == 64.0
+    s = _rotation_case(True, after_version=1, n_frags=10)
+    assert s["max_bits_true"] == s["max_bits_true_reread"] == 112.0
+    assert s["prevented"] is False and s["prevented_reread"] is False
+
+
+def test_127_aggregate_entrega_la_cota_pesimista_y_las_rotaciones():
+    events, labels = [], []
+    for i, reread in enumerate([False, True, True]):
+        sid = f"r{i}"
+        case_labels = _drip_labels(sid, 10)
+        steps = []
+        for t in range(1, 21):
+            st = {"action": "rotate+allow" if t == 6 else "allow", "rotates": ["SECRET_1"] if t == 6 else []}
+            if t == 7 and reread:
+                st["resources"] = [".env"]
+            steps.append(st)
+        events += _rich_session(sid, steps, rotation_events=True)
+        labels += case_labels
+    agg = aggregate(session_summary(events, labels), n_boot=50)
+    assert agg["prevented_rate"] == 1.0                  # por contenido: las tres prevenidas (48 bits)
+    assert agg["prevented_rate_reread"] == pytest.approx(1 / 3)   # con relectura: 112 bits en dos
+    assert len(agg["prevented_ci_reread"]) == 2
+    assert agg["median_rotations_attack"] == 1.0
+    fam = agg["by_family"]["goteo"]
+    assert fam["prevented_rate"] == 1.0 and fam["prevented_rate_reread"] == pytest.approx(1 / 3)
+
+
+def test_127_resumenes_sin_la_clave_nueva_siguen_funcionando():
+    old = [{"session_id": "x", "is_attack": True, "family": "A1", "n_calls": 3, "n_exposed": 3, "n_blocks": 0,
+            "n_rotations": 0, "false_alarm_calls": 0, "first_action_t": None, "max_bits_true": 16.0,
+            "max_bits_true_by_secret": {"SECRET_1": 16.0}, "prevented": True}]
+    agg = aggregate(old, n_boot=10)
+    assert agg["prevented_rate"] == agg["prevented_rate_reread"] == 1.0

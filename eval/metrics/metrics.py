@@ -13,15 +13,20 @@ Cuenta por sesión y por secreto s (#78):
   secreto rotó sale de los eventos `rotation` (`data.secret_id`) si están; si no, de que
   `leak[s].bits` baje de un valor positivo a 0 entre una decisión y la siguiente (la decisión
   reporta los valores de antes de rotar, así que la rotación ocurrió en la decisión anterior).
-- Una llamada etiquetada POSTERIOR a una rotación de s cuenta contra la clave nueva solo si:
-  (a) su etiqueta trae `"version"` igual a la versión vigente de s (0 = valor inicial, +1 por
-      rotación), o
-  (b) la traza no trae versiones y HUBO relectura de s después de la rotación (una llamada
-      posterior cuyo `resources` incluye un archivo de s): sin relectura, el atacante no puede
-      conocer la clave nueva y lo que filtra es la vieja.
-  (El issue #78 decía «no hubo relectura»; su propio ejemplo exige la regla de arriba.)
+- Dos cuentas en una pasada (#127). Una etiqueta con `"version"` cuenta en las dos si coincide con
+  la versión vigente de s (0 = valor inicial, +1 por rotación). Una etiqueta SIN `"version"` es
+  material del valor original de la grabación (versión 0):
+  * Por contenido (principal: `max_bits_true`, `prevented`): cuenta mientras s no haya rotado;
+    después de la primera rotación de s, no cuenta. Las sesiones grabadas son un atacante NO
+    adaptativo: tras rotar, la grabación sigue enviando la clave vieja, que ya no sirve, y el
+    detector, que compara con la clave nueva, no puede reaccionar a una fuga que no existe.
+  * Cota pesimista (secundaria: `max_bits_true_reread`, `prevented_reread`, la regla de #78): tras
+    rotar cuenta contra la clave nueva solo si la traza no trae versiones y HUBO relectura de s
+    después de la rotación (una llamada posterior cuyo `resources` incluye un archivo de s).
+  El atacante que relee y sigue con la clave nueva se mide aparte (ataque adaptativo tras H20 y
+  test de envío lento con relectura en engine/detector/tests).
 - `max_bits_true[s]` = máximo a lo largo de la sesión de |acumulado de s| · bits_per_position.
-- `prevented` = para todo secreto de la sesión, max_bits_true[s] ≤ H − beta.
+- `prevented` = para todo secreto de la sesión, max_bits_true[s] ≤ H − beta (ídem `_reread`).
 """
 
 from __future__ import annotations
@@ -137,8 +142,9 @@ def session_summary(events: Iterable[Any], labels: list[dict], H: float = 160.0,
             if action != "allow" and first_t is None:
                 first_t = call["t"]
 
-        by_secret = _max_bits_by_secret(rows, labs, rotations, files_by_id, bits_per_position)
+        by_secret, by_secret_reread = _max_bits_by_secret(rows, labs, rotations, files_by_id, bits_per_position)
         max_bits = max(by_secret.values()) if by_secret else 0.0
+        max_bits_reread = max(by_secret_reread.values()) if by_secret_reread else 0.0
 
         out.append({
             "session_id": sid,
@@ -153,20 +159,25 @@ def session_summary(events: Iterable[Any], labels: list[dict], H: float = 160.0,
             "max_bits_true": max_bits,
             "max_bits_true_by_secret": by_secret,
             "prevented": all(b <= H - beta for b in by_secret.values()) if is_attack else None,
+            "max_bits_true_reread": max_bits_reread,
+            "prevented_reread": all(b <= H - beta for b in by_secret_reread.values()) if is_attack else None,
         })
     return out
 
 
 def _max_bits_by_secret(rows: list[tuple[dict, dict]], labs: list[dict], rotations: dict[str, set[str]],
-                        files_by_id: dict[str, set[str]], bpp: float) -> dict[str, float]:
+                        files_by_id: dict[str, set[str]], bpp: float) -> tuple[dict[str, float], dict[str, float]]:
+    """(por contenido, cota pesimista): máximo de bits por secreto en cada cuenta (ver docstring del módulo)."""
     labs_at: dict[int, list[dict]] = defaultdict(list)
     for lab in labs:
         labs_at[int(lab["t"])].append(lab)
     secrets = sorted({lab.get("secret_id") or "" for lab in labs})
     has_versions = any("version" in lab for lab in labs)
 
-    acc = {s: set() for s in secrets}
+    acc = {s: set() for s in secrets}          # por contenido
     best = {s: 0.0 for s in secrets}
+    acc_r = {s: set() for s in secrets}        # cota pesimista (relectura)
+    best_r = {s: 0.0 for s in secrets}
     version = {s: 0 for s in secrets}
     rotated_once = {s: False for s in secrets}
     reread = {s: False for s in secrets}     # hubo relectura de s después de su última rotación
@@ -179,7 +190,7 @@ def _max_bits_by_secret(rows: list[tuple[dict, dict]], labs: list[dict], rotatio
         if not use_events and prev_dec is not None:
             for s in secrets:
                 if _leak_bits(prev_dec, s) > 0 and _leak_bits(dec, s) == 0:
-                    _rotate(s, acc, version, rotated_once, reread)
+                    _rotate(s, acc, acc_r, version, rotated_once, reread)
 
         res = set(call.get("resources") or [])
         for s in secrets:
@@ -190,27 +201,33 @@ def _max_bits_by_secret(rows: list[tuple[dict, dict]], labs: list[dict], rotatio
             for lab in labs_at.get(int(call["t"]), []):
                 s = lab.get("secret_id") or ""
                 if "version" in lab:
-                    counts = int(lab["version"]) == version[s]
+                    counts = counts_r = int(lab["version"]) == version[s]
                 elif rotated_once[s]:
-                    counts = (not has_versions) and reread[s]
+                    counts = False                                   # material de la clave vieja
+                    counts_r = (not has_versions) and reread[s]      # regla de #78
                 else:
-                    counts = True
+                    counts = counts_r = True
+                pos = [int(p) for p in lab.get("positions_leaked") or []]
                 if counts:
-                    acc[s].update(int(p) for p in lab.get("positions_leaked") or [])
+                    acc[s].update(pos)
+                if counts_r:
+                    acc_r[s].update(pos)
             for s in secrets:
                 best[s] = max(best[s], len(acc[s]) * bpp)
+                best_r[s] = max(best_r[s], len(acc_r[s]) * bpp)
 
         cid = call.get("id")
         if use_events:
             for s in rotations.get(cid, ()):
                 if s in acc:
-                    _rotate(s, acc, version, rotated_once, reread)
+                    _rotate(s, acc, acc_r, version, rotated_once, reread)
         prev_dec, prev_cid = dec, cid
-    return best
+    return best, best_r
 
 
-def _rotate(s, acc, version, rotated_once, reread):
+def _rotate(s, acc, acc_r, version, rotated_once, reread):
     acc[s] = set()
+    acc_r[s] = set()
     version[s] += 1
     rotated_once[s] = True
     reread[s] = False
@@ -234,13 +251,19 @@ def aggregate(summaries: list[dict], n_boot: int = 2000, seed: int = 0) -> dict:
 
     pv_k = sum(1 for s in attack if s["prevented"])
     pv_rate, pv_ci = _rate(pv_k, len(attack))
+    # Cota pesimista (#127): las sesiones sin la clave nueva (resúmenes viejos) usan la principal.
+    pr_k = sum(1 for s in attack if s.get("prevented_reread", s["prevented"]))
+    pr_rate, pr_ci = _rate(pr_k, len(attack))
 
     by_family: dict[str, dict] = {}
     for fam in sorted({s["family"] or "sin_familia" for s in attack}):
         group = [s for s in attack if (s["family"] or "sin_familia") == fam]
         k = sum(1 for s in group if s["prevented"])
         r, ci = _rate(k, len(group))
+        kr = sum(1 for s in group if s.get("prevented_reread", s["prevented"]))
+        rr, cir = _rate(kr, len(group))
         by_family[fam] = {"n": len(group), "prevented_rate": r, "prevented_ci": ci,
+                          "prevented_rate_reread": rr, "prevented_ci_reread": cir,
                           "median_max_bits_true": float(numpy.median([s["max_bits_true"] for s in group]))}
 
     bits = [s["max_bits_true"] for s in attack]
@@ -256,6 +279,9 @@ def aggregate(summaries: list[dict], n_boot: int = 2000, seed: int = 0) -> dict:
         "benign_rotations_per_1000": (1000.0 * benign_rot / benign_calls) if benign_calls else None,
         "prevented_rate": pv_rate,
         "prevented_ci": pv_ci,
+        "prevented_rate_reread": pr_rate,
+        "prevented_ci_reread": pr_ci,
+        "median_rotations_attack": float(numpy.median([s["n_rotations"] for s in attack])) if attack else None,
         "by_family": by_family,
         "median_max_bits_true": med,
         "median_bits_ci": med_ci,
