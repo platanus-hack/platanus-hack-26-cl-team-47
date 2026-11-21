@@ -1,6 +1,6 @@
 import json
 
-from eval.final import build_report, t1_false_alarms, t2_detection, t5_theorem_slope, to_markdown
+from eval.final import build_report, prevented_reread, t1_false_alarms, t2_detection, t5_theorem_slope, to_markdown
 from eval.final.__main__ import main as cli_main
 
 
@@ -55,3 +55,30 @@ def test_cli_writes_report(tmp_path):
     assert rep["tests"]["T3"]["b"] == 6
     data = json.loads((out / "report.json").read_text(encoding="utf-8"))
     assert set(data["tests"]) == {"T1", "T2", "T3", "T4", "T5", "T6"}
+
+
+def test_127_fila_informativa_cota_pesimista():
+    s = _summary(attacks=6)
+    att = [r for r in s if r["is_attack"]]
+    for i, r in enumerate(att):
+        r["prevented_reread"] = i < 3                     # 3 de 6 con la cota pesimista
+    rep = build_report({"T2": t2_detection(att), "T2_reread": prevented_reread(att)})
+    md = to_markdown(rep)
+    row = next(line for line in md.splitlines() if line.startswith("| T2 (cota pesimista) |"))
+    assert "Ataques prevenidos, cota pesimista (relectura)" in row and "3/6 = 0.5" in row
+    assert "informativa" in row and "no entra en Holm" in row
+    assert md.index("| T2 |") < md.index("| T2 (cota pesimista) |") < md.index("| T3 |")
+    assert set(rep["holm"]) == {"T2"}                    # la fila informativa no entra en Holm
+    assert rep["tests"]["T2"]["k"] == 6                  # T2 sigue usando prevented (por contenido)
+
+
+def test_127_cli_agrega_la_fila_informativa(tmp_path):
+    s = _summary(attacks=4)
+    for r in s:
+        if r["is_attack"]:
+            r["prevented_reread"] = False
+    ours = tmp_path / "ours.json"
+    ours.write_text(json.dumps({"sessions": s}), encoding="utf-8")
+    rep = cli_main(["--ours", str(ours), "--out", str(tmp_path / "final")])
+    assert rep["info"]["T2_reread"]["k"] == 0 and rep["info"]["T2_reread"]["n"] == 4
+    assert rep["tests"]["T2"]["k"] == 4

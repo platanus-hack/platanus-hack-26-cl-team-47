@@ -52,6 +52,17 @@ def t2_detection(attacks: list[dict], target: float = 0.8) -> dict:
     return out
 
 
+def prevented_reread(attacks: list[dict]) -> dict:
+    """Fila informativa (#127): ataques prevenidos con la cota pesimista (`prevented_reread`, regla de
+    relectura de #78), con el mismo intervalo unilateral que T2. No es una prueba: no entra en Holm.
+    Si un resumen no trae la clave (versión anterior), usa `prevented`."""
+    k = int(sum(1 for s in attacks if s.get("prevented_reread", s.get("prevented")) is True))
+    n = len(attacks)
+    lo = clopper_pearson(k, n, conf=ONE_SIDED_95)[0]
+    return {"k": k, "n": n, "rate": (k / n) if n else None, "ci": [lo, 1.0], "ci_type": "unilateral 95 %",
+            "informative": True}
+
+
 def t3_vs_baseline(ours: list[dict], baseline: list[dict]) -> dict:
     """McNemar exacto pareado por session_id sobre `prevented`."""
     a = {s["session_id"]: bool(s.get("prevented")) for s in ours}
