@@ -64,3 +64,14 @@ Búsqueda (comando de arriba; 29 min con 9 procesos en la máquina del orquestad
 | A3 | 20 | 1,00 | 0,90 | 16 |
 | A4 | 25 | 1,00 | 0,88 | 16 |
 | A5′ | 10 | 0,30 | 0,30 | 112 |
+
+## Congelamiento (#133)
+
+La configuración queda congelada: `search/frozen.json` en `main` (hash `42cfa5e4610ae99b0d5af2f0a2bbf1800f7cfe87414ff46a0302400227e0432b`; `b 4`, `b_rot 5`, `lambda_rot 0.1`, `T 75`) con este `model.json`. No se regenera. La carga `engine.detector.make_frozen()`, que comprueba el sha256 del modelo contra `model_sha256` (sobre el contenido versionado, con LF). Desde aquí `engine/` no cambia salvo errores que autorice el líder.
+
+Evaluación final, un solo comando (detalle en `results/README.md`):
+
+```
+python -m eval.final.run --split val  --out results/val
+python -m eval.final.run --split test --out results/test    # una sola vez
+```
