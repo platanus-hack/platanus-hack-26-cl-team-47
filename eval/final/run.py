@@ -281,6 +281,16 @@ def _write_json(path: Path, obj) -> None:
 
 # --------------------------------------------------------------------------- comando
 
+def safe_console() -> None:
+    """Que imprimir no tumbe el comando en una consola que no es UTF-8 (cp1252 en Windows no tiene «≤»,
+    «−» ni «′»): esos caracteres salen reemplazados en pantalla. Los archivos se escriben siempre en UTF-8."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def run(split: str, out: str | Path, benign_dir: str = "data/benign/sessions", redteam_root: str = "redteam",
         frozen_path: str = "models/search/frozen.json", model_path: str = "models/model.json",
         systems: Iterable[str] = SYSTEMS, n_boot: int = 2000) -> dict:
@@ -339,6 +349,7 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--model", default="models/model.json", help=argparse.SUPPRESS)
     ap.add_argument("--n-boot", type=int, default=2000, help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+    safe_console()
     try:
         return run(args.split, args.out, args.benign, args.redteam, args.frozen, args.model, n_boot=args.n_boot)
     except SystemExit as exc:

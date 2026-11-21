@@ -315,6 +315,7 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--redteam", default="redteam", help=argparse.SUPPRESS)
     ap.add_argument("--systems", nargs="+", default=list(SYSTEMS), choices=list(SYSTEMS), help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+    R.safe_console()
 
     frozen = make_frozen()
     results = {s: run_set(s, frozen, args.systems, args.benign, args.redteam) for s in args.sets}
