@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pitch team-47</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="deck" aria-live="polite">
+
+    <section class="slide slide-title" data-n="1">
+      <h1>«Medidor de información filtrada para agentes de IA»</h1>
+      <p class="sub">Team-47 · track AI Security</p>
+    </section>
+
+    <section class="slide" data-n="2">
+      <h2>El problema</h2>
+      <p>Un agente de código con acceso a archivos, shell y red puede ser manipulado para sacar secretos en muchos pasos, cada uno inocente por sí solo.</p>
+      <p class="strong">Los filtros que evalúan cada llamada aislada no lo ven.</p>
+    </section>
+
+    <section class="slide" data-n="3">
+      <h2>El ejemplo</h2>
+      <p>El goteo: 4 caracteres por salida, separados por decenas de llamadas normales.</p>
+      <p class="pendiente">PENDIENTE: nombre del escenario de la demo (decisión del equipo)</p>
+    </section>
+
+    <section class="slide slide-quote" data-n="4">
+      <h2>La idea</h2>
+      <blockquote class="cita">«No adivinamos la intención del atacante. Medimos cuánto sabe, y hacemos que robar despacio no sirva.»</blockquote>
+    </section>
+
+    <section class="slide" data-n="5">
+      <h2>Cómo funciona</h2>
+      <div class="two">
+        <div class="box"><span class="k">Bits</span>cuánto sabe el atacante del secreto</div>
+        <div class="box"><span class="k">Evidencia</span>cuánto sabe el defensor del ataque</div>
+      </div>
+      <p class="strong">Cuando el atacante se acerca, se rota la clave.</p>
+    </section>
+
+    <section class="slide" data-n="6">
+      <h2>La pinza</h2>
+      <div class="two">
+        <div class="box"><span class="k">Filtra lento</span>la rotación lo anula</div>
+        <div class="box"><span class="k">Filtra rápido</span>la evidencia lo delata</div>
+      </div>
+    </section>
+
+    <section class="slide slide-demo" data-n="7">
+      <a class="demo-link" href="../demo/viz/split.html">Demo</a>
+    </section>
+
+    <section class="slide slide-quote" data-n="8">
+      <h2>Qué es nuevo</h2>
+      <blockquote class="cita">«Trabajos de este año muestran que contar la fuga acumulada ve lo que los detectores por turno no ven. Nosotros lo hacemos sin acceso al modelo, con falsas alarmas medidas, y rotamos el secreto para que lo filtrado deje de servir.»</blockquote>
+    </section>
+
+    <section class="slide" data-n="9">
+      <h2>Resultados</h2>
+      <table class="results">
+        <tr><th>Falsas alarmas por llamada expuesta</th><td class="pendiente">PENDIENTE: T1, eval/metrics</td></tr>
+        <tr><th>Ataques prevenidos</th><td class="pendiente">PENDIENTE: T2</td></tr>
+        <tr><th>Contra allowlist más detect-secrets</th><td class="pendiente">PENDIENTE: T3</td></tr>
+        <tr><th>Efecto de la rotación en el goteo</th><td class="pendiente">PENDIENTE: T4</td></tr>
+      </table>
+    </section>
+
+    <section class="slide" data-n="10">
+      <h2>Límites, dichos de frente</h2>
+      <p>Es una cota inferior: decimos «al menos X bits», no «bits exactos».</p>
+      <p>Una transformación que los decodificadores no conocen no se ve: por eso existen la evidencia y la rotación.</p>
+    </section>
+
+    <section class="slide" data-n="11">
+      <h2>¿Dónde está la IA?</h2>
+      <p>AI Security es proteger sistemas de IA.</p>
+      <p>El detector es determinista a propósito: un guardrail hecho con un LLM se ataca con prompt injection; el nuestro no se convence con texto.</p>
+    </section>
+
+    <section class="slide" data-n="12">
+      <h2>Usuario y cierre</h2>
+      <p>Equipos de plataforma o seguridad de empresas que usan agentes de código sobre repositorios con credenciales.</p>
+      <p class="pendiente">PENDIENTE: qué pedimos o qué sigue (decisión del equipo)</p>
+    </section>
+
+  </main>
+
+  <nav class="hud" aria-label="Navegación">
+    <button id="prev" title="Anterior (←)">◀</button>
+    <span id="counter">1 / 12</span>
+    <button id="next" title="Siguiente (→)">▶</button>
+  </nav>
+
+  <script src="slides.js"></script>
+</body>
+</html>
