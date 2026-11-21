@@ -1,7 +1,8 @@
 """Servidor MCP por stdio: python -m proxy.server
 
 Expone las seis herramientas y delega cada llamada en Proxy.handle.
-Variables: AGENT_WORKSPACE (por defecto demo/repo), SESSION_ID, LOG_DIR.
+Variables: AGENT_WORKSPACE (por defecto demo/repo), SESSION_ID, LOG_DIR,
+PROXY_MODE (live = detector + rotación en vault.test; sin valor = allow_all).
 """
 
 from __future__ import annotations
@@ -11,11 +12,22 @@ try:  # mcp >= 2
 except ImportError:  # mcp 1.x
     from mcp.server.fastmcp import FastMCP as _Server
 
+import os
+
 from .core import Proxy
 
 
+def default_proxy() -> Proxy:
+    """PROXY_MODE=live -> detector real con rotación en el gestor; sin la variable, allow_all."""
+    if os.environ.get("PROXY_MODE", "").strip().lower() == "live":
+        from .live import build_live_proxy
+
+        return build_live_proxy()
+    return Proxy()
+
+
 def build_server(proxy: Proxy | None = None):
-    proxy = proxy or Proxy()
+    proxy = proxy or default_proxy()
     server = _Server("leak-meter-proxy")
 
     @server.tool()

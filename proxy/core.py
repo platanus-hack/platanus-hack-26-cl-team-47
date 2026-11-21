@@ -17,6 +17,8 @@ DEFAULT_WORKSPACE = "demo/repo"
 TOOL_NAMES = ("read_file", "list_dir", "http_request", "git", "github_issue", "github_comment")
 
 DecideFn = Callable[[ToolCall], Decision]
+OutputHook = Callable[[str, str], None]
+DecisionHook = Callable[[ToolCall, Decision], None]
 
 
 def default_workspace() -> str:
@@ -30,12 +32,16 @@ class Proxy:
         decide: DecideFn = allow_all,
         session_id: str | None = None,
         hosts: dict[str, str] | None = None,
+        on_output: OutputHook | None = None,
+        on_decision: DecisionHook | None = None,
     ):
         self.workspace = str(Path(workspace or default_workspace()).resolve())
         self.decide = decide
         self.session_id = session_id or os.environ.get("SESSION_ID") or uuid.uuid4().hex[:12]
         self.hosts = hosts if hosts is not None else load_hosts()
         self.t = 0
+        self.on_output = on_output
+        self.on_decision = on_decision
 
     # --- Metadatos del ToolCall ---------------------------------------
 
@@ -101,6 +107,8 @@ class Proxy:
         decision = decision.model_copy(update={"latency_ms": (time.perf_counter() - t0) * 1000})
         self._log("tool_call", call.id, call.model_dump())
         self._log("decision", call.id, decision.model_dump())
+        if self.on_decision is not None:
+            self.on_decision(call, decision)
 
         if not decision.allowed:
             return f"BLOQUEADA por el proxy: {decision.reason or decision.action}", decision
@@ -110,4 +118,6 @@ class Proxy:
             output = f"ERROR: {e}"
         except (KeyError, TypeError, ValueError) as e:
             output = f"ERROR: argumentos inválidos para {tool}: {e}"
+        if self.on_output is not None:
+            self.on_output(call.id, output)
         return output, decision

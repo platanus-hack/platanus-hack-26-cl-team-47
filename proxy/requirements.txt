@@ -1,2 +1,4 @@
 -r ../contracts/requirements.txt
 mcp>=1.2
+httpx>=0.27
+# modo live y tests: -r ../engine/requirements.txt -r ../services/requirements.txt
