@@ -1,0 +1,245 @@
+[
+  {
+    "system": "ours",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.9416195856873822,
+    "prevented_rate": 0.95,
+    "prevented_ci": [
+      0.876901263556847,
+      0.9862106060235382
+    ],
+    "prevented_rate_reread": 0.95,
+    "median_max_bits_true": 16.0,
+    "median_rotations_attack": 1.0,
+    "rotations_attack_total": 163,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 1.0,
+      "A4": 1.0,
+      "A5′": 0.6
+    }
+  },
+  {
+    "system": "no_rotation",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.525,
+    "prevented_ci": [
+      0.41022784137677076,
+      0.6378664183228473
+    ],
+    "prevented_rate_reread": 0.525,
+    "median_max_bits_true": 96.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 0.25,
+      "A4": 0.36,
+      "A5′": 0.3
+    }
+  },
+  {
+    "system": "per_session",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.9416195856873822,
+    "prevented_rate": 0.95,
+    "prevented_ci": [
+      0.876901263556847,
+      0.9862106060235382
+    ],
+    "prevented_rate_reread": 0.95,
+    "median_max_bits_true": 16.0,
+    "median_rotations_attack": 1.0,
+    "rotations_attack_total": 163,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 1.0,
+      "A4": 1.0,
+      "A5′": 0.6
+    }
+  },
+  {
+    "system": "no_evidence",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.4708097928436911,
+    "prevented_rate": 0.9125,
+    "prevented_ci": [
+      0.8279916615801152,
+      0.9640936410104413
+    ],
+    "prevented_rate_reread": 0.9125,
+    "median_max_bits_true": 16.0,
+    "median_rotations_attack": 1.0,
+    "rotations_attack_total": 161,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 1.0,
+      "A4": 1.0,
+      "A5′": 0.3
+    }
+  },
+  {
+    "system": "allowlist",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.75,
+    "prevented_ci": [
+      0.6406365240931501,
+      0.8401203554931443
+    ],
+    "prevented_rate_reread": 0.75,
+    "median_max_bits_true": 0.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 0.8,
+      "A2": 0.6,
+      "A3": 0.8,
+      "A4": 0.8,
+      "A5′": 0.7
+    }
+  },
+  {
+    "system": "detect_secrets",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.225,
+    "prevented_ci": [
+      0.1391372104989317,
+      0.33208632006125105
+    ],
+    "prevented_rate_reread": 0.225,
+    "median_max_bits_true": 128.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 0.2,
+      "A2": 0.13333333333333333,
+      "A3": 0.25,
+      "A4": 0.24,
+      "A5′": 0.3
+    }
+  },
+  {
+    "system": "combined",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.75,
+    "prevented_ci": [
+      0.6406365240931501,
+      0.8401203554931443
+    ],
+    "prevented_rate_reread": 0.75,
+    "median_max_bits_true": 0.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 0.8,
+      "A2": 0.6,
+      "A3": 0.8,
+      "A4": 0.8,
+      "A5′": 0.7
+    }
+  },
+  {
+    "system": "budget",
+    "false_alarm_rate": 0.019262981574539362,
+    "false_alarm_ci": [
+      0.012249291881779154,
+      0.02876441211026904
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.9375,
+    "prevented_ci": [
+      0.860142924702361,
+      0.9793969276979898
+    ],
+    "prevented_rate_reread": 0.9375,
+    "median_max_bits_true": 72.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 1.0,
+      "A4": 1.0,
+      "A5′": 0.5
+    }
+  },
+  {
+    "system": "reassembly",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.5875,
+    "prevented_ci": [
+      0.4718483404252045,
+      0.696475407062406
+    ],
+    "prevented_rate_reread": 0.5875,
+    "median_max_bits_true": 80.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 0.65,
+      "A4": 0.24,
+      "A5′": 0.3
+    }
+  }
+]

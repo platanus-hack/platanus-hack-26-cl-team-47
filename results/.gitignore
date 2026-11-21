@@ -1,0 +1,2 @@
+# Eventos crudos de cada sistema: pesan mucho y se regeneran con python -m eval.final.run
+**/events_*.jsonl
