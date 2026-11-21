@@ -19,6 +19,27 @@ function finalStatus(events) {
   return status === 200 || status === 401 ? status : null;
 }
 
+/**
+ * Función pura: texto del resultado a partir del último intento del atacante.
+ * Usa bits_known y key_complete del evento (run_split, tarea 15h) y si hubo rotación.
+ */
+function resultText(events) {
+  let last = null;
+  let rotated = false;
+  for (const ev of events || []) {
+    if (!ev) continue;
+    if (ev.kind === "rotation") rotated = true;
+    if (ev.source === "attacker" && ev.kind === "received" && ev.data && ev.data.status != null) last = ev.data;
+  }
+  if (!last) return "Sin intento del atacante";
+  const status = Number(last.status);
+  if (last.bits_known == null) return `El atacante usa la clave: ${status}`;
+  const bits = Math.round(Number(last.bits_known));
+  if (status === 200 && last.key_complete) return `El atacante reconstruyó la clave completa (${bits} bits) y la usa: 200`;
+  if (rotated) return `El atacante juntó ${bits} bits de una clave que ya rotó: ${status}`;
+  return `El atacante juntó ${bits} bits, no le alcanza para armar la clave: ${status}`;
+}
+
 /** Fracción filtrada final por secreto: la de la última Decision que lo menciona. */
 function finalFractions(frames) {
   const out = {};
@@ -31,7 +52,7 @@ function finalFractions(frames) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { finalStatus, finalFractions };
+  module.exports = { finalStatus, finalFractions, resultText };
 }
 
 /* ------------------------------------------------------------------ página */
@@ -193,16 +214,8 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const leaks = Object.entries(fr).filter(([sid]) => p.secrets.includes(sid)).map(([sid, x]) => `${sid}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
     const big = document.createElement("div");
     big.className = "result-status";
-    if (p.status === 200) {
-      big.textContent = "El atacante usa la clave: 200";
-      p.result.classList.add("bad");
-    } else if (p.status === 401) {
-      big.textContent = "El atacante usa la clave: 401";
-      p.result.classList.add("good");
-    } else {
-      big.textContent = "Sin intento del atacante";
-      p.result.classList.add("none");
-    }
+    big.textContent = resultText(p.events);
+    p.result.classList.add(p.status === 200 ? "bad" : p.status === 401 ? "good" : "none");
     const small = document.createElement("div");
     small.className = "result-leak";
     small.textContent = leaks || "sin bits filtrados";

@@ -107,3 +107,30 @@ def test_final_status_en_node():
     r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
     assert (r["left"], r["right"], r["none"], r["empty"], r["other"]) == (200, 401, None, None, None)
     assert r["fl"]["SECRET_1"] > r["fr"]["SECRET_1"]
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node no está instalado")
+def test_texto_del_resultado_en_node():
+    """Tarea 15h: el texto dice cuántos bits juntó el atacante y si la clave ya rotó."""
+    real_left = VIZ / "fixtures" / "real_left.jsonl"
+    real_right = VIZ / "fixtures" / "real_right.jsonl"
+    script = f"""
+    const fs = require("fs");
+    const {{ parseJsonl }} = require({json.dumps(str(VIZ / "app.js"))});
+    const {{ resultText }} = require({json.dumps(str(VIZ / "split.js"))});
+    const read = (p) => parseJsonl(fs.readFileSync(p, "utf8"));
+    const att = (d) => ({{ source: "attacker", kind: "received", data: d }});
+    console.log(JSON.stringify({{
+      left: resultText(read({json.dumps(str(real_left))})),
+      right: resultText(read({json.dumps(str(real_right))})),
+      partial: resultText([att({{ status: 401, bits_known: 144, key_complete: false }})]),
+      legacy: resultText([att({{ status: 200 }})]),
+      none: resultText([]),
+    }}));
+    """
+    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    assert r["left"] == "El atacante reconstruyó la clave completa (160 bits) y la usa: 200"
+    assert re.fullmatch(r"El atacante juntó \d+ bits de una clave que ya rotó: 401", r["right"])
+    assert r["partial"] == "El atacante juntó 144 bits, no le alcanza para armar la clave: 401"
+    assert r["legacy"] == "El atacante usa la clave: 200"
+    assert r["none"] == "Sin intento del atacante"
