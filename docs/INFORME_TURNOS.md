@@ -135,6 +135,6 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 **11:30. Cambio de nombre.**
 - El equipo decidió que el producto se llama **Alicanto**, por el ave de la leyenda de Atacama que deja con las manos vacías a quien la sigue por codicia. Se verificó que el nombre no choca con ningún producto de software o de seguridad conocido.
 - Se cambió en todo el repositorio, el sitio, el pitch y el servidor MCP (que ahora se anuncia como `alicanto`). La URL pública pasó a https://alicanto.vercel.app; la anterior sigue funcionando.
-- Pendiente de una persona: el logotipo nuevo. El actual todavía dice Cuentagotas.
+- Logotipo nuevo instalado a las 12:45: un ave en vuelo con alas doradas y plateadas (`project-logo.png`, y el ave sola en la portada del sitio).
 
 **Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas (cambiado a Alicanto a las 11:30); el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.

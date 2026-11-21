@@ -29,4 +29,4 @@ Actualizado: sábado 21 de noviembre de 2026, 11:45 (H12,75). Lo mantiene el orq
 
 ## Pendiente (depende de personas)
 
-Clave de API para las corridas con un LLM real; logotipo nuevo con el nombre Alicanto; revisar `README.md` y `project-description.md`; ensayar el pitch.
+Resultados de las corridas con un LLM real (en curso, las lanza Victoria); revisar `README.md` y `project-description.md`; ensayar el pitch.

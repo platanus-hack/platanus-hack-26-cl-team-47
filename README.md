@@ -1,6 +1,6 @@
 # Alicanto · team-47 · Platanus Hack 26: Santiago
 
-<img src="./project-logo.png" alt="Logotipo de Alicanto" width="200" />
+<img src="./project-logo.png" alt="Logotipo de Alicanto: un ave en vuelo con alas doradas y plateadas" width="200" />
 
 Track: 🛡️ AI Security
 
