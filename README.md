@@ -57,6 +57,8 @@ python demo/run_split.py --swarm --out-dir demo/out    # enjambre
 python -m pytest -q
 ```
 
+**Conectarlo a tu agente de código** (servidor MCP, con la cuenta compartida entre agentes): [docs/QUICKSTART.md](docs/QUICKSTART.md).
+
 ## Para quien evalúa (y para su agente)
 
 Cada afirmación del proyecto, con el archivo que la sostiene y un comando que la comprueba en menos de un minuto. Todo corre en local, sin claves ni servicios externos.

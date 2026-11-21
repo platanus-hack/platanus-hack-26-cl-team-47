@@ -452,4 +452,5 @@ def test_preguntas_que_mas_se_repiten():
     titulos = re.findall(r"^## (\d+)\. (.+)$", PREGUNTAS, flags=re.M)
     assert "permisos de Claude Code" in titulos[0][1] and "instala" in titulos[4][1]
     assert PREGUNTAS.index("## Las que más se repiten") < PREGUNTAS.index("## 1. ")
-    assert "PENDIENTE: enlace a `docs/QUICKSTART.md` (#138)" in PREGUNTAS
+    assert "`docs/QUICKSTART.md`" in PREGUNTAS and "PENDIENTE: enlace a `docs/QUICKSTART.md`" not in PREGUNTAS
+    assert (PITCH.parent / "docs" / "QUICKSTART.md").is_file()
