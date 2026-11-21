@@ -18,7 +18,7 @@ H0 es el viernes 20 a las 23:00. Para saber la hora H actual: horas transcurrida
 | H12 | Sáb 11:00 | Primer análisis en validación con ℓ_t y CUSUM | Features más simples; el GFF queda solo para visualizar |
 | H15 | Sáb 14:00 | Demo mínima de punta a punta (paso 9) | Todos al paso 9 hasta que funcione |
 | H17 | Sáb 16:00 | Crescendo y goteo funcionan en reproducción | La reproducción es la demo principal |
-| H20 | Sáb 19:00 | Parámetros congelados | Se congela lo que haya |
+| H20 | Sáb 19:00 | Parámetros congelados; enjambre (paso 17) en `main` | Se congela lo que haya; sin el paso 17, el pitch dice «cuenta por sesión» |
 | H23 | Sáb 22:00 | Evaluación final hecha, una sola vez | Se reporta lo que alcanzó, con intervalos |
 | H27 | Dom 02:00 | Congelamiento total: solo errores, láminas y ensayo | — |
 
@@ -98,6 +98,10 @@ Simplificación del nivel 0: la regla de bloqueo por evidencia usa los ancestros
 | 14 | Evaluación final: T1 a T6, ablación, líneas de base, una sola corrida | H20–H23 | Análisis | Tabla de resultados con intervalos |
 | 15 | Visualización: pantalla dividida sincronizada | H8–H26 | Demo | Reproducción completa del escenario principal; video de respaldo grabado en H26 |
 | 16 | Pitch | H24–H34 | Demo | Láminas con cifras reales, tres ensayos cronometrados |
+| 17 | Enjambre: cuenta global por secreto compartida entre varios agentes y sesiones, con persistencia en disco (`SharedLedger`, issue #114) | H7–H12 | Proxy | Con la fuga repartida entre 5 agentes, sin cuenta global salen los 160 bits sin rotación; con cuenta global rota a más tardar en el tercer fragmento y de ninguna versión salen más de H − β bits |
+| 18 | Demo del enjambre en la pantalla dividida: cuenta por agente contra cuenta global (issue #115) | H9–H15 | Demo | Corrida real: izquierda 200 sin rotaciones, derecha 401 con al menos una rotación |
+
+**Enjambre (decisión del líder, H7).** Que Cuentagotas funcione con un enjambre de agentes es objetivo del proyecto y está prometido en la descripción. Los pasos 17 y 18 deben entrar antes del congelamiento de H20. El paso 17 cambia el detector: lleva fila en `docs/BITACORA_DETECTOR.md` y, por ser una capacidad general, no cuenta como regla para un ataque concreto. Alcance: varios agentes en un mismo proceso y persistencia entre sesiones; varios procesos o máquinas a la vez quedan fuera. Si el paso 17 no está en `main` en H20, la descripción y el pitch dicen «cuenta por sesión» y el enjambre se presenta como trabajo futuro: no se promete lo que no corre.
 
 ### Nivel 2: solo si sobra
 
@@ -119,11 +123,11 @@ Los logins están en la tabla de dueños de `AGENTS.md`.
 
 | Área | Responsable de | Pasos |
 |---|---|---|
-| Proxy | Contratos, proxy MCP, herramientas, GFF, DAG, R⁺ | 1a, 3a, 7, 12 |
+| Proxy | Contratos, proxy MCP, herramientas, GFF, DAG, R⁺, cuenta global del enjambre | 1a, 3a, 7, 12, 17 |
 | Análisis | Motor de bits, features, CUSUM, búsqueda, pruebas, ablación. Modera al equipo morado | 4, 8, 13, 14 |
 | Servicios | Gestor de secretos, API protegida, servidor del atacante, rotación de punta a punta, líneas de base | 2a, 2b, 9, 10 |
 | Rojo | Plantillas, conversión de trazas, GitHub y web simulados, set sellado, ataque adaptativo | 2c, 5a, 5b, 11 |
-| Demo | Repo de demo, agente mínimo, arnés de reproducción, visualización, pitch, conversaciones con compradores | 1b, 3b, 6, 15, 16 |
+| Demo | Repo de demo, agente mínimo, arnés de reproducción, visualización, pitch, demo del enjambre, conversaciones con compradores | 1b, 3b, 6, 15, 16, 18 |
 
 ## Reglas que no se negocian
 

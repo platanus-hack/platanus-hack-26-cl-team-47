@@ -21,8 +21,10 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 |---|---|---|---|
 
 | #110 | `matix3000` | 13d Primer modelo de evidencia y búsqueda con validación real. Sin dependencias pendientes | H11 (10:00) |
+| #114 | `JCBasulto` | 9o Cuenta global por secreto para un enjambre de agentes (`SharedLedger`). Paso 17 del plan | H12 (11:00) |
+| #115 | `VictoriaGuerriero` | 15k Demo del enjambre: cuenta por agente contra cuenta global. El punto 2 depende de #114. Paso 18 | H15 (14:00) |
 
-`VictoriaGuerriero` y `JCBasulto` no tienen tarea abierta. `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
+`Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
 
 ## Lo que viene, en orden
 
@@ -35,6 +37,8 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 ## Decisiones vigentes
 
+- **Nombre del proyecto: Cuentagotas.** Ya está en la portada, la pantalla dividida, la lámina 1, `platanus-hack-project.jsonc` y `project-description.md`.
+- **Enjambre: es objetivo del proyecto** (pasos 17 y 18 de `docs/PLAN.md`). Mientras #114 no esté en `main`, nadie dice «la cuenta es por clave, no por agente»; la descripción lo presenta como «en curso».
 - **Equipo morado.** El agente que haya leído `engine/` no escribe ataques ni el set sellado. Las tareas de `redteam/` se hacen en una sesión de agente nueva, con la instrucción de no abrir `engine/`, y siguiendo la especificación del issue al pie de la letra. Si te llega una tarea de `redteam/` y ya leíste `engine/`, avisa en el board.
 - **Todo PR que toque `engine/`** agrega su fila en `docs/BITACORA_DETECTOR.md`.
 - **Métricas** (`eval.metrics`): las claves son `max_bits_true`, `max_bits_true_by_secret` y `median_max_bits_true`. Tras una rotación, una llamada etiquetada sin `version` cuenta solo si hubo relectura del secreto.
@@ -45,7 +49,6 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 ## Pendiente de decisión del líder
 
-- Cuenta global de bits por secreto entre sesiones y agentes (hoy es por sesión). Mientras no se implemente, no decir «por secreto, no por agente» en el pitch.
 - Demo interactiva con el público: en espera hasta que el líder avise.
 - Conversión de trazas públicas (5b): sin repartir; el fondo benigno propio ya existe.
 
