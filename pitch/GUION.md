@@ -4,6 +4,11 @@ Borrador para que una persona del equipo lo reescriba. Abrir las láminas:
 `pitch/index.html` (flechas o clic; `?s=N` abre la lámina N). Tiempo total objetivo:
 unos 3 minutos sin la demo, más la demo.
 
+Preguntas del jurado y respuestas cortas: `pitch/PREGUNTAS.md`. Si alguien
+habla de la rotación de la industria: «la rotación automática existe por
+calendario, por TTL o tras una fuga pública completa; nada la dispara por
+fuga parcial dentro del tráfico de un agente».
+
 **Regla:** las cifras de las láminas son resultados reales. Ningún número de
 resultados se escribe hasta tenerlo medido.
 
@@ -16,6 +21,7 @@ resultados se escribe hasta tenerlo medido.
 | 9 | T2: ataques prevenidos | Evaluación final sobre el set sellado (paso 14) | Análisis |
 | 9 | T3: comparación con allowlist más detect-secrets | `eval/baselines` en la evaluación final | Servicios (VictoriaGuerriero) y Análisis |
 | 9 | T4: efecto de la rotación en el goteo | Ablación del paso 14 | Análisis |
+| 11 | Corridas en vivo con un LLM siguiendo la inyección | Paso de nivel 2 (`docs/PLAN.md`) | Equipo |
 | 12 | Qué pedimos o qué sigue | Decisión del equipo | Equipo / líder |
 
 ## 1. Título · 10 s
@@ -64,7 +70,11 @@ camino que explica la rotación.
 Trabajos de este año muestran que contar la fuga acumulada ve lo que los
 detectores por turno no ven. Nosotros lo hacemos sin acceso al modelo, con
 falsas alarmas medidas, y rotamos el secreto para que lo filtrado deje de
-servir. (No decir «somos los primeros».)
+servir. En letra menor: hasta donde encontramos, es nuevo contar la fuga en
+bits por secreto en los argumentos de las herramientas sin acceso al modelo,
+rotar según lo medido, y combinar la rotación con una prueba secuencial. (No
+afirmar ser los primeros: decir «hasta donde encontramos». Ojo: la mitad
+«rápido, lo delata la evidencia» todavía no decide en el detector.)
 
 ## 9. Resultados · 25 s
 
@@ -80,9 +90,12 @@ evidencia y la rotación.
 
 ## 11. ¿Dónde está la IA? · 15 s
 
-AI Security es proteger sistemas de IA. El detector es determinista a
-propósito: un guardrail hecho con un LLM se ataca con prompt injection; el
-nuestro no se convence con texto.
+La IA es el blanco y el vector: el ataque no existe sin un agente que obedece
+texto no confiable. El monitor no es un LLM a propósito, porque un monitor LLM
+se ataca con la misma inyección: un guardia que se convence con texto no es un
+guardia. Y un atacante que suma un LLM no gana nada contra el medidor, porque
+medimos información, no intención. (PENDIENTE: corridas en vivo con un LLM; no
+decir que las mostramos hasta hacerlas.)
 
 ## 12. Usuario y cierre · 15 s
 
