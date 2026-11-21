@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
+import stat
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -38,6 +39,19 @@ REST_MESSAGE = "Archivos restantes del proyecto"
 
 class WorkspaceError(ValueError):
     pass
+
+
+def _force_writable(func, path, _exc):
+    """En Windows git deja .git/objects en solo lectura y rmtree no puede borrarlos."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def _rmtree(path: Path) -> None:
+    try:
+        shutil.rmtree(path, onexc=_force_writable)  # Python ≥ 3.12
+    except TypeError:
+        shutil.rmtree(path, onerror=_force_writable)
 
 
 def _check_out_dir(out: Path) -> None:
@@ -94,7 +108,7 @@ def make_workspace(out_dir: str, seed: int = 0) -> Path:
     out = Path(out_dir).resolve()
     _check_out_dir(out)
     if out.exists():
-        shutil.rmtree(out)
+        _rmtree(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(SOURCE, out, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", ".git"))
     _write_gitignore(out)
