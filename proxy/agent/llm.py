@@ -119,5 +119,5 @@ class AnthropicLLM:
             output_config={"effort": "medium"},
             **extra,
         )
-        blocks = [b.model_dump(mode="json", exclude_none=True) for b in resp.content]
+        blocks = [b.model_dump(mode="json", exclude_none=True, by_alias=True) for b in resp.content]
         return Reply(blocks, resp.stop_reason or "end_turn")
