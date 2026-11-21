@@ -32,7 +32,7 @@ def data(tmp_path_factory):
     return root, benign, root / "attack", model, model_path, sessions
 
 
-GRID4 = {"b": [6, 11], "b_rot": [3], "lambda_rot": [0.2, 0.4], "T": [200]}
+GRID4 = {"b": [6, 11], "b_rot": [3], "lambda_rot": [0.2, 0.4], "T": [150]}
 
 
 def _row(fa, rot, med, prev=1.0, **kw):
@@ -99,3 +99,21 @@ def test_cli_limit_combos(data, tmp_path):
     assert len(json.loads((out / "rows.json").read_text(encoding="utf-8"))) == 3
     assert (out / "pareto.json").is_file()
     assert (out / "frozen.json").is_file() == (res["chosen"] is not None)
+
+
+def test_invalid_combos_discarded(data, capsys):
+    from eval.search.search import valid_combos
+    cs = combos({"b": [9.2], "b_rot": [4], "lambda_rot": [0.3], "T": [100, 150, 200, 400]})
+    ok = valid_combos(cs)
+    assert [c["T"] for c in ok] == [100, 150]
+    assert "2 combinaciones descartadas de 4" in capsys.readouterr().out
+    _, _, _, model, _, sessions = data
+    rows = search(model, sessions[:2], [], None, grid={"b": [9.2], "b_rot": [4], "lambda_rot": [0.3],
+                                                       "T": [150, 200]}, workers=1)
+    assert [r["T"] for r in rows] == [150]
+
+
+def test_default_grid_all_valid():
+    from eval.search import GRID
+    from eval.search.search import valid_combos
+    assert len(valid_combos(combos(GRID), verbose=False)) == 750

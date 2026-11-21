@@ -66,9 +66,11 @@ class Detector:
     def __init__(self, workspace: str = "demo/repo", manifest_path: str = "demo/secrets_manifest.json",
                  model: FeatureModel | None = None, params: Params = Params(),
                  rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True,
-                 secrets: dict[str, str] | None = None):
+                 secrets: dict[str, str] | None = None, check_params: bool = True):
         """secrets: valores que reemplazan (o agregan) secretos del manifiesto, p. ej. el secreto propio
-        de una sesión del equipo rojo. None = los del manifiesto (comportamiento por defecto)."""
+        de una sesión del equipo rojo. None = los del manifiesto (comportamiento por defecto).
+        check_params: comprueba la invariante de Params (#79). Solo se desactiva en el test que
+        documenta por qué existe."""
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
         self.enforce = enforce
         self.params = params
@@ -99,11 +101,36 @@ class Detector:
         self.first_read: dict[str, str | None] = {sid: None for sid in self.secret_files}
         self.contrib: dict[str, list[str]] = {sid: [] for sid in self.secret_files}
         self._t_of: dict[str, int] = {}
+        # Límite de rotaciones (#79): pasos en que rotó cada secreto, modo escalado y último pedido.
+        self._step = 0
+        self._rotations: dict[str, list[int]] = {sid: [] for sid in self.secret_files}
+        self.escalated: dict[str, bool] = {sid: False for sid in self.secret_files}
+        self._last_request: dict[str, int] = {sid: -10**9 for sid in self.secret_files}
+        if check_params and self.secret_files:
+            shortest = min(self.secret_files, key=lambda s: self.bits.H(s))
+            st = self.bits._s[shortest]
+            params.check(H=self.bits.H(shortest), bits_per_char=st.bits_per_char, k=self.bits.k, W=self.bits.W)
+
+    def _expose_by_content(self, call_id: str, output: str | None) -> None:
+        """Un secreto queda expuesto si una salida contiene k o más caracteres seguidos de su valor vigente."""
+        if not output:
+            return
+        low = output.lower()
+        k = self.bits.k
+        for sid in self.secret_files:
+            st = self.bits._s[sid]
+            text = low if st.ci else output
+            v = st.norm
+            if any(v[i:i + k] in text for i in range(0, len(v) - k + 1)):
+                self.exposed[sid] = True
+                if self.first_read[sid] is None:
+                    self.first_read[sid] = call_id
 
     # --- API ---------------------------------------------------------------
 
     def set_output(self, call_id: str, output: str) -> None:
         self.dag.set_output(call_id, output)
+        self._expose_by_content(call_id, output)
 
     def decide(self, call: ToolCall) -> Decision:
         t0 = time.perf_counter()
@@ -126,13 +153,17 @@ class Detector:
         l =self.model.llr(f) if self.model is not None else 0.0
         S = self.cusum.update(l)
 
+        self._step += 1
         for sid in self.secret_files:
             self.e[sid] += 1
+            if self.escalated[sid] and self._step - self._last_request[sid] >= p.rotation_window:
+                self.escalated[sid] = False   # pasaron rotation_window llamadas sin pedidos de rotación
         for r in call.resources:
             for sid in self._file_to_secrets.get(r, ()):
                 self.exposed[sid] = True
                 if self.first_read[sid] is None:
                     self.first_read[sid] = call.id
+        self._expose_by_content(call.id, call.output)
         self._t_of[call.id] = call.t
         if call.is_sink:
             for sid, v in bits.items():
@@ -156,7 +187,7 @@ class Detector:
         reasons: list[str] = []
         blocked = False
 
-        # 1. Bloqueo determinista
+        # 1. Bloqueo determinista (no exige exposición)
         if call.is_sink:
             for sid, v in bits.items():
                 if v["bits"] > before[sid][3] and (dest is None or dest not in self.allowed[sid]):
@@ -164,44 +195,56 @@ class Detector:
                     to_rotate.append(sid)
                     reasons.append(f"Sumidero con material de {sid} hacia {dest or 'destino desconocido'}")
                     path_ids.update(dag_path or read_and_now(sid))
-        if blocked:
-            action = "rotate+block"
-        else:
-            # 2. Rotar
+        if not blocked:
+            # 2. Rotar (todas las causas exigen que el secreto esté expuesto; #79)
             for sid, v in bits.items():
+                if not self.exposed[sid]:
+                    continue
                 H = self.bits.H(sid)
                 frac = (v["bits"] + v["candidate_bits"]) / H if H else 0.0
                 if frac >= p.lambda_rot:
                     reasons.append(f"Rotación de {sid}: fracción filtrada {frac:.2f} ≥ {p.lambda_rot}")
                     path_ids.update([i for i in [self.first_read[sid], *self.contrib[sid]] if i])
-                elif self.exposed[sid] and S >= p.b_rot:
+                elif S >= p.b_rot:
                     reasons.append(f"Rotación de {sid}: expuesto y evidencia S={S:.2f} ≥ {p.b_rot}")
                     path_ids.update(read_and_now(sid))
-                elif self.exposed[sid] and self.e[sid] >= p.T:
+                elif self.e[sid] >= p.T:
                     reasons.append(f"Rotación periódica de {sid}: {self.e[sid]} llamadas desde la última")
                     path_ids.update(read_and_now(sid))
                 else:
                     continue
                 to_rotate.append(sid)
             # 3. Bloqueo por evidencia
-            evidence_block = bool(self.dag.exposed()) and S > p.b and bool(dag_path)
-            if evidence_block:
+            if bool(self.dag.exposed()) and S > p.b and bool(dag_path):
+                blocked = True
                 reasons.append(f"Bloqueo por evidencia: S={S:.2f} > {p.b} con camino no confiable → secreto → sumidero")
                 path_ids.update(dag_path)
-            if to_rotate and evidence_block:
-                action = "rotate+block"
-            elif to_rotate:
-                action = "rotate+allow"
-            elif evidence_block:
-                action = "block"
-            else:
-                action = "allow"
 
+        # Límite de rotaciones (#79): un secreto que ya rotó max_rotations veces en rotation_window
+        # llamadas no se vuelve a rotar; pasa a modo escalado.
+        rotate_now: list[str] = []
+        for sid in to_rotate:
+            self._last_request[sid] = self._step
+            recent = [s for s in self._rotations[sid] if self._step - s < p.rotation_window]
+            if self.enforce and len(recent) >= p.max_rotations:
+                self.escalated[sid] = True
+            else:
+                rotate_now.append(sid)
+        # Modo escalado: todo sumidero hacia un destino fuera de allowed_hosts del secreto se bloquea.
+        if call.is_sink:
+            for sid in self.secret_files:
+                if self.escalated[sid] and (dest is None or dest not in self.allowed[sid]):
+                    blocked = True
+                    reasons.append(f"Demasiadas rotaciones de {sid}: se bloquean las salidas y se avisa a una persona")
+                    path_ids.update(read_and_now(sid))
+
+        action = ("rotate+" if rotate_now else "") + ("block" if blocked else "allow")
         path = sorted(path_ids, key=lambda i: (self._t_of.get(i, call.t), i))
         reason = "; ".join(reasons) if reasons else "Sin evidencia ni fuga"
         if self.enforce:
-            for sid in to_rotate:
+            for sid in rotate_now:
                 self._do_rotate(sid)
+                self._rotations[sid].append(self._step)
         else:
             reason = f"Solo medición: {action} — {reason}"
             action = "allow"

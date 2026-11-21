@@ -18,7 +18,7 @@ from eval.metrics import aggregate, session_summary
 from eval.replay.core import replay
 
 GRID = {"b": [4, 6, 8, 9.2, 11, 13], "b_rot": [2, 3, 4, 5, 6],
-        "lambda_rot": [0.1, 0.2, 0.3, 0.4, 0.5], "T": [50, 100, 200, 400, 800]}   # 750 combinaciones
+        "lambda_rot": [0.1, 0.2, 0.3, 0.4, 0.5], "T": [25, 50, 75, 100, 150]}   # 750 combinaciones (#79)
 
 OBJECTIVES = ("false_alarm_rate", "benign_rotations_per_1000", "median_max_bits_true")   # se minimizan
 
@@ -26,6 +26,20 @@ OBJECTIVES = ("false_alarm_rate", "benign_rotations_per_1000", "median_max_bits_
 def combos(grid: dict[str, list]) -> list[dict]:
     keys = list(grid)
     return [dict(zip(keys, vals)) for vals in itertools.product(*(grid[k] for k in keys))]
+
+
+def valid_combos(cs: list[dict], verbose: bool = True) -> list[dict]:
+    """Las combinaciones que cumplen Params.check() (con el H, k y W por defecto). Imprime las descartadas."""
+    ok = []
+    for c in cs:
+        try:
+            Params(**c).check()
+        except ValueError:
+            continue
+        ok.append(c)
+    if verbose:
+        print(f"invariante de parámetros: {len(cs) - len(ok)} combinaciones descartadas de {len(cs)}")
+    return ok
 
 
 def evaluate(params: Params, model, sessions: list[list[ToolCall]], labels: list[dict],
@@ -66,7 +80,9 @@ def search(model, val_sessions: list[list[ToolCall]], labels: list[dict], secret
 
 def search_combos(model, val_sessions: list[list[ToolCall]], labels: list[dict], secrets: dict | None,
                   cs: list[dict], workers: int = 0, seed: int = 0) -> list[dict]:
-    """Como search, pero sobre una lista explícita de combinaciones (para --limit-combos)."""
+    """Como search, pero sobre una lista explícita de combinaciones (para --limit-combos).
+    Descarta antes de evaluar las combinaciones que no cumplen la invariante de Params (#79)."""
+    cs = valid_combos(cs)
     n = workers or os.cpu_count() or 1
     if n <= 1 or len(cs) <= 1:
         return [evaluate(Params(**c), model, val_sessions, labels, secrets, seed) for c in cs]
