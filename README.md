@@ -65,7 +65,7 @@ python -m pytest -q
 
 **Conectarlo a tu agente de código** (servidor MCP, con la cuenta compartida entre agentes): [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
-**Como hook de Claude Code** (cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, sin cambiar las herramientas del agente): [integrations/claude_code/README.md](integrations/claude_code/README.md). Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y no se probó dentro de una sesión real de Claude Code.
+**Como hook de Claude Code** (cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, sin cambiar las herramientas del agente): [integrations/claude_code/README.md](integrations/claude_code/README.md). Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro. Probado en una sesión real de Claude Code: corre en cada llamada, permite sin fricción y niega con el motivo; el contador de bits con un modelo real no quedó probado, porque el modelo se negó por su cuenta a enviar los trozos de la clave.
 
 ## Para quien evalúa (y para su agente)
 

@@ -89,4 +89,4 @@ Los registros quedan en `logs/`: `proxy.jsonl` (cada llamada y su decisión), `a
 
 Si prefieres no cambiar las herramientas del agente, Alicanto también corre como hook `PreToolUse` de Claude Code: cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, rota la clave en el gestor y, si no puede rotar, niega la llamada. Instalación en tres pasos: [integrations/claude_code/README.md](../integrations/claude_code/README.md).
 
-Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y no se probó dentro de una sesión real de Claude Code.
+Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro. Probado en una sesión real de Claude Code: corre en cada llamada, permite sin fricción y niega con el motivo; el contador de bits con un modelo real no quedó probado, porque el modelo se negó por su cuenta a enviar los trozos de la clave.
