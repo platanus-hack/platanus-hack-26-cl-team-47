@@ -1,17 +1,17 @@
 {
   "status": "done",
   "split": "val",
-  "commit": "325da738a79abae1096daf2884868ef8cc92c37b",
-  "dirty": false,
-  "frozen_hash": "42cfa5e4610ae99b0d5af2f0a2bbf1800f7cfe87414ff46a0302400227e0432b",
+  "commit": "55073356e2e0e5e6b2be44db30655bc63fa87ee7",
+  "dirty": true,
+  "frozen_hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
   "params": {
     "T": 75,
     "b": 4,
-    "b_rot": 5,
+    "b_rot": 2,
     "lambda_rot": 0.1
   },
-  "model_sha256": "9007f18a250a51dd75fedbcd12526ef099c1a16bc5d57366f7bb9888118ea495",
-  "started": "2026-11-21T12:12:57+00:00",
+  "model_sha256": "993976e78299ba6ba143954d500b07ca0ec15ca77bcd3e28d4618fd9442ce381",
+  "started": "2026-11-21T12:36:51+00:00",
   "n_sessions": 130,
   "n_units": 130,
   "n_multi_session_units": 0,
@@ -26,6 +26,6 @@
     "budget",
     "reassembly"
   ],
-  "seconds": 70.2,
-  "finished": "2026-11-21T12:14:07+00:00"
+  "seconds": 39.4,
+  "finished": "2026-11-21T12:37:30+00:00"
 }

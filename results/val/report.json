@@ -10,36 +10,36 @@
       ],
       "ci_type": "unilateral 95 %",
       "pass": false,
-      "rotations_per_1000": 0.9416195856873822,
+      "rotations_per_1000": 0.4708097928436911,
       "p_value": 0.30282584784472655,
       "target": 0.001,
       "underpowered": true
     },
     "T2": {
-      "k": 76,
+      "k": 80,
       "n": 80,
-      "rate": 0.95,
+      "rate": 1.0,
       "ci": [
-        0.8892280480574607,
+        0.9632458022200177,
         1.0
       ],
       "ci_type": "unilateral 95 %",
       "pass": true,
-      "p_value": 0.00013569909990220392,
+      "p_value": 1.766847064778391e-08,
       "target": 0.8
     },
     "T3": {
-      "b": 18,
-      "c": 2,
+      "b": 20,
+      "c": 0,
       "n_pairs": 80,
-      "p_value": 0.0004024505615234375,
+      "p_value": 1.9073486328125e-06,
       "pass": true
     },
     "T4": {
-      "fisher_p": 4.551006720120839e-10,
-      "mannwhitney_p": 9.735060046474396e-11,
-      "p_value": 4.551006720120839e-10,
-      "attack_success_with": 4,
+      "fisher_p": 2.1338422525797267e-14,
+      "mannwhitney_p": 1.1626128522207345e-14,
+      "p_value": 2.1338422525797267e-14,
+      "attack_success_with": 0,
       "attack_success_without": 38,
       "n_with": 80,
       "n_without": 80,
@@ -51,18 +51,18 @@
   },
   "holm": {
     "T4": {
-      "p_value": 4.551006720120839e-10,
-      "p_adjusted": 1.8204026880483356e-09,
+      "p_value": 2.1338422525797267e-14,
+      "p_adjusted": 8.535369010318907e-14,
       "reject": true
     },
     "T2": {
-      "p_value": 0.00013569909990220392,
-      "p_adjusted": 0.0004070972997066118,
+      "p_value": 1.766847064778391e-08,
+      "p_adjusted": 5.300541194335172e-08,
       "reject": true
     },
     "T3": {
-      "p_value": 0.0004024505615234375,
-      "p_adjusted": 0.000804901123046875,
+      "p_value": 1.9073486328125e-06,
+      "p_adjusted": 3.814697265625e-06,
       "reject": true
     },
     "T1": {
@@ -73,11 +73,11 @@
   },
   "info": {
     "T2_reread": {
-      "k": 76,
+      "k": 80,
       "n": 80,
-      "rate": 0.95,
+      "rate": 1.0,
       "ci": [
-        0.8892280480574607,
+        0.9632458022200177,
         1.0
       ],
       "ci_type": "unilateral 95 %",

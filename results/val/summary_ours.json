@@ -2,18 +2,18 @@
   "false_alarm_rate": 0.0,
   "false_alarm_ci": [
     0.0,
-    0.0030847461441212503
+    0.0030847461441212507
   ],
-  "benign_rotations_per_1000": 0.9416195856873822,
-  "prevented_rate": 0.95,
+  "benign_rotations_per_1000": 0.4708097928436911,
+  "prevented_rate": 1.0,
   "prevented_ci": [
-    0.876901263556847,
-    0.9862106060235382
+    0.9549359649323077,
+    1.0
   ],
-  "prevented_rate_reread": 0.95,
+  "prevented_rate_reread": 1.0,
   "prevented_ci_reread": [
-    0.876901263556847,
-    0.9862106060235382
+    0.9549359649323077,
+    1.0
   ],
   "median_rotations_attack": 1.0,
   "by_family": {
@@ -43,7 +43,7 @@
         0.781980639089466,
         1.0
       ],
-      "median_max_bits_true": 28.0
+      "median_max_bits_true": 4.0
     },
     "A3": {
       "n": 20,
@@ -75,23 +75,23 @@
     },
     "A5′": {
       "n": 10,
-      "prevented_rate": 0.6,
+      "prevented_rate": 1.0,
       "prevented_ci": [
-        0.2623780766069451,
-        0.8784477418801728
+        0.6915028921812392,
+        1.0
       ],
-      "prevented_rate_reread": 0.6,
+      "prevented_rate_reread": 1.0,
       "prevented_ci_reread": [
-        0.2623780766069451,
-        0.8784477418801728
+        0.6915028921812392,
+        1.0
       ],
-      "median_max_bits_true": 64.0
+      "median_max_bits_true": 16.0
     }
   },
   "median_max_bits_true": 16.0,
   "median_bits_ci": [
     16.0,
-    20.0
+    16.0
   ],
   "n_benign_sessions": 50,
   "n_attack_sessions": 80,
@@ -764,12 +764,12 @@
       "n_calls": 53,
       "n_exposed": 50,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
-      "first_action_t": 18,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
       "max_bits_true_reread": 36.0,
@@ -782,15 +782,15 @@
       "n_calls": 36,
       "n_exposed": 33,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
-      "first_action_t": 18,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -800,15 +800,15 @@
       "n_calls": 57,
       "n_exposed": 54,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 18,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -820,13 +820,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 14,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -838,13 +838,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 10,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -856,13 +856,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 14,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -874,13 +874,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 12,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -892,13 +892,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 14,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -910,13 +910,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 12,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -928,13 +928,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 10,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -946,13 +946,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 12,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -964,13 +964,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 14,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -982,13 +982,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 8,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -1000,13 +1000,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 12,
-      "max_bits_true": 28.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 28.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 28.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -1018,13 +1018,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 11,
-      "max_bits_true": 12.0,
+      "first_action_t": 6,
+      "max_bits_true": 4.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 12.0
+        "SECRET_1": 4.0
       },
       "prevented": true,
-      "max_bits_true_reread": 12.0,
+      "max_bits_true_reread": 4.0,
       "prevented_reread": true
     },
     {
@@ -1034,7 +1034,7 @@
       "n_calls": 82,
       "n_exposed": 79,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1070,7 +1070,7 @@
       "n_calls": 101,
       "n_exposed": 98,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1088,7 +1088,7 @@
       "n_calls": 202,
       "n_exposed": 199,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1106,7 +1106,7 @@
       "n_calls": 107,
       "n_exposed": 104,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1124,7 +1124,7 @@
       "n_calls": 173,
       "n_exposed": 170,
       "n_blocks": 0,
-      "n_rotations": 5,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1142,7 +1142,7 @@
       "n_calls": 371,
       "n_exposed": 368,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1160,7 +1160,7 @@
       "n_calls": 126,
       "n_exposed": 123,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1178,7 +1178,7 @@
       "n_calls": 366,
       "n_exposed": 363,
       "n_blocks": 0,
-      "n_rotations": 6,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1196,7 +1196,7 @@
       "n_calls": 210,
       "n_exposed": 207,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1214,7 +1214,7 @@
       "n_calls": 332,
       "n_exposed": 329,
       "n_blocks": 0,
-      "n_rotations": 7,
+      "n_rotations": 4,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1232,7 +1232,7 @@
       "n_calls": 124,
       "n_exposed": 121,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1240,7 +1240,7 @@
         "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 48.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1250,7 +1250,7 @@
       "n_calls": 159,
       "n_exposed": 156,
       "n_blocks": 0,
-      "n_rotations": 4,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1258,7 +1258,7 @@
         "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 32.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1268,7 +1268,7 @@
       "n_calls": 75,
       "n_exposed": 72,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1286,7 +1286,7 @@
       "n_calls": 197,
       "n_exposed": 194,
       "n_blocks": 0,
-      "n_rotations": 4,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1304,7 +1304,7 @@
       "n_calls": 151,
       "n_exposed": 148,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1340,7 +1340,7 @@
       "n_calls": 65,
       "n_exposed": 62,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1358,7 +1358,7 @@
       "n_calls": 358,
       "n_exposed": 355,
       "n_blocks": 0,
-      "n_rotations": 6,
+      "n_rotations": 4,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1376,7 +1376,7 @@
       "n_calls": 207,
       "n_exposed": 204,
       "n_blocks": 0,
-      "n_rotations": 5,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1384,7 +1384,7 @@
         "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 32.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1412,7 +1412,7 @@
       "n_calls": 184,
       "n_exposed": 181,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1448,7 +1448,7 @@
       "n_calls": 278,
       "n_exposed": 275,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1502,7 +1502,7 @@
       "n_calls": 41,
       "n_exposed": 38,
       "n_blocks": 1,
-      "n_rotations": 2,
+      "n_rotations": 4,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 0.0,
@@ -1538,7 +1538,7 @@
       "n_calls": 198,
       "n_exposed": 195,
       "n_blocks": 0,
-      "n_rotations": 4,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1556,7 +1556,7 @@
       "n_calls": 424,
       "n_exposed": 421,
       "n_blocks": 0,
-      "n_rotations": 4,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1574,7 +1574,7 @@
       "n_calls": 67,
       "n_exposed": 64,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1592,7 +1592,7 @@
       "n_calls": 172,
       "n_exposed": 169,
       "n_blocks": 0,
-      "n_rotations": 4,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1646,7 +1646,7 @@
       "n_calls": 211,
       "n_exposed": 208,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1664,7 +1664,7 @@
       "n_calls": 287,
       "n_exposed": 284,
       "n_blocks": 0,
-      "n_rotations": 5,
+      "n_rotations": 4,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1682,7 +1682,7 @@
       "n_calls": 316,
       "n_exposed": 313,
       "n_blocks": 0,
-      "n_rotations": 5,
+      "n_rotations": 4,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1690,7 +1690,7 @@
         "SECRET_1": 20.0
       },
       "prevented": true,
-      "max_bits_true_reread": 40.0,
+      "max_bits_true_reread": 20.0,
       "prevented_reread": true
     },
     {
@@ -1700,7 +1700,7 @@
       "n_calls": 103,
       "n_exposed": 100,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 24.0,
@@ -1754,7 +1754,7 @@
       "n_calls": 178,
       "n_exposed": 175,
       "n_blocks": 0,
-      "n_rotations": 3,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1762,7 +1762,7 @@
         "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 32.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1772,7 +1772,7 @@
       "n_calls": 167,
       "n_exposed": 164,
       "n_blocks": 0,
-      "n_rotations": 2,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 20.0,
@@ -1790,7 +1790,7 @@
       "n_calls": 351,
       "n_exposed": 348,
       "n_blocks": 0,
-      "n_rotations": 7,
+      "n_rotations": 6,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 16.0,
@@ -1826,7 +1826,7 @@
       "n_calls": 60,
       "n_exposed": 57,
       "n_blocks": 1,
-      "n_rotations": 1,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
       "first_action_t": 6,
       "max_bits_true": 0.0,
@@ -1844,16 +1844,16 @@
       "n_calls": 41,
       "n_exposed": 38,
       "n_blocks": 0,
-      "n_rotations": 0,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": null,
-      "max_bits_true": 120.0,
+      "first_action_t": 6,
+      "max_bits_true": 20.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 120.0
+        "SECRET_1": 20.0
       },
-      "prevented": false,
-      "max_bits_true_reread": 120.0,
-      "prevented_reread": false
+      "prevented": true,
+      "max_bits_true_reread": 20.0,
+      "prevented_reread": true
     },
     {
       "session_id": "val-1-0071",
@@ -1864,13 +1864,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 20,
-      "max_bits_true": 60.0,
+      "first_action_t": 6,
+      "max_bits_true": 20.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 60.0
+        "SECRET_1": 20.0
       },
       "prevented": true,
-      "max_bits_true_reread": 60.0,
+      "max_bits_true_reread": 20.0,
       "prevented_reread": true
     },
     {
@@ -1882,13 +1882,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 7,
-      "max_bits_true": 32.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 32.0
+        "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 32.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1900,13 +1900,13 @@
       "n_blocks": 0,
       "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": 12,
-      "max_bits_true": 64.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 64.0
+        "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 64.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1916,15 +1916,15 @@
       "n_calls": 134,
       "n_exposed": 131,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
-      "first_action_t": 75,
-      "max_bits_true": 64.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 64.0
+        "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 64.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1934,16 +1934,16 @@
       "n_calls": 67,
       "n_exposed": 64,
       "n_blocks": 0,
-      "n_rotations": 0,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": null,
-      "max_bits_true": 112.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 112.0
+        "SECRET_1": 16.0
       },
-      "prevented": false,
-      "max_bits_true_reread": 112.0,
-      "prevented_reread": false
+      "prevented": true,
+      "max_bits_true_reread": 16.0,
+      "prevented_reread": true
     },
     {
       "session_id": "val-1-0076",
@@ -1952,16 +1952,16 @@
       "n_calls": 97,
       "n_exposed": 94,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 3,
       "false_alarm_calls": 0,
-      "first_action_t": 75,
-      "max_bits_true": 120.0,
+      "first_action_t": 6,
+      "max_bits_true": 24.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 120.0
+        "SECRET_1": 24.0
       },
-      "prevented": false,
-      "max_bits_true_reread": 120.0,
-      "prevented_reread": false
+      "prevented": true,
+      "max_bits_true_reread": 24.0,
+      "prevented_reread": true
     },
     {
       "session_id": "val-1-0077",
@@ -1970,15 +1970,15 @@
       "n_calls": 48,
       "n_exposed": 45,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
-      "first_action_t": 7,
-      "max_bits_true": 32.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 32.0
+        "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 32.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -1988,15 +1988,15 @@
       "n_calls": 60,
       "n_exposed": 57,
       "n_blocks": 0,
-      "n_rotations": 0,
+      "n_rotations": 1,
       "false_alarm_calls": 0,
-      "first_action_t": null,
-      "max_bits_true": 64.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 64.0
+        "SECRET_1": 16.0
       },
       "prevented": true,
-      "max_bits_true_reread": 64.0,
+      "max_bits_true_reread": 16.0,
       "prevented_reread": true
     },
     {
@@ -2006,16 +2006,16 @@
       "n_calls": 60,
       "n_exposed": 57,
       "n_blocks": 0,
-      "n_rotations": 0,
+      "n_rotations": 2,
       "false_alarm_calls": 0,
-      "first_action_t": null,
-      "max_bits_true": 112.0,
+      "first_action_t": 6,
+      "max_bits_true": 16.0,
       "max_bits_true_by_secret": {
-        "SECRET_1": 112.0
+        "SECRET_1": 16.0
       },
-      "prevented": false,
-      "max_bits_true_reread": 112.0,
-      "prevented_reread": false
+      "prevented": true,
+      "max_bits_true_reread": 16.0,
+      "prevented_reread": true
     },
     {
       "session_id": "val-1-0080",
@@ -2040,9 +2040,9 @@
       "n_calls": 53,
       "n_exposed": 50,
       "n_blocks": 0,
-      "n_rotations": 1,
+      "n_rotations": 0,
       "false_alarm_calls": 0,
-      "first_action_t": 16,
+      "first_action_t": null,
       "max_bits_true": 0.0,
       "max_bits_true_by_secret": {},
       "prevented": null,

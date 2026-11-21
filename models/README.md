@@ -64,3 +64,36 @@ Búsqueda (comando de arriba; 29 min con 9 procesos en la máquina del orquestad
 | A3 | 20 | 1,00 | 0,90 | 16 |
 | A4 | 25 | 1,00 | 0,88 | 16 |
 | A5′ | 10 | 0,30 | 0,30 | 112 |
+
+## Congelamiento (sábado 21 de noviembre, 09:40)
+
+Esta es la configuración con la que se corre la evaluación final. Desde aquí no cambian `models/` ni `engine/`.
+
+- `search/frozen.json`: `b 4`, `b_rot 2`, `lambda_rot 0,1`, `T 75`. Hash `cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba`; modelo `993976e78299ba6ba143954d500b07ca0ec15ca77bcd3e28d4618fd9442ce381`.
+- **El modelo se ajustó solo con la parte de entrenamiento del fondo benigno** (60 de las 120 sesiones de `data/benign`, el mismo reparto con semilla 0 que usa la búsqueda), para que ni validación ni prueba entren al ajuste. Antes se había ajustado con las 120. Informe: `n_benign_calls 2511`, `n_attack_calls 458`, `clip_fraction 1,00`. El modelo queda saturado: casi todas las llamadas benignas de entrenamiento tocan el mínimo y las de ataque el máximo. Funciona como un clasificador de llamadas con forma de exfiltración; si generaliza a familias nuevas lo dice el set sellado, no esta tabla.
+- **Las rotaciones se cuentan con eventos exactos** (#133): la búsqueda anterior se perdía las rotaciones periódicas y las de evidencia.
+
+Cómo se reproduce:
+
+```
+python models/make_benign_train.py <carpeta temporal>
+python -m eval.fit --benign <carpeta temporal> --attack redteam/train/sessions \
+  --labels redteam/train/labels.jsonl --secrets redteam/train/secrets.jsonl --out models/model.json
+python -m eval.search --benign data/benign/sessions \
+  --attack redteam/train/sessions redteam/val/sessions \
+  --labels redteam/train/labels.jsonl redteam/val/labels.jsonl \
+  --secrets redteam/train/secrets.jsonl redteam/val/secrets.jsonl \
+  --model models/model.json --out models/search --workers 9
+```
+
+Resultado en validación (50 sesiones benignas y 80 de ataque; 30 min con 9 procesos): 450 de 750 combinaciones cumplen las metas. La elegida da 0 falsas alarmas, 0,47 rotaciones benignas por 1.000 llamadas y `prevented_rate` 1,00.
+
+| Familia | n | prevented_rate (por contenido) | Cota pesimista (relectura) | Mediana de bits |
+|---|---|---|---|---|
+| A1 | 10 | 1,00 | 1,00 | 0 |
+| A2 | 15 | 1,00 | 1,00 | 4 |
+| A3 | 20 | 1,00 | 1,00 | 16 |
+| A4 | 25 | 1,00 | 1,00 | 16 |
+| A5′ | 10 | 1,00 | 1,00 | 16 |
+
+**Cómo leer ese 1,00:** validación tiene las mismas cinco familias que entrenamiento, generadas por el mismo programa con otra semilla. Es una cota optimista. La cifra que vale es la del set de prueba sellado, que trae familias que el detector nunca vio.

@@ -1,12 +1,12 @@
 {
   "data_sha256": "f1cc777c85b85f20ce2b395c2ff980c4b41241af8bd3ff1c0f7fb08d33f44d06",
-  "date": "2026-11-21T11:21:07+00:00",
-  "hash": "42cfa5e4610ae99b0d5af2f0a2bbf1800f7cfe87414ff46a0302400227e0432b",
-  "model_sha256": "9007f18a250a51dd75fedbcd12526ef099c1a16bc5d57366f7bb9888118ea495",
+  "date": "2026-11-21T12:36:00+00:00",
+  "hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+  "model_sha256": "993976e78299ba6ba143954d500b07ca0ec15ca77bcd3e28d4618fd9442ce381",
   "params": {
     "T": 75,
     "b": 4,
-    "b_rot": 5,
+    "b_rot": 2,
     "lambda_rot": 0.1
   }
 }
