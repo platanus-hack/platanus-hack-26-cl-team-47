@@ -178,7 +178,11 @@ def run_split(session: Path, decide_right=RIGHT_FACTORY, out_dir: Path = ROOT / 
     calls = load_session(session)
     left = run_panel(calls, resolve(decide_left), secrets, secret_id, rotate_on_decision=False)
     right = run_panel(calls, resolve(decide_right), secrets, secret_id, rotate_on_decision=True)
-    return write(left, out_dir / "left.jsonl"), write(right, out_dir / "right.jsonl")
+    paths = write(left, out_dir / "left.jsonl"), write(right, out_dir / "right.jsonl")
+    # Grafo de archivos para la franja de la pantalla dividida (?graph=).
+    from demo.export_graph import write_graph
+    write_graph(out_dir / "graph.json")
+    return paths
 
 
 def main() -> None:

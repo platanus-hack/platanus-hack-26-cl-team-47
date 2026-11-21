@@ -46,8 +46,20 @@
     </section>
   </main>
 
+  <section class="graph-strip" id="graph-strip" hidden>
+    <div class="panel graph-panel">
+      <h2>Grafo de archivos por sensibilidad (panel derecho)</h2>
+      <div class="graph-box" id="graph-box"></div>
+    </div>
+    <div class="panel path-panel">
+      <h2>Camino de la decisión (panel derecho)</h2>
+      <div id="path-box" class="path-box-wrap"></div>
+    </div>
+  </section>
+
   <script src="vendor/d3.min.js"></script>
   <script src="app.js"></script>
+  <script src="graph.js"></script>
   <script src="split.js"></script>
 </body>
 </html>

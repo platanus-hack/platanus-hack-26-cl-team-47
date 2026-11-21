@@ -80,13 +80,28 @@ bash demo/demo.sh
    `engine.detector:make_decide` (rota en la llamada 24 con 48 bits filtrados:
    diente de sierra y 401).
 2. Levanta `python -m http.server 8200 --directory demo`.
-3. Imprime la URL: `http://127.0.0.1:8200/viz/split.html?left=../out/left.jsonl&right=../out/right.jsonl`.
+3. Imprime la URL: `http://127.0.0.1:8200/viz/split.html?left=../out/left.jsonl&right=../out/right.jsonl&graph=../out/graph.json`.
 
 Abre la URL, pulsa ▶ (o espacio) y elige 4× o 16×. Al final se ven el 200 y el 401.
 
 **Sin Python** (por ejemplo, si algo falla en vivo): hay una copia versionada de
 la corrida en `demo/viz/fixtures/real_left.jsonl` y `real_right.jsonl`. Sirve
 `demo/viz` con cualquier servidor estático y abre
-`split.html?left=fixtures/real_left.jsonl&right=fixtures/real_right.jsonl`.
-Para regenerarla: `python demo/run_split.py --out-dir demo/out` y copia los dos
-archivos a `demo/viz/fixtures/real_*.jsonl`.
+`split.html?left=fixtures/real_left.jsonl&right=fixtures/real_right.jsonl&graph=fixtures/real_graph.json`.
+Para regenerarla: `python demo/run_split.py --out-dir demo/out` y copia
+`left.jsonl`, `right.jsonl` y `graph.json` a `demo/viz/fixtures/real_*`.
+
+## Grafo de archivos y camino de la decisión (15e)
+
+Con `&graph=<archivo>` la pantalla dividida agrega una franja con:
+
+- **Grafo de archivos** de `demo/repo` (GFF de `engine.graph.gff`): cada nodo
+  va de gris (μ = 0) a rojo (μ = 1). Borde grueso: lo que toca la llamada
+  actual del panel derecho; borde fino: lo tocado antes. La disposición se
+  calcula una vez y no se mueve.
+- **Camino de la decisión** actual del panel derecho: una caja por llamada de
+  `Decision.path` (id, herramienta, recurso principal) y la `reason` debajo.
+
+`python demo/export_graph.py --out demo/out/graph.json` genera el grafo
+(nodos `{id, kind, mu, sd}` y aristas, sin valores de secretos);
+`run_split.py` también lo escribe en `<out-dir>/graph.json`.
