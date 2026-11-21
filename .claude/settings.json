@@ -23,5 +23,19 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tools/board unread)",
+      "Bash(tools/board whoami)",
+      "Bash(tools/board read:*)",
+      "Bash(tools/board wait:*)",
+      "Bash(tools/board wait)",
+      "Bash(bash tools/board unread)",
+      "Bash(bash tools/board whoami)",
+      "Bash(bash tools/board read:*)",
+      "Bash(bash tools/board wait:*)",
+      "Bash(bash tools/board wait)"
+    ]
   }
 }

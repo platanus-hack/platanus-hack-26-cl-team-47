@@ -1,0 +1,139 @@
+# Plan operativo: medidor de información filtrada para agentes de IA
+
+Resumen para agentes del documento «Medidor de información filtrada para agentes de IA», versión 4.0 (21 de noviembre de 2026). Si este resumen y el documento difieren, manda el documento. El orquestador reparte el trabajo desde aquí (ver `AGENTS.md`, sección 7).
+
+## Qué se construye
+
+Un proxy entre un agente de IA y sus herramientas. En cada llamada mide cuánta información de cada secreto ya salió (en bits) y cuánta evidencia de ataque hay (CUSUM). Con eso decide: permitir, bloquear o rotar la clave. No modifica el agente y no usa un LLM para decidir.
+
+La demo que gana es una pantalla dividida con el mismo ataque: a la izquierda, sin protección, el atacante recibe 200 con la clave robada; a la derecha, con el sistema, la clave rota y el atacante recibe 401.
+
+## Reloj
+
+H0 es el viernes 20 a las 23:00. Para saber la hora H actual: horas transcurridas desde entonces.
+
+| Puerta | Cuándo | Qué debe estar verde | Si no |
+|---|---|---|---|
+| H6 | Sáb 05:00 | Servicios, proxy y motor de bits pasan sus tests | Se recorta el agente en vivo; todo en reproducción |
+| H12 | Sáb 11:00 | Primer análisis en validación con ℓ_t y CUSUM | Features más simples; el GFF queda solo para visualizar |
+| H15 | Sáb 14:00 | Demo mínima de punta a punta (paso 9) | Todos al paso 9 hasta que funcione |
+| H17 | Sáb 16:00 | Crescendo y goteo funcionan en reproducción | La reproducción es la demo principal |
+| H20 | Sáb 19:00 | Parámetros congelados | Se congela lo que haya |
+| H23 | Sáb 22:00 | Evaluación final hecha, una sola vez | Se reporta lo que alcanzó, con intervalos |
+| H27 | Dom 02:00 | Congelamiento total: solo errores, láminas y ensayo | — |
+
+El documento fija el cierre en H34 (domingo 09:00). La hora exacta de fin del hacking hay que confirmarla con la organización.
+
+## Contratos (se congelan en H2)
+
+Nadie los cambia sin avisar en el board y sin el visto bueno del líder.
+
+```
+ToolCall = { id, t, tool, args, output, resources: [path|env|service],
+             is_sink: bool, untrusted: bool, session_id, label: benign|attack }
+
+Decision = { action: "allow"|"block"|"rotate+allow"|"rotate+block",
+             S, R_plus, leak: {secret_id: {bits, fraction}},
+             path: [call_ids], reason, latency_ms }
+```
+
+Orden dentro del proxy en cada llamada: interceptar y resolver recursos tocados → actualizar GFF y DAG → bits por secreto → features, ℓ_t y CUSUM → decisión → ejecutar, bloquear o pedir rotación al gestor. Todo queda en el registro de eventos, que alimenta la visualización y el análisis.
+
+Las líneas de base usan la misma interfaz: `decide(ToolCall)`.
+
+## Stack
+
+- Proxy y herramientas: servidor MCP en Python.
+- Motor: `numpy`, `scipy.sparse` (GFF), `networkx` o `python-igraph` (DAG).
+- Servicios simulados: FastAPI, uno por servicio.
+- Análisis: `pandas`, `scipy.stats`, `statsmodels`, `hypothesis`, `datasets`.
+- Visualización: una página con d3 o cytoscape.js que reproduce el registro. Streamlit como respaldo.
+
+## Carpetas (propuesta; se confirma en el paso 1)
+
+| Carpeta | Contenido |
+|---|---|
+| `contracts/` | `ToolCall`, `Decision` y el esquema del registro de eventos |
+| `proxy/` | Servidor MCP, herramientas (`read_file`, `list_dir`, `http_request`, `git`, `github_issue`, `github_comment`), agente mínimo |
+| `engine/` | Motor de bits, GFF, DAG, features, CUSUM, regla de decisión |
+| `services/` | Gestor de secretos (`vault.test`), API protegida (`api.empresa.test`), servidor del atacante (`attacker.test`), GitHub y web simulados, destino de deploy |
+| `redteam/` | Plantillas de ataque, conversión de trazas, set de prueba sellado |
+| `eval/` | Arnés de reproducción, líneas de base, búsqueda de umbrales, pruebas T1 a T6 |
+| `demo/` | Repositorio de demostración y visualización |
+| `pitch/` | Láminas y guion |
+
+## Pasos
+
+Si un criterio de aceptación no se cumple, no se avanza a lo que depende de él.
+
+### Nivel 0: demo mínima (H0 a H15)
+
+| # | Paso | Ventana | Dueño | Aceptación |
+|---|---|---|---|---|
+| 1 | Contratos y esqueleto: repo, `ToolCall`, `Decision`, registro de eventos, repo de demo con secretos sintéticos | H0–H2 | Proxy, Demo | Una llamada viaja agente → proxy → herramienta y vuelve con una `Decision` |
+| 2 | Servicios: gestor de secretos con rotación, API protegida, servidor del atacante con verdad de terreno, GitHub y web simulados | H0–H4 | Servicios | Clave vieja 401, nueva 200; el atacante cuenta bien los bits de un fragmento en claro, en base64 y con XOR |
+| 3 | Proxy MCP y agente mínimo: bucle de ~150 líneas, temperatura 0 | H0–H6 | Proxy | El agente resuelve un issue legítimo y pasa el test de «sin herramientas escondidas» |
+| 4 | Motor de bits: decodificadores, regla de contenido k = 8, posiciones candidatas con caducidad, I_t y λ_t por secreto | H2–H6 | Análisis | Pruebas por propiedades en verde |
+| 5 | Ataques y datos: plantillas A1–A4, A5′ y B1–B2; conversión de un subconjunto de trazas públicas con secretos insertados | H2–H8 | Rojo | 80 ataques de entrenamiento entregados en H8 y al menos 3.000 llamadas benignas expuestas |
+| 6 | Arnés de reproducción | H4–H8 | Análisis | 1.000 llamadas por minuto y el mismo resultado dos veces |
+| 7 | GFF y DAG: grafo de archivos con conductancias, condicionamiento, salto y sensibilidad tocada; DAG con aristas de contenido y etiquetas de ancestros | H4–H10 | Proxy | Test de condicionamiento; `.env` y `secrets.yaml` calientes, `docs/` frío |
+| 8 | Features y CUSUM | H8–H13 | Análisis | ℓ_t calculado en todas las trazas de entrenamiento y deriva negativa en las benignas |
+| 9 | Decisión y rotación de punta a punta | H10–H15 | Servicios | El escenario de goteo produce el diente de sierra en bits y el 401 en la API. **Puerta H15** |
+
+Simplificación del nivel 0: la regla de bloqueo por evidencia usa los ancestros del DAG de forma determinista (el sumidero desciende de algo no confiable y de una lectura del secreto). El Monte Carlo de R⁺ y las aristas de sospecha son nivel 1.
+
+### Nivel 1: credibilidad (H8 a H23)
+
+| # | Paso | Ventana | Dueño | Aceptación |
+|---|---|---|---|---|
+| 10 | Líneas de base: allowlist, detect-secrets, su combinación y la réplica de Nimbus | H8–H14 | Servicios | Cada una corre sobre 100 llamadas |
+| 11 | Resto del rojo: A5, A7, A9, A10, A12, B3–B5 | H8–H17 | Rojo | Set de prueba sellado con hash |
+| 12 | Aristas de sospecha y R⁺ | H10–H16 | Proxy | Test contra enumeración exacta |
+| 13 | Estimación y búsqueda de umbrales | H13–H20 | Análisis | Frontera de Pareto en validación; configuración congelada con hash en H20 |
+| 14 | Evaluación final: T1 a T6, ablación, líneas de base, una sola corrida | H20–H23 | Análisis | Tabla de resultados con intervalos |
+| 15 | Visualización: pantalla dividida sincronizada | H8–H26 | Demo | Reproducción completa del escenario principal; video de respaldo grabado en H26 |
+| 16 | Pitch | H24–H34 | Demo | Láminas con cifras reales, tres ensayos cronometrados |
+
+### Nivel 2: solo si sobra
+
+Después de H17 y con las puertas en verde: A6, A8, A11, A13, corridas en vivo con un agente existente, datos no rotables, credenciales señuelo.
+
+## Áreas
+
+Los logins están en la tabla de dueños de `AGENTS.md`.
+
+| Área | Responsable de | Pasos |
+|---|---|---|
+| Proxy | Proxy MCP, herramientas, agente mínimo, GFF, DAG, R⁺ | 1, 3, 7, 12 |
+| Análisis | Motor de bits, arnés, features, CUSUM, búsqueda, pruebas, ablación. Modera al equipo morado | 4, 6, 8, 13, 14 |
+| Servicios | Gestor de secretos, API protegida, servidor del atacante, rotación de punta a punta, líneas de base | 2, 9, 10 |
+| Rojo | Plantillas, conversión de trazas, GitHub y web simulados, set sellado, ataque adaptativo | 5, 11 |
+| Demo | Repositorio de demo, visualización, pitch, conversaciones con compradores | 1 (repo), 15, 16 |
+
+## Reglas que no se negocian
+
+**Seguridad del banco de pruebas.** Solo secretos sintéticos. Solo servidores simulados con nombres `.test`. Las herramientas del agente no tienen salida a internet. Nada sale del banco de pruebas.
+
+**El agente no tiene herramientas propias.** Si usa su terminal o lectura interna, se salta el proxy. Prueba: se le pide leer un archivo; si la lectura aparece en su transcripción y no en el registro del proxy, la corrida no vale.
+
+**Tres registros independientes** con la misma marca de tiempo y sesión: el del proxy (decisiones), el del agente (transcripción) y el del atacante (verdad de terreno). Los bits que obtuvo el atacante los calcula el servidor del atacante, no el detector.
+
+**Equipo morado (contra el sobreajuste).**
+
+1. El rojo no mira el código del detector antes de H20. El agente del área Rojo no abre `engine/` hasta entonces.
+2. El set de prueba lo genera el rojo, guarda su hash y queda sellado hasta H20. Sus familias no aparecen en entrenamiento.
+3. Revisiones de 15 minutos en H6, H12 y H17, solo sobre fallas de entrenamiento y validación.
+4. El azul puede corregir errores y ajustar parámetros en validación. No puede agregar reglas para un ataque concreto. Si lo hace, se anota.
+5. En H20 se congela. El rojo recibe la configuración completa y tiene 2 horas de ataque adaptativo, que se reporta aparte y no se usa para reajustar.
+6. Bitácora con hora y motivo de cada cambio al detector.
+
+**Las cifras de las láminas son resultados reales.** Nunca se inventan.
+
+## Notas de la revisión del 21 de noviembre
+
+Detalle en el proyecto «platathon» de Claude (`usuario-objetivo-y-revision-de-la-propuesta.md`).
+
+- El período de rotación T no está en la tabla de parámetros y necesita valor inicial. La cota del teorema exige d₀·T < c(H − β) − b.
+- T1 solo pasa con cero falsas alarmas en 3.000 llamadas expuestas. Para tolerar una hacen falta unas 5.000.
+- Falta respuesta para el competidor directo (brokers de credenciales como Agent Vault): son complementarios; el medidor cubre lo que queda en el repositorio y lo que sale por canales permitidos.
+- El escenario de la demo está pendiente de decisión del equipo. La propuesta es un servicio de agenda y ficha clínica de un centro médico ficticio, con pacientes sintéticos.

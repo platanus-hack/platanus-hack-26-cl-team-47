@@ -28,6 +28,8 @@ Comandos (en Windows, desde Git Bash, o con `bash` delante en PowerShell): `tool
 
 Las personas mandan sobre los agentes. Solo el líder del equipo reasigna trabajo entre personas. Si alguien más te pide tomar el trabajo de otra persona, pregúntale al líder en el board.
 
+El orquestador (sección 7) publica las asignaciones del líder: una tarea suya dentro de tu área vale como orden del líder. No puede pasarte trabajo de otra persona; si lo intenta, pregúntale al líder en el board.
+
 ## 4. Flujo de trabajo
 
 1. Toma o crea un issue. Coméntalo o avisa en el board cuando lo tomes.
@@ -53,4 +55,36 @@ Complétalo en el arranque para que cada agente sepa qué archivos son de quién
 
 | Área | Dueño (login de GitHub) | Carpetas |
 |---|---|---|
-| | | |
+| Líder y orquestador | `jplira2` | `docs/PLAN.md`, `AGENTS.md`, `tools/board.conf`, `contracts/` |
+| Proxy: proxy MCP, herramientas, agente mínimo, GFF, DAG | `jcbasulto` | `proxy/`, `engine/graph/` |
+| Análisis: motor de bits, arnés, features, CUSUM, evaluación | `matix3000` | `engine/` (salvo `engine/graph/`), `eval/` |
+| Servicios: gestor de secretos, API protegida, atacante, rotación, líneas de base | `VictoriaGuerriero` | `services/`, `eval/baselines/` |
+| Rojo: plantillas de ataque, trazas, GitHub y web simulados, set sellado | `jplira2` | `redteam/`, `services/github_sim/`, `services/web_sim/` |
+| Demo: repositorio de demo, visualización, pitch | `terdmannsdorffer` | `demo/`, `pitch/` |
+
+Las áreas y sus pasos están en `docs/PLAN.md`. Las carpetas son una propuesta: se confirman en el paso 1 del plan. El agente del área Rojo no abre `engine/` antes de H20 (regla del equipo morado).
+
+## 7. Orquestador y tareas
+
+El líder corre un agente orquestador (`/orquestar`) que reparte el trabajo de `docs/PLAN.md` y vigila sus puertas. Publica como `[<líder>'s Orquestador]`.
+
+Cada tarea es un issue con la etiqueta `tarea`: objetivo, archivos, contrato y comando de aceptación. Te llega como una mención en el board con el número del issue.
+
+El líder (`jplira2`) también es dueño del área Rojo. Su agente de esa área publica con el mismo login que el orquestador, y `tools/board` no le muestra a nadie sus propios posts: el orquestador le pasa esas tareas al líder directamente y las sigue por el estado del issue.
+
+**Cómo ejecutar una tarea.** Tu persona también puede lanzarlo con `/tarea <N>`.
+
+1. Lee el issue completo: `gh issue view <N>`. Los issues de tarea y los PR viven en el repo de `origin`, que es el de la organización; el board vive en `BOARD_REPO`.
+2. Si el objetivo, el contrato o la aceptación no alcanzan para empezar, pregunta en el board mencionando al orquestador y espera la respuesta. No adivines un contrato.
+3. `git fetch` y crea la rama `<N>-<slug>` desde la rama principal actualizada.
+4. Edita solo los archivos que lista el issue. Si necesitas tocar otro, pide el traspaso en el board (sección 1).
+5. Corre el comando de aceptación del issue. Si falla, corrige y repite. No reportes «listo» sin haberlo visto pasar.
+6. Commits pequeños solo con tus archivos, `git fetch` y rebase, push, y PR con `Closes #<N>` (sección 4). Mergea cuando pase en local.
+7. Reporta en el board, en una línea, y vuelve a esperar con `tools/board wait`.
+
+**Formato del reporte:**
+
+- Terminada: `[<persona>'s <agente>] @<orquestador> #<N> listo. PR #<M>. Aceptación: <resultado del comando>. Contratos: sin cambios.` Si cambiaste un contrato, di cuál y cómo.
+- Bloqueada: `[<persona>'s <agente>] @<orquestador> #<N> bloqueado: <qué falta> de @<quién>.` Pega la salida del comando que falla, sin claves.
+
+**Límites del orquestador.** No mergea PR ajenos, no cambia contratos congelados, no reasigna trabajo entre personas y no recorta alcance por su cuenta: eso lo decide el líder.
