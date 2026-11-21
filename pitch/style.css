@@ -132,3 +132,14 @@ td.pendiente { border-radius: 0; }
 .slide-swarm .results.swarm td.good { color: #5fd38d; font-weight: 700; }
 .slide-swarm .strong { margin: 6px 0 10px; }
 .swarm-link { font-size: 26px; color: var(--muted); }
+
+/* Lámina «Qué hace cada uno» (16d) */
+.compare { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 19px; margin: 8px 0 14px; }
+.compare th, .compare td { padding: 8px 10px; border-bottom: 2px solid var(--border); text-align: left; vertical-align: top; }
+.compare tr:first-child th { font-size: 17px; color: var(--muted); font-weight: 600; }
+.compare th { font-weight: 600; }
+.compare tr:first-child th:first-child { width: 25%; }
+.compare tr.ours th, .compare tr.ours td { font-weight: 700; color: var(--accent); }
+.slide-compare .novedad { font-size: 25px; margin: 6px 0; }
+.slide-compare .nota-pie { font-size: 17px; color: var(--muted); margin: 0; }
+.slide p .k { display: inline-block; font-weight: 700; color: var(--accent); margin-right: 8px; }

@@ -24,7 +24,6 @@
     <section class="slide" data-n="3">
       <h2>El ejemplo</h2>
       <p>El goteo: 4 caracteres por salida, separados por decenas de llamadas normales.</p>
-      <p class="pendiente">PENDIENTE: nombre del escenario de la demo (decisión del equipo)</p>
     </section>
 
     <section class="slide slide-quote" data-n="4">
@@ -66,10 +65,17 @@
       <a class="swarm-link" href="../demo/viz/split.html?demo=enjambre">Ver la demo del enjambre</a>
     </section>
 
-    <section class="slide slide-quote" data-n="9">
-      <h2>Qué es nuevo</h2>
-      <blockquote class="cita">«Trabajos de este año muestran que contar la fuga acumulada ve lo que los detectores por turno no ven. Nosotros lo hacemos sin acceso al modelo, con falsas alarmas medidas, y rotamos el secreto para que lo filtrado deje de servir.»</blockquote>
-      <p class="nota" style="font-size: 26px; color: var(--muted);">Hasta donde encontramos, es nuevo: fuga en bits por secreto en los argumentos de las herramientas, sin acceso al modelo; rotación disparada por lo medido; y rotación combinada con prueba secuencial.</p>
+    <section class="slide slide-compare" data-n="9">
+      <h2>Qué hace cada uno</h2>
+      <table class="compare">
+        <tr><th></th><th>Junta fragmentos entre llamadas</th><th>Lee fragmentos cortos o codificados</th><th>Cuenta por credencial</th><th>Entre varios agentes</th><th>Rota la clave</th></tr>
+        <tr><th>Filtros por mensaje (pasarelas MCP con regex, detect-secrets)</th><td>No</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
+        <tr><th>Reensamblado por sesión (Pipelock, AgentBrake)</th><td>Sí</td><td>No, según declaran</td><td>Parcial</td><td>No</td><td>No</td></tr>
+        <tr><th>Presupuestos de fuga (Chauhan y Revankar, OCELOT, Metere)</th><td>Sí</td><td>No aplica: no miran argumentos de herramientas</td><td>No</td><td>No</td><td>No</td></tr>
+        <tr class="ours"><th>Cuentagotas</th><td>Sí</td><td>Sí, en las seis codificaciones que lee</td><td>Sí</td><td>Sí, en un mismo proceso</td><td>Sí</td></tr>
+      </table>
+      <p class="novedad">Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.</p>
+      <p class="nota-pie">Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026.</p>
     </section>
 
     <section class="slide" data-n="10">
@@ -98,8 +104,9 @@
 
     <section class="slide" data-n="13">
       <h2>Usuario y cierre</h2>
-      <p>Equipos de plataforma o seguridad de empresas que usan agentes de código sobre repositorios con credenciales.</p>
-      <p class="pendiente">PENDIENTE: qué pedimos o qué sigue (decisión del equipo)</p>
+      <p><span class="k">Quién compra</span> Seguridad y plataforma en salud y sus proveedores de software.</p>
+      <p><span class="k">Por qué ahora</span> Alerta a la ANCI en 3 horas; el informe dice qué salió y cuándo rotó.</p>
+      <p class="strong">Pedimos dos equipos de TI de salud para un piloto.</p>
     </section>
 
   </main>

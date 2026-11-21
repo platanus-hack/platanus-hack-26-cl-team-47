@@ -57,17 +57,42 @@ def test_falta_el_navegador(tmp_path, monkeypatch):
         record.find_chrome(env={}, home=tmp_path, which=lambda n: None)
 
 
-def test_ffmpeg_solo_con_libx264(tmp_path):
+X264 = " V....D libx264  libx264 H.264\n V....D libvpx  libvpx VP8"
+VP8 = " V....D libvpx  libvpx VP8"
+
+
+def test_codec_de_la_lista_de_encoders():
+    assert record.codec_of(X264) == "libx264"
+    assert record.codec_of(VP8) == "libvpx"
+    assert record.codec_of(" V..... mjpeg") is None
+
+
+def test_ffmpeg_prefiere_libx264_y_si_no_webm(tmp_path):
     bueno = fake(tmp_path, "bin/ffmpeg")
     pw = fake(tmp_path, "Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac")
-    ok = {str(bueno)}
-    check = lambda p: str(p) in ok
-    assert record.find_ffmpeg(env={"FFMPEG_BIN": str(bueno)}, home=tmp_path, which=lambda n: None, check=check) == bueno
-    assert record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: str(bueno), check=check) == bueno
-    with pytest.raises(record.MissingBinary, match="Falta ffmpeg con libx264.*ffmpeg-mac.*FFMPEG_BIN"):
-        record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: None, check=check)
-    with pytest.raises(record.MissingBinary, match="no trae libx264"):
-        record.find_ffmpeg(env={"FFMPEG_BIN": str(pw)}, home=tmp_path, which=lambda n: None, check=check)
+    listas = {str(bueno): X264, str(pw): VP8}
+    probe = lambda p: listas.get(str(p), "")
+    assert record.find_ffmpeg(env={"FFMPEG_BIN": str(bueno)}, home=tmp_path, which=lambda n: None,
+                              probe=probe) == (bueno, "libx264")
+    assert record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: str(bueno), probe=probe) == (bueno, "libx264")
+    # Sin libx264 en ningún lado: el de Playwright, en WebM.
+    assert record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: None, probe=probe) == (pw, "libvpx")
+    assert record.output_path(Path("demo/out/v.mp4"), "libvpx") == Path("demo/out/v.webm")
+    assert record.output_path(Path("demo/out/v.mp4"), "libx264") == Path("demo/out/v.mp4")
+
+
+def test_falta_ffmpeg(tmp_path):
+    fake(tmp_path, "Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac")
+    with pytest.raises(record.MissingBinary, match="Falta ffmpeg.*ffmpeg-mac.*FFMPEG_BIN"):
+        record.find_ffmpeg(env={}, home=tmp_path, which=lambda n: None, probe=lambda p: " V..... mjpeg")
+    with pytest.raises(record.MissingBinary, match="no trae libx264 ni libvpx"):
+        record.find_ffmpeg(env={"FFMPEG_BIN": str(fake(tmp_path, "x/ffmpeg"))}, home=tmp_path,
+                           which=lambda n: None, probe=lambda p: "")
+
+
+def test_comando_webm():
+    j = " ".join(record.webm_cmd(Path("ffmpeg"), Path("o.webm")))
+    assert "image2pipe" in j and "-c:v mjpeg" in j and "-c:v libvpx" in j and "-an" in j and "pipe:0" in j
 
 
 def test_comando_de_ffmpeg():
@@ -93,10 +118,11 @@ def _binarios():
         return False
 
 
-@pytest.mark.skipif(not _binarios(), reason="falta un navegador o un ffmpeg con libx264")
+@pytest.mark.skipif(not _binarios(), reason="falta un navegador o un ffmpeg con libx264 o libvpx")
 def test_graba_goteo(tmp_path):
     out = tmp_path / "respaldo_goteo.mp4"
     r = subprocess.run([sys.executable, str(ROOT / "demo" / "record.py"), "--demo", "goteo", "--every", "20",
                         "--out", str(out)], capture_output=True, text=True, encoding="utf-8", timeout=600)
     assert r.returncode == 0, r.stderr
-    assert out.is_file() and out.stat().st_size > 10 * 1024
+    hecho = out if out.is_file() else out.with_suffix(".webm")  # sin libx264 sale en WebM
+    assert hecho.is_file() and hecho.stat().st_size > 10 * 1024
