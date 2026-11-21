@@ -26,7 +26,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from .decoders import alphabet_of, expand, iter_strings, normalize
+from .decoders import alphabet_of, expand_oriented, iter_strings, normalize
 
 MIN_CANDIDATE = 4
 
@@ -147,14 +147,19 @@ class BitsEngine:
             if strings:
                 text = "\n".join(strings)
                 hosts = {h.lower() for h in _HOST.findall(text)}
-                variants = expand(text, self.depth)
+                variants = expand_oriented(text, self.depth)
                 blanked = _HASH_TOKEN.sub(" ", text)
-                blanked_variants = expand(blanked, self.depth) if blanked != text else variants
+                blanked_variants = expand_oriented(blanked, self.depth) if blanked != text else None
                 for sid, st in self._s.items():
                     to_allowed = bool(hosts) and hosts <= st.allowed
-                    self._scan(st, variants, found_conf[sid], found_cand[sid], confirmed=True)
-                    cand_src = blanked_variants if to_allowed else variants
-                    self._scan(st, cand_src, found_conf[sid], found_cand[sid], confirmed=False)
+                    full = self._matches(st, variants)
+                    for i, L in full:
+                        if L >= self.k:
+                            found_conf[sid].update(range(i, i + L))
+                    cand_src = self._matches(st, blanked_variants) if (to_allowed and blanked_variants) else full
+                    for i, L in cand_src:
+                        if L < self.k:
+                            found_cand[sid].update(range(i, i + L))
 
         for sid, st in self._s.items():
             st.K |= found_conf[sid]
@@ -167,11 +172,38 @@ class BitsEngine:
             st.cand -= st.K
         return self.state()
 
-    def _scan(self, st: _SecretState, variants: list[str], conf: set[int], cand: set[int], confirmed: bool) -> None:
-        for v in variants:
-            for i, L in maximal_matches(st.norm, normalize(v, st.ci)):
-                if L >= self.k:
-                    if confirmed:
-                        conf.update(range(i, i + L))
-                elif not confirmed:
-                    cand.update(range(i, i + L))
+    @staticmethod
+    def _matches(st: _SecretState, variants: list[tuple[str, bool]]) -> set[tuple[int, int]]:
+        """Coincidencias maximales (inicio, largo) en todas las variantes, sin las espejadas (#76).
+
+        Si el secreto tiene un palíndromo junto al borde de lo enviado, la variante invertida de lo
+        enviado contiene caracteres del secreto desplazados, fuera de lo enviado. Una coincidencia de
+        una orientación se descarta si su inversa aparece en el secreto en otra posición y esas
+        posiciones ya las explica la orientación contraria: es la misma información leída al revés.
+
+        Dos pasos para no descartar ambas cuando se espejan entre sí (frecuente con 4-gramas): primero
+        se filtran las invertidas contra las directas; después las directas solo contra las invertidas
+        que quedaron. Si la ambigüedad es real, gana la lectura directa (mismo número de bits).
+        """
+        groups: dict[bool, set[tuple[int, int]]] = {False: set(), True: set()}
+        for v, flipped in variants:
+            groups[flipped].update(maximal_matches(st.norm, normalize(v, st.ci)))
+        s = st.norm
+
+        def cover(ms: set[tuple[int, int]]) -> set[int]:
+            return {p for i, L in ms for p in range(i, i + L)}
+
+        def unmirrored(ms: set[tuple[int, int]], other: set[int]) -> set[tuple[int, int]]:
+            out = set()
+            for i, L in ms:
+                rev = s[i:i + L][::-1]
+                j = s.find(rev)
+                while j != -1 and not (j != i and all(p in other for p in range(j, j + L))):
+                    j = s.find(rev, j + 1)
+                if j == -1:
+                    out.add((i, L))
+            return out
+
+        kept_rev = unmirrored(groups[True], cover(groups[False]))
+        kept_fwd = unmirrored(groups[False], cover(kept_rev))
+        return kept_fwd | kept_rev
