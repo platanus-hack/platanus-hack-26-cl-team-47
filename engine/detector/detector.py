@@ -21,6 +21,10 @@ para ese secreto en esa llamada se descarta.
 Decision.leak[s] = {bits: confirmadas + candidatas, fraction: bits / H(s)}, con los valores de
 antes de rotar. El bloqueo determinista (regla 1) mira solo las confirmadas.
 Con enforce=False (make_measure_only) se mide todo igual pero la acción es siempre allow y no se rota.
+
+Enjambre (#114): con `ledger` (SharedLedger), varios detectores comparten el motor de bits, la
+exposición, las versiones, el historial de rotaciones y el reloj. Cada uno ve las rotaciones que
+pidieron los otros al empezar su siguiente decide(). Sin `ledger`, todo es como antes.
 """
 
 from __future__ import annotations
@@ -30,7 +34,7 @@ import random
 import string
 import time
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable, Iterator, MutableMapping
 from urllib.parse import urlparse
 
 from contracts import Decision, Leak, ToolCall
@@ -41,6 +45,9 @@ from engine.graph.gff import FileGraph
 
 from .features import extract
 from .params import Params
+
+if TYPE_CHECKING:
+    from .ledger import SharedLedger
 
 _ALPHABET_CHARS = {
     "hex": "0123456789abcdef",
@@ -62,21 +69,50 @@ def _dest_host(call: ToolCall, files: set[str]) -> str | None:
     return None
 
 
+class _SharedExposed(MutableMapping):
+    """Vista dict de ledger.exposed: un secreto leído por un agente está expuesto para todos."""
+
+    def __init__(self, ledger: "SharedLedger", sids: list[str]):
+        self._ledger, self._sids = ledger, sids
+
+    def __getitem__(self, sid: str) -> bool:
+        return sid in self._ledger.exposed
+
+    def __setitem__(self, sid: str, value: bool) -> None:
+        if value:
+            self._ledger.exposed.add(sid)
+        else:
+            self._ledger.exposed.discard(sid)
+
+    def __delitem__(self, sid: str) -> None:
+        self._ledger.exposed.discard(sid)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._sids)
+
+    def __len__(self) -> int:
+        return len(self._sids)
+
+
 class Detector:
     def __init__(self, workspace: str = "demo/repo", manifest_path: str = "demo/secrets_manifest.json",
                  model: FeatureModel | None = None, params: Params = Params(),
                  rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True,
-                 secrets: dict[str, str] | None = None, check_params: bool = True):
+                 secrets: dict[str, str] | None = None, check_params: bool = True,
+                 ledger: "SharedLedger | None" = None):
         """secrets: valores que reemplazan (o agregan) secretos del manifiesto, p. ej. el secreto propio
         de una sesión del equipo rojo. None = los del manifiesto (comportamiento por defecto).
         check_params: comprueba la invariante de Params (#79). Solo se desactiva en el test que
-        documenta por qué existe."""
+        documenta por qué existe.
+        ledger: cuenta compartida del enjambre (#114). Con ledger, los secretos y sus valores vigentes
+        salen del ledger (se ignora `secrets`) y el motor de bits es el del ledger."""
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
         self.enforce = enforce
         self.params = params
         self.model = model
         self._rotate_fn = rotate
         self._rng = random.Random(seed)
+        self.ledger = ledger
         self.secret_files = {s["secret_id"]: list(s.get("files", [])) for s in manifest["secrets"]}
         self.allowed = {s["secret_id"]: {h.lower() for h in s.get("allowed_hosts", [])} for s in manifest["secrets"]}
         values = {s["secret_id"]: s["value"] for s in manifest["secrets"]}
@@ -84,6 +120,11 @@ class Detector:
             values[sid] = v
             self.secret_files.setdefault(sid, [])
             self.allowed.setdefault(sid, set())
+        if ledger is not None:
+            values = dict(ledger.values)
+            self.secret_files = {sid: self.secret_files.get(sid, []) for sid in values}
+            self.allowed = {sid: self.allowed.get(sid, set()) | ledger.allowed_hosts.get(sid, set())
+                            for sid in values}
         self._file_to_secrets: dict[str, set[str]] = {}
         for sid, fs in self.secret_files.items():
             for f in fs:
@@ -91,10 +132,12 @@ class Detector:
         self.graph = FileGraph.from_workspace(workspace, manifest_path)
         # S del DAG viaja solo con material del valor vigente de cada secreto (#86, #94).
         self.dag = CallDAG(self.secret_files, secret_values=dict(values))
-        self.bits = BitsEngine(values, allowed_hosts=self.allowed)
+        self.bits = ledger.bits if ledger is not None else BitsEngine(values, allowed_hosts=self.allowed)
         self.last_features: dict[str, float] = {}   # features de la última llamada (#57)
         self.cusum = Cusum()
-        self.exposed: dict[str, bool] = {sid: False for sid in self.secret_files}
+        self.exposed: MutableMapping[str, bool] = (
+            _SharedExposed(ledger, list(self.secret_files)) if ledger is not None
+            else {sid: False for sid in self.secret_files})
         self.e: dict[str, int] = {sid: 0 for sid in self.secret_files}
         self._prev_kind: str | None = None
         # Para el camino explicativo (#51): primera lectura y sumideros que aportaron, desde la última rotación.
@@ -106,6 +149,7 @@ class Detector:
         self._rotations: dict[str, list[int]] = {sid: [] for sid in self.secret_files}
         self.escalated: dict[str, bool] = {sid: False for sid in self.secret_files}
         self._last_request: dict[str, int] = {sid: -10**9 for sid in self.secret_files}
+        self._seen_version: dict[str, int] = dict(ledger.version) if ledger is not None else {}
         if check_params and self.secret_files:
             shortest = min(self.secret_files, key=lambda s: self.bits.H(s))
             st = self.bits._s[shortest]
@@ -135,6 +179,9 @@ class Detector:
     def decide(self, call: ToolCall) -> Decision:
         t0 = time.perf_counter()
         p = self.params
+        if self.ledger is not None:
+            self.ledger.tick()
+            self._sync_rotations()
 
         touch = self.graph.touch(call.resources)
         dag_info = self.dag.add(call)
@@ -154,9 +201,14 @@ class Detector:
         S = self.cusum.update(l)
 
         self._step += 1
+        step = self._clock()
         for sid in self.secret_files:
-            self.e[sid] += 1
-            if self.escalated[sid] and self._step - self._last_request[sid] >= p.rotation_window:
+            if self.ledger is not None:   # reloj global: llamadas del enjambre desde la última rotación
+                rot = self.ledger.rotation_steps[sid]
+                self.e[sid] = step - (rot[-1] if rot else 0)
+            else:
+                self.e[sid] += 1
+            if self.escalated[sid] and step - self._last_request[sid] >= p.rotation_window:
                 self.escalated[sid] = False   # pasaron rotation_window llamadas sin pedidos de rotación
         for r in call.resources:
             for sid in self._file_to_secrets.get(r, ()):
@@ -224,8 +276,8 @@ class Detector:
         # llamadas no se vuelve a rotar; pasa a modo escalado.
         rotate_now: list[str] = []
         for sid in to_rotate:
-            self._last_request[sid] = self._step
-            recent = [s for s in self._rotations[sid] if self._step - s < p.rotation_window]
+            self._last_request[sid] = step
+            recent = [s for s in self._rotation_steps(sid) if step - s < p.rotation_window]
             if self.enforce and len(recent) >= p.max_rotations:
                 self.escalated[sid] = True
             else:
@@ -244,7 +296,8 @@ class Detector:
         if self.enforce:
             for sid in rotate_now:
                 self._do_rotate(sid)
-                self._rotations[sid].append(self._step)
+                if self.ledger is None:   # con ledger, ledger.rotate ya anotó el paso
+                    self._rotations[sid].append(self._step)
         else:
             reason = f"Solo medición: {action} — {reason}"
             action = "allow"
@@ -269,24 +322,53 @@ class Detector:
         st = self.bits._s[sid]
         st.K, st.cand, st.last_new = set(snap[0]), set(snap[1]), snap[2]
 
+    def _clock(self) -> int:
+        return self.ledger.step if self.ledger is not None else self._step
+
+    def _rotation_steps(self, sid: str) -> list[int]:
+        return self.ledger.rotation_steps[sid] if self.ledger is not None else self._rotations[sid]
+
+    def _reset_local(self, sid: str, new: str) -> None:
+        """Parte local de una rotación: DAG con el valor nuevo y camino explicativo desde cero."""
+        self.dag.set_secret_value(sid, new)
+        self.first_read[sid] = None
+        self.contrib[sid] = []
+        self.e[sid] = 0
+
+    def _sync_rotations(self) -> None:
+        """Aplica las rotaciones que pidieron otros detectores del enjambre desde la última llamada."""
+        for sid in self.secret_files:
+            v = self.ledger.version[sid]
+            if v != self._seen_version.get(sid):
+                self._reset_local(sid, self.ledger.values[sid])
+                self._seen_version[sid] = v
+
     def _do_rotate(self, sid: str) -> None:
+        rng = self.ledger.rng if self.ledger is not None else self._rng
         if self._rotate_fn is not None:
             new = self._rotate_fn(sid)
         else:
             old = self.bits._s[sid].value
             chars = _ALPHABET_CHARS[alphabet_of(old)[0]]
-            new = "".join(self._rng.choice(chars) for _ in range(len(old)))
-        self.bits.rotate(sid, new)
-        self.dag.set_secret_value(sid, new)
-        self.first_read[sid] = None
-        self.contrib[sid] = []
-        self.e[sid] = 0
-        self.exposed[sid] = False
+            new = "".join(rng.choice(chars) for _ in range(len(old)))
+        if self.ledger is not None:
+            self._seen_version[sid] = self.ledger.rotate(sid, new)   # también quita la exposición
+        else:
+            self.bits.rotate(sid, new)
+            self.exposed[sid] = False
+        self._reset_local(sid, new)
 
 
 def make_decide() -> Callable[[ToolCall], Decision]:
     """Fábrica para el arnés: python -m eval.replay --decide engine.detector:make_decide"""
     return Detector().decide
+
+
+def make_decide_shared(ledger: "SharedLedger", **detector_kwargs) -> Callable[[], Callable[[ToolCall], Decision]]:
+    """Fábrica para un enjambre: cada llamada crea un Detector de un agente sobre la misma cuenta."""
+    def factory() -> Callable[[ToolCall], Decision]:
+        return Detector(ledger=ledger, **detector_kwargs).decide
+    return factory
 
 
 def make_measure_only() -> Callable[[ToolCall], Decision]:

@@ -3,8 +3,9 @@
 import json
 from pathlib import Path
 
-from .detector import Detector, make_decide, make_measure_only
+from .detector import Detector, make_decide, make_decide_shared, make_measure_only
 from .features import extract
+from .ledger import SharedLedger
 from .params import Params
 
 
@@ -23,4 +24,5 @@ def make_decide_with_model(path: str = "models/model.json"):
     return factory
 
 
-__all__ = ["Detector", "Params", "extract", "make_decide", "make_decide_with_model", "make_measure_only"]
+__all__ = ["Detector", "Params", "SharedLedger", "extract", "make_decide", "make_decide_shared",
+           "make_decide_with_model", "make_measure_only"]
