@@ -10,7 +10,7 @@ Las que se repitieron en finales de AI Security de otras sedes del tour 2026 (pr
 
 ## 1. ¿En qué se diferencia de los permisos de Claude Code o de la revisión de Codex?
 
-Los permisos deciden si una herramienta puede usarse; no miran qué sale por una herramienta ya permitida. Nuestro ataque usa solo llamadas permitidas, de a cuatro caracteres. Cuentagotas mide el contenido que sale, sumado en el tiempo, y cambia la clave.
+Los permisos deciden si una herramienta puede usarse; no miran qué sale por una herramienta ya permitida. Nuestro ataque usa solo llamadas permitidas, de a cuatro caracteres. Alicanto mide el contenido que sale, sumado en el tiempo, y cambia la clave.
 
 Fuente: la demo (`demo/sessions/goteo.jsonl`: solo lecturas y peticiones HTTP permitidas); `proxy/` (el proxy ve los argumentos de cada llamada).
 
@@ -22,7 +22,7 @@ Fuente: `data/benign/` y `redteam/SELLO.md` (familias benignas del set de prueba
 
 ## 3. ¿Por qué no un clasificador o un LLM que vigile?
 
-Porque un monitor que se convence con texto se puede convencer con texto. Contar caracteres de una clave conocida es determinista, explicable y barato, y no se puede persuadir. La evidencia de comportamiento que suma Cuentagotas también es un cálculo, no un modelo de lenguaje.
+Porque un monitor que se convence con texto se puede convencer con texto. Contar caracteres de una clave conocida es determinista, explicable y barato, y no se puede persuadir. La evidencia de comportamiento que suma Alicanto también es un cálculo, no un modelo de lenguaje.
 
 Fuente: pregunta 12 (por qué el detector es determinista); informe, E (puntos 1 y 2).
 
@@ -72,13 +72,13 @@ Fuente: «Actualización de H10», corrección 1: https://pipelab.org/blog/cross
 
 ## 11. ¿Por qué no usar un broker de credenciales y no darle el secreto al agente?
 
-Es la crítica más fuerte, y los brokers son complementarios. Si puede poner todo detrás de un broker, hágalo. Quedan las claves que viven en el repositorio: contraseñas de base de datos, llaves de firma, secretos de webhook. Cuentagotas es una vida útil adaptativa: la clave dura hasta que empieza a filtrarse, no hasta un reloj.
+Es la crítica más fuerte, y los brokers son complementarios. Si puede poner todo detrás de un broker, hágalo. Quedan las claves que viven en el repositorio: contraseñas de base de datos, llaves de firma, secretos de webhook. Alicanto es una vida útil adaptativa: la clave dura hasta que empieza a filtrarse, no hasta un reloj.
 
 Fuente: [22], [28]; informe, A.3.
 
 ## 12. ¿Dónde está la IA, si el detector es determinista?
 
-El agente de IA es el blanco y el vector del ataque: el ataque no existe sin un agente LLM que obedece texto no confiable. El monitor es determinista a propósito, porque un monitor LLM se ataca con la misma inyección que ataca al agente: un monitor que se convence con texto no es un monitor. Y un atacante que agrega un LLM no gana nada contra Cuentagotas, porque medimos información, no intención.
+El agente de IA es el blanco y el vector del ataque: el ataque no existe sin un agente LLM que obedece texto no confiable. El monitor es determinista a propósito, porque un monitor LLM se ataca con la misma inyección que ataca al agente: un monitor que se convence con texto no es un monitor. Y un atacante que agrega un LLM no gana nada contra Alicanto, porque medimos información, no intención.
 
 Fuente: informe, E (puntos 1, 2 y 4); `docs/BASES.md`, línea de trabajo 1 (AI control). PENDIENTE: resultado de las corridas con un LLM real (#139). Mientras no existan, no decir que lo mostramos.
 
@@ -90,7 +90,7 @@ Fuente: lámina 11; informe, A.5; `results/test/LECTURA.md`, puntos 2 y 4.
 
 ## 14. ¿Rotar no rompe producción?
 
-La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Cuentagotas deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona. Falsos positivos en la evaluación final: 0 llamadas benignas bloqueadas de 5.879 expuestas (cota superior al 95 %: 0,05 %); el costo es otro, rotaciones de más: 34 de las 90 sesiones benignas difíciles rotaron una clave sin necesidad (5,46 por cada 1.000 llamadas benignas; la meta era 5), y ninguna de las 30 normales. Es tráfico sintético, escrito por nosotros.
+La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Alicanto deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona. Falsos positivos en la evaluación final: 0 llamadas benignas bloqueadas de 5.879 expuestas (cota superior al 95 %: 0,05 %); el costo es otro, rotaciones de más: 34 de las 90 sesiones benignas difíciles rotaron una clave sin necesidad (5,46 por cada 1.000 llamadas benignas; la meta era 5), y ninguna de las 30 normales. Es tráfico sintético, escrito por nosotros.
 
 Fuente: [21], [22]; informe, A.2; límite de rotaciones en `engine/detector/params.py` (#79); `results/test/LECTURA.md`, punto 3.
 
@@ -114,7 +114,7 @@ Fuente: `docs/ESCENARIO.md`, filas «verificado» de la tabla de datos. El hospi
 
 ## 18. ¿Y si el atacante reparte la fuga entre varios agentes?
 
-Lo probamos con cinco agentes que sacan dos fragmentos cada uno: con un monitor por agente, ninguno ve más de 32 de los 160 bits, nada rota y el atacante arma la clave (200); con la cuenta global de Cuentagotas la clave rota en la llamada 32 y el atacante recibe 401. Hoy la cuenta compartida cubre a los agentes que pasan por el mismo proceso y se conserva entre sesiones; coordinar varias máquinas es trabajo futuro. Ya hay monitores entre agentes: Makins et al. (arXiv 2607.07368) describen el «efecto fragmentación» contra monitores por instancia, y Brown et al. (arXiv 2605.31593) también vigilan entre agentes; los dos usan un LLM o agrupamiento, no una cuenta de bits por secreto. El riesgo no es teórico: Anthropic describió una campaña en que los atacantes dividieron el ataque en tareas pequeñas de apariencia inocente y el modelo cosechó credenciales, y Google GTIG describe actores que automatizan descubrimiento y explotación con frameworks multiagente, con las intrusiones totalmente agénticas como tendencia.
+Lo probamos con cinco agentes que sacan dos fragmentos cada uno: con un monitor por agente, ninguno ve más de 32 de los 160 bits, nada rota y el atacante arma la clave (200); con la cuenta global de Alicanto la clave rota en la llamada 32 y el atacante recibe 401. Hoy la cuenta compartida cubre a varios agentes en una misma máquina, cada uno con su proceso, por un archivo común, y se conserva entre sesiones; coordinar varias máquinas es trabajo futuro. Ya hay monitores entre agentes: Makins et al. (arXiv 2607.07368) describen el «efecto fragmentación» contra monitores por instancia, y Brown et al. (arXiv 2605.31593) también vigilan entre agentes; los dos usan un LLM o agrupamiento, no una cuenta de bits por secreto. El riesgo no es teórico: Anthropic describió una campaña en que los atacantes dividieron el ataque en tareas pequeñas de apariencia inocente y el modelo cosechó credenciales, y Google GTIG describe actores que automatizan descubrimiento y explotación con frameworks multiagente, con las intrusiones totalmente agénticas como tendencia.
 
 Fuente: `demo/viz/fixtures/swarm_left.jsonl` y `swarm_right.jsonl` (`python demo/run_split.py --swarm`); Anthropic, 13 de noviembre de 2025, <https://www.anthropic.com/news/disrupting-AI-espionage>; Google GTIG, 16 de noviembre de 2026, <https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold>. Ojo: la campaña de Anthropic no fue un «enjambre» sino un framework de orquestación sobre un agente de código; y no decir que las intrusiones totalmente autónomas ya son generalizadas.
 
@@ -126,6 +126,12 @@ Fuente: `results/adaptive/summary.md` (`python -m eval.final.adaptive`); `result
 
 ## 20. ¿Conviene rotar en momentos aleatorios, para que el atacante no pueda anticiparlo?
 
-Hoy la rotación periódica es de período fijo, y tiene una cota que vale aunque el atacante lo conozca: lo máximo que se puede sacar enviando justo bajo el radar entre dos rotaciones no alcanza para armar la clave. Contra el atacante que relee la clave nueva y sigue, lo que lo frena no es el momento de la rotación sino el tope: a la tercera, Cuentagotas bloquea las salidas de esa clave y avisa a una persona. La variación aleatoria ayudaría en un caso estrecho, el de un canal que no sabemos leer y que no deja rastro de comportamiento: ahí impide elegir el momento que deja más tiempo de uso a una clave robada entera. Es el siguiente paso de diseño, con una condición: la variación solo puede acortar el período, porque alargarlo rompería la cota. No está implementado ni medido.
+Hoy la rotación periódica es de período fijo, y tiene una cota que vale aunque el atacante lo conozca: lo máximo que se puede sacar enviando justo bajo el radar entre dos rotaciones no alcanza para armar la clave. Contra el atacante que relee la clave nueva y sigue, lo que lo frena no es el momento de la rotación sino el tope: a la tercera, Alicanto bloquea las salidas de esa clave y avisa a una persona. La variación aleatoria ayudaría en un caso estrecho, el de un canal que no sabemos leer y que no deja rastro de comportamiento: ahí impide elegir el momento que deja más tiempo de uso a una clave robada entera. Es el siguiente paso de diseño, con una condición: la variación solo puede acortar el período, porque alargarlo rompería la cota. No está implementado ni medido.
 
 Fuente: `engine/detector/params.py` (`Params.check`); `results/adaptive/summary.md`.
+
+## 21. ¿Por qué se llama Alicanto?
+
+En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el oro; quien la sigue por codicia termina perdido y con las manos vacías. Es lo que hace el producto con una clave: el atacante la va juntando de a pedazos y, cuando cree que la tiene, ya no sirve. Lo que el producto hace en concreto es contar cuánta clave salió y rotarla antes de que se complete.
+
+Fuente: https://es.wikipedia.org/wiki/Alicanto

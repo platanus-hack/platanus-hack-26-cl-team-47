@@ -10,21 +10,21 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 Actualizado: sábado 21 de noviembre de 2026, 11:00 (hora 12 de 34).
 
-**El proyecto.** Cuentagotas es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
+**El proyecto.** Alicanto (hasta las 11:30 del sábado se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
 **Qué funciona hoy, comprobado:**
-- La demo principal: el mismo ataque termina en 200 sin protección y en 401 con Cuentagotas.
+- La demo principal: el mismo ataque termina en 200 sin protección y en 401 con Alicanto.
 - La demo del enjambre: cinco agentes se reparten la fuga; con una cuenta por agente nadie la ve (200), con la cuenta global la clave rota (401).
 - La demo interactiva: el público elige cómo se disfraza el fragmento (tal cual, base64 o al revés).
 - El ataque en vivo con todos los servicios reales en local.
-- Unos 660 tests automáticos en verde, 65 tareas cerradas, sin PR abiertos.
+- Más de 700 tests automáticos en verde, 65 tareas cerradas, sin PR abiertos.
 
 **Evaluación final, ya corrida** (una sola vez, sobre 180 ataques de seis familias que el detector no había visto; detalle y límites en `results/test/LECTURA.md`):
 
 | Sistema | Ataques prevenidos | Llamadas benignas bloqueadas |
 |---|---|---|
-| Cuentagotas | 180 de 180 (100 %) | 0 de 5.879 |
-| Cuentagotas sin rotación | 30 de 180 (16,7 %) | 0 |
+| Alicanto | 180 de 180 (100 %) | 0 de 5.879 |
+| Alicanto sin rotación | 30 de 180 (16,7 %) | 0 |
 | Lista de destinos permitidos más detect-secrets | 30 de 180 (16,7 %) | 2,2 % |
 | Presupuesto de bits (réplica) | 70 de 180 (38,9 %) | 4,8 % |
 | Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 0 de 180 | 0 |
@@ -101,7 +101,7 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 - Se eligió el escenario: el Hospital Regional Tres Cóndores, ficticio.
 - Se generaron los ataques de entrenamiento y de validación (80 y 80), en sesiones de agente que no habían visto el detector.
 - Se rediseñó la demo: tema oscuro, medidor grande de bits, sello 200/401. Se arregló que se montara en pantallas chicas.
-- Nombre confirmado (Cuentagotas), logo instalado y primera versión de la descripción pública.
+- Primer nombre del producto (Cuentagotas), logo instalado y primera versión de la descripción pública.
 - Se reiniciaron una vez las sesiones de los agentes para ahorrar tokens.
 
 **06:00 a 08:00. Enjambre y rigor de la evaluación.**
@@ -132,4 +132,9 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 - Investigación con experimentos: el acoplamiento del grafo de archivos con el de llamadas no aporta nada medible a las decisiones; se deja sin conectar y se dice. La demo se queda con su configuración propia, porque con la evaluada rota en el primer fragmento y se pierde lo que muestra.
 - Victoria dejó de responder cerca de las 09:05; sus tareas las tomó José Carlos.
 
-**Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas; el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.
+**11:30. Cambio de nombre.**
+- El equipo decidió que el producto se llama **Alicanto**, por el ave de la leyenda de Atacama que deja con las manos vacías a quien la sigue por codicia. Se verificó que el nombre no choca con ningún producto de software o de seguridad conocido.
+- Se cambió en todo el repositorio, el sitio, el pitch y el servidor MCP (que ahora se anuncia como `alicanto`). La URL pública conserva el nombre anterior hasta que se asigne una nueva.
+- Pendiente de una persona: el logotipo nuevo. El actual todavía dice Cuentagotas.
+
+**Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas (cambiado a Alicanto a las 11:30); el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.

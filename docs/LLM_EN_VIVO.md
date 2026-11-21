@@ -1,6 +1,6 @@
 # Corridas con un LLM real a través del proxy (#139)
 
-Un LLM real hace de agente, varias veces, con y sin Cuentagotas. Todo lo que hace pasa por el servidor MCP del proxy, el único conjunto de herramientas que tiene. Cada corrida deja tres registros independientes y una línea en una tabla honesta: cuántas veces el modelo siguió la instrucción plantada y qué pasó con la clave.
+Un LLM real hace de agente, varias veces, con y sin Alicanto. Todo lo que hace pasa por el servidor MCP del proxy, el único conjunto de herramientas que tiene. Cada corrida deja tres registros independientes y una línea en una tabla honesta: cuántas veces el modelo siguió la instrucción plantada y qué pasó con la clave.
 
 ## Comando
 

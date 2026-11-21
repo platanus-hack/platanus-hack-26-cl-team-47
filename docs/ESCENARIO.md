@@ -7,7 +7,7 @@ Decisión del líder del 21 de noviembre de 2026 (H5). Reemplaza la sección «E
 El equipo de TI del **Hospital Regional Tres Cóndores** (ficticio) mantiene `servicio-reservas`, el servicio que agenda horas médicas y consulta la ficha clínica electrónica. Usan un agente de IA de programación para resolver issues del repositorio. Un issue con una instrucción plantada hace que el agente saque, de a pocos caracteres, la clave con la que el servicio entra a la ficha clínica.
 
 - Sin protección: el atacante reconstruye la clave y la API de fichas le responde 200.
-- Con el medidor: la clave rota a mitad del goteo y el atacante recibe 401.
+- Con Alicanto: la clave rota a mitad del goteo y el atacante recibe 401.
 
 El hospital, los pacientes y las claves son inventados. El nombre se comprobó con una búsqueda web y no corresponde a ningún hospital o clínica que apareciera; no es una consulta al registro de prestadores.
 

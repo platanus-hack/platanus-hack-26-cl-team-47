@@ -97,7 +97,7 @@ def test_resultados_con_las_cifras_de_la_evaluacion_final_y_sus_limites():
     assert "Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna." in norm(s10["body"])
     assert ("Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas "
             "tras tres rotaciones.") in norm(s10["body"])
-    for col in ("Cuentagotas", "Sin rotación", "Presupuesto de bits (réplica)"):
+    for col in ("Alicanto", "Sin rotación", "Presupuesto de bits (réplica)"):
         assert col in s10["text"], col
 
 
@@ -137,12 +137,12 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 20
+    assert len(titulos) == 21
     claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
               "instala", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación",
-              "momentos aleatorios")
+              "momentos aleatorios", "se llama Alicanto")
     for clave, titulo in zip(claves, titulos):
         assert clave in titulo, f"falta la pregunta sobre {clave!r}"
 
@@ -239,11 +239,11 @@ def test_pregunta_del_enjambre_con_fuentes():
     assert "¿Y si el atacante reparte la fuga entre varios agentes?" in PREGUNTAS
     sec = PREGUNTAS.split("¿Y si el atacante reparte la fuga entre varios agentes?")[1]
     assert ANTHROPIC in sec and GTIG in sec
-    assert "mismo proceso" in sec and "trabajo futuro" in sec
+    assert "misma máquina" in sec and "trabajo futuro" in sec
 
 
-def test_guion_usa_cuentagotas_y_dice_el_tiempo_total():
-    assert "Cuentagotas" in GUION
+def test_guion_usa_alicanto_y_dice_el_tiempo_total():
+    assert "Alicanto" in GUION
     assert not re.search(r"\b(?:con|contra) el medidor\b", GUION)
     assert re.search(r"Tiempo total: \d+ min", GUION)
     assert re.search(r"^## 3\. El enjambre", GUION, flags=re.M)
@@ -289,7 +289,7 @@ def test_tabla_de_tiempos_con_total():
     assert re.search(r"^## Tiempos", GUION, flags=re.M)
     m = re.search(r"\*\*Total\*\* \| \*\*(\d+)\*\* \| \*\*(\d+) min (\d+) s", GUION)
     assert m and int(m.group(2)) * 60 + int(m.group(3)) <= 180
-    for clave in ("problema", "Cuentagotas", "200", "401", "enjambre", "Límites"):
+    for clave in ("problema", "Alicanto", "200", "401", "enjambre", "Límites"):
         assert clave in _texto_hablado(GUION) or clave in GUION, clave
 
 
@@ -322,7 +322,7 @@ def test_preguntas_nombran_competidores():
 
 def test_lamina_de_competidores():
     s = slide("Qué hace cada uno")
-    assert "Pipelock" in s["text"] and "AgentBrake" in s["text"] and "Cuentagotas" in s["text"]
+    assert "Pipelock" in s["text"] and "AgentBrake" in s["text"] and "Alicanto" in s["text"]
     assert FRASE_NOVEDAD in norm(s["body"])
     assert "Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026" in norm(s["text"])
 
@@ -342,11 +342,11 @@ def test_demo_dice_que_decide_solo_el_contador():
 # ------------------------------------------------ pregunta del track y cifras (16d, segundo comentario)
 
 def test_guion_abre_con_el_nombre_y_la_pregunta_del_track():
-    """16e: la primera frase hablada dice «Cuentagotas»; la segunda es la pregunta del track."""
+    """16e: la primera frase hablada dice «Alicanto»; la segunda es la pregunta del track."""
     frases = re.split(r"(?<=[.»?])\s+", _texto_hablado(GUION).strip())
-    assert "Cuentagotas" in frases[0]
+    assert "Alicanto" in frases[0]
     assert "¿cómo te darías cuenta?" in frases[1]
-    assert "Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
+    assert "Alicanto es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
 
 
 def test_lamina_del_problema_situa_el_track():
@@ -418,7 +418,7 @@ def test_lamina_36_horas_nueve_sistemas():
 
 def test_orden_de_las_laminas_sigue_al_guion():
     slides = parse()
-    assert slides[0]["title"] == "Cuentagotas" and "¿cómo te darías cuenta?" in slides[0]["text"]
+    assert slides[0]["title"] == "Alicanto" and "¿cómo te darías cuenta?" in slides[0]["text"]
     assert "Demo" in slides[1]["text"]
     assert "enjambre" in slides[2]["title"].lower()
     assert slides[3]["title"] == "Qué es real y qué es simulado"

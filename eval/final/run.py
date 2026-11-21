@@ -50,7 +50,7 @@ DETECTOR_SYSTEMS = ("ours", "no_rotation", "per_session", "no_evidence")
 LEDGER_SYSTEMS = ("ours", "no_rotation", "no_evidence")   # un SharedLedger por unidad
 # Una línea por sistema para systems.md.
 DESCRIPTIONS = {
-    "ours": "Cuentagotas congelado; por unidad, un SharedLedger con el manifiesto completo y los secretos de la "
+    "ours": "Alicanto congelado; por unidad, un SharedLedger con el manifiesto completo y los secretos de la "
             "unidad, y un detector por sesión (la cuenta es por clave, compartida entre sesiones).",
     "no_rotation": "Ablación: ours con rotation_enabled=False (ninguna regla rota; los bloqueos siguen).",
     "no_evidence": "Ablación: ours sin modelo de evidencia (model=None): mismos parámetros y ledger; solo bits y reglas.",

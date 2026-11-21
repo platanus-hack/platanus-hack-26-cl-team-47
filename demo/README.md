@@ -41,7 +41,7 @@ Campos de cada secreto (los cuatro primeros son el contrato de #6):
 
 - `SECRET_1` es la clave de `api.empresa.test`: su valor es la clave **inicial** que debe aceptar el gestor antes de la primera rotación. Léela del manifiesto; no la copies a otro archivo.
 - Para leerlo: `json.load(open("demo/secrets_manifest.json", encoding="utf-8"))`.
-- El escenario está pendiente (`docs/PLAN.md`, «Escenario pendiente»): al decidirlo cambian los textos, no el formato.
+- El escenario es un hospital ficticio (`docs/ESCENARIO.md`). Es una capa de textos: no cambia el formato de los registros.
 
 ## Registros reales para la pantalla dividida (15c)
 
@@ -107,7 +107,7 @@ Para regenerarla: `python demo/run_split.py --out-dir demo/out` y copia
 Cinco agentes se reparten la fuga de `SECRET_1`: dos fragmentos de 4 caracteres
 cada uno (`demo/sessions/enjambre.jsonl`, 90 llamadas). A la izquierda cada agente
 tiene su propio monitor (ninguno pasa de 32 bits, no rota nada y el atacante entra
-con 200). A la derecha los cinco comparten la cuenta global de Cuentagotas: la
+con 200). A la derecha los cinco comparten la cuenta global de Alicanto: la
 clave rota y el atacante recibe 401.
 
 ```bash
@@ -149,7 +149,7 @@ Guion para el presentador (40 segundos):
 > «El atacante no es tonto: va a disfrazar los pedazos. Elijan ustedes. Levante la
 > mano quien quiere la clave tal cual… ¿en base64?… ¿al revés?» (Pulsa la opción
 > ganadora.) «Izquierda, sin protección: sube hasta el final y entra, 200. Derecha:
-> el mismo disfraz que eligieron, Cuentagotas cuenta igual, rota aquí, 401. Elijan
+> el mismo disfraz que eligieron, Alicanto cuenta igual, rota aquí, 401. Elijan
 > cualquiera de las tres: no importa cómo la disfracen, medimos información, no formato.»
 
 «No importa cómo la disfracen» vale solo para las opciones que ofrece la página

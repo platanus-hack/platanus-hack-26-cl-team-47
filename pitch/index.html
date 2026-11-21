@@ -10,9 +10,9 @@
   <main id="deck" aria-live="polite">
 
     <section class="slide slide-title" data-n="1">
-      <h1>Cuentagotas</h1>
+      <h1>Alicanto</h1>
       <p class="sub pregunta">«Si el agente que corre en tu máquina quisiera hacer daño, ¿cómo te darías cuenta?»</p>
-      <p class="sub">Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva.</p>
+      <p class="sub">Alicanto mide cuánta clave ya salió y la cambia: quien la sigue termina sin nada.</p>
       <p class="sub">Team-47 · track AI Security</p>
     </section>
 
@@ -24,7 +24,7 @@
       <h2>Y si atacan en enjambre</h2>
       <p>Cinco agentes se reparten la fuga: cada uno saca solo dos fragmentos.</p>
       <table class="results swarm">
-        <tr><th></th><th>Cuenta por agente</th><th>Cuenta global de Cuentagotas</th></tr>
+        <tr><th></th><th>Cuenta por agente</th><th>Cuenta global de Alicanto</th></tr>
         <tr><th>Lo máximo que ve un monitor</th><td>32 de 160 bits</td><td>—</td></tr>
         <tr><th>Rotaciones</th><td>0</td><td>1, en la llamada 32</td></tr>
         <tr><th>El atacante</th><td class="bad">arma la clave: 200</td><td class="good">401</td></tr>
@@ -44,7 +44,7 @@
     <section class="slide slide-resultados" data-n="5">
       <h2>180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h2>
       <table class="results resultados">
-        <tr><th></th><th>Cuentagotas</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
+        <tr><th></th><th>Alicanto</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
         <tr><th>Ataques de familias nuevas prevenidos, de 180</th><td class="good">100 % (180)</td><td>16,7 % (30)</td><td>38,9 % (70)</td></tr>
         <tr><th>El ataque triunfa, de 180</th><td class="good">0 % (0)</td><td class="bad">83,3 % (150)</td><td>61,1 % (110)</td></tr>
         <tr><th>Llamadas benignas bloqueadas, de 5.879</th><td class="good">0 % (0)</td><td>0 % (0)</td><td>4,8 % (283)</td></tr>
@@ -95,7 +95,7 @@
       <h2>Filtrar lento o rápido</h2>
       <div class="two">
         <div class="box"><span class="k">Filtra lento</span>la rotación lo anula</div>
-        <div class="box"><span class="k">Filtra rápido</span>la evidencia lo delata</div>
+        <div class="box"><span class="k">Filtra rápido</span>la evidencia lo delata (configuración evaluada)</div>
       </div>
     </section>
 
@@ -106,7 +106,7 @@
         <tr><th>Filtros por mensaje (pasarelas MCP con regex, detect-secrets)</th><td>No</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
         <tr><th>Reensamblado por sesión (Pipelock, AgentBrake)</th><td>Sí</td><td>No, según declaran</td><td>Parcial</td><td>No</td><td>No</td></tr>
         <tr><th>Presupuestos de fuga (Chauhan y Revankar, OCELOT, Metere)</th><td>Sí</td><td>No aplica: no miran argumentos de herramientas</td><td>No</td><td>No</td><td>No</td></tr>
-        <tr class="ours"><th>Cuentagotas</th><td>Sí</td><td>Sí, en las seis codificaciones que lee</td><td>Sí</td><td>Sí, en un mismo proceso</td><td>Sí</td></tr>
+        <tr class="ours"><th>Alicanto</th><td>Sí</td><td>Sí, en las seis codificaciones que lee</td><td>Sí</td><td>Sí, en una misma máquina</td><td>Sí</td></tr>
       </table>
       <p class="novedad">Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.</p>
       <p class="nota-pie">Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026.</p>
@@ -123,13 +123,13 @@
       <p>La IA es el blanco y el vector: sin agente que obedezca texto ajeno, no hay ataque.</p>
       <p>El monitor no es un LLM: un guardia que se convence con texto no sirve.</p>
       <p>Un atacante con LLM no gana: medimos información.</p>
-      <p class="pendiente">PENDIENTE: corridas en vivo con un LLM (aún no hechas)</p>
+      <p class="pendiente">Aún sin correr con un LLM real: el agente de la demo es un guion reproducible. Las corridas están preparadas.</p>
     </section>
 
     <section class="slide slide-cifras" data-n="16">
       <h2>36 horas en cifras</h2>
       <ul class="cifras">
-        <li><span class="num">635</span> tests automáticos</li>
+        <li><span class="num">700+</span> tests automáticos</li>
         <li><span class="num">9</span> sistemas comparados</li>
         <li><span class="num">80 + 80 + 180</span> ataques del equipo rojo; los 180, sellados con hash antes de evaluar</li>
         <li>El equipo rojo no vio el detector</li>

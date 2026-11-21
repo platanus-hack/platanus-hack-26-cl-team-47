@@ -1,6 +1,8 @@
-# Cuentagotas 💧
+# Alicanto
 
 ### Tu agente de IA puede regalar tus claves de a cuatro letras. Nosotros contamos cada gota y cambiamos la cerradura antes de que la llave esté completa.
+
+> En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el oro; quien la sigue por codicia termina perdido y con las manos vacías. Eso le pasa aquí a quien intenta robar una clave: lo que junta deja de servir.
 
 ## Un robo que nadie ve
 
@@ -10,14 +12,14 @@ El atacante paciente no la pide entera. La saca **de a 4 caracteres**, entre dec
 
 Diez mensajes después, tiene la clave.
 
-## Qué hace Cuentagotas
+## Qué hace Alicanto
 
 Se pone entre el agente y sus herramientas. No toca el agente y **no usa otra IA para decidir**: un monitor que se convence con texto no es un monitor.
 
 En cada llamada:
 
 - 🔬 **Mide.** Cuenta cuántos bits de cada clave ya salieron, sumando gota por gota a lo largo de la sesión, aunque vengan en base64, hexadecimal, al revés o separados por guiones.
-- 🧭 **Sigue el rastro.** Sabe qué archivo se leyó, qué contenido no confiable influyó y por dónde salió.
+- 🧭 **Sigue el rastro.** Registra qué archivo se leyó, si la sesión tocó contenido no confiable y por dónde salió cada dato.
 - 🔁 **Rota.** Antes de que la fuga se complete, cambia la clave en el gestor de secretos. Lo que el atacante juntó ya no abre nada.
 
 Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.
@@ -26,22 +28,22 @@ Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en 
 
 Un hospital ficticio, su sistema de agenda y ficha clínica, y un agente al que le plantan una instrucción. Hospital, pacientes y claves son inventados.
 
-| | Sin protección | Con Cuentagotas |
+| | Sin protección | Con Alicanto |
 |---|---|---|
 | El atacante junta | 160 de 160 bits de la clave | 0 bits de la clave vigente |
 | La API de fichas clínicas responde | **200**: entró | **401**: rechazado |
 
-![La pantalla dividida al terminar el ataque: 200 sin protección, 401 con Cuentagotas](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-goteo.png)
+![La pantalla dividida al terminar el ataque: 200 sin protección, 401 con Alicanto](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-goteo.png)
 
 Los bits que consiguió el atacante se cuentan con el código de **su propio servidor**, que es independiente del detector. No nos ponemos la nota nosotros.
 
 ## Y si atacan en enjambre
 
-Los ataques reales ya reparten el trabajo entre varios agentes, en pasos que por separado parecen inocentes. Con la fuga repartida entre cinco agentes, un monitor por agente no ve nunca más de 32 bits: nadie rota, y el atacante arma la clave completa.
+Ya se documentaron campañas que dividen el ataque en tareas pequeñas, de apariencia inocente por separado. Con la fuga repartida entre cinco agentes, un monitor por agente no ve nunca más de 32 bits: nadie rota, y el atacante arma la clave completa.
 
-Cuentagotas lleva **una sola cuenta por clave**, no por agente. En la misma prueba rota al tercer fragmento, y el atacante recibe 401.
+Alicanto lleva **una sola cuenta por clave**, no por agente. En la misma prueba rota al tercer fragmento, y el atacante recibe 401.
 
-| Cinco agentes se reparten la fuga | Cuenta por agente | Cuenta global de Cuentagotas |
+| Cinco agentes se reparten la fuga | Cuenta por agente | Cuenta global de Alicanto |
 |---|---|---|
 | Rotaciones | 0 | 1, en la llamada 32 |
 | La API de fichas clínicas responde | **200** | **401** |
@@ -50,7 +52,7 @@ Cuentagotas lleva **una sola cuenta por clave**, no por agente. En la misma prue
 
 ## Por qué importa
 
-Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad. Cuentagotas no espera al incidente: cuando la clave lleva un tercio filtrado, ya la cambió, y deja escrito qué salió, hacia dónde y por qué camino.
+Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad. Alicanto no espera al incidente: cuando la clave lleva un tercio filtrado, ya la cambió, y deja escrito qué salió, hacia dónde y por qué camino.
 
 ## Pruébalo en 60 segundos
 
@@ -81,7 +83,7 @@ python -m services.scenarios goteo --out logs/goteo
 
 - **Proxy MCP** en Python: toda llamada del agente pasa por él y queda registrada.
 - **Motor de bits** con decodificadores encadenados y pruebas por propiedades.
-- **Dos grafos**: uno de archivos por sensibilidad y otro de llamadas, que explica cada decisión.
+- **Dos grafos**: uno de archivos por sensibilidad y otro de llamadas. Hoy aportan señales por llamada y el camino que se muestra al explicar una decisión; la propagación entre pasos lejanos está implementada pero no conectada a las decisiones.
 - **Banco de pruebas cerrado**: gestor de secretos con rotación, API protegida, servidor del atacante, GitHub y web simulados, en una red sin salida a internet.
 - **Evaluación seria**: equipo rojo separado del azul, líneas de base y pruebas de hipótesis con intervalos.
 
@@ -89,7 +91,7 @@ python -m services.scenarios goteo --out logs/goteo
 
 - Medimos una **cota inferior**: lo que pasa por el proxy, en las codificaciones que sabemos leer.
 - Rotar limita el daño; no impide que el agente lo intente.
-- La cuenta compartida cubre a los agentes que pasan por el mismo proceso de Cuentagotas y se conserva entre sesiones; coordinar varios procesos o máquinas a la vez queda como trabajo futuro.
+- La cuenta compartida cubre a varios agentes en una misma máquina, cada uno con su propio proceso, a través de un archivo común, y se conserva entre sesiones; coordinar varias máquinas queda como trabajo futuro.
 
 ---
 
