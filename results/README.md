@@ -59,3 +59,7 @@ Defensores: `ours` (el de `eval.final.run`, con `SharedLedger` por unidad), `no_
 
 Lectura: contra este atacante, `ours` resiste porque, tras `max_rotations` rotaciones en `rotation_window` llamadas, el detector pasa a **modo escalado**: bloquea todo sumidero hacia destinos no permitidos y avisa a una persona. La columna «En modo escalado» lo muestra. Es una detención con costo (el agente deja de poder enviar hacia afuera), no una rotación indefinida.
 
+## Banderas del proxy (#167): análisis aparte
+
+`results/proxy_flags/` (`python -m eval.final.proxy_flags --out results/proxy_flags`): la evaluación del set de prueba con las banderas `is_sink` y `untrusted` que calcula el proxy en vivo, en vez de las que escribió el generador, y la regla simple como línea de base. Cómo leerla: `results/test/LECTURA.md`, «Las banderas de cada llamada venían de las grabaciones».
+
