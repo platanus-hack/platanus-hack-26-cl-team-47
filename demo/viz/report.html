@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informe de incidente</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { max-width: 980px; margin: 0 auto; padding: 24px; }
+    .report-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+    .report-head a { color: var(--current); }
+    .meta { color: var(--muted); font-size: 14px; }
+    .secret { border: 1px solid var(--border); background: var(--panel); border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+    .secret h2 { margin: 0 0 8px; font-size: 18px; color: var(--muted); }
+    .statement { font-size: 24px; font-weight: 700; line-height: 1.35; margin: 4px 0 18px; }
+    .timeline { position: relative; height: 54px; margin: 8px 0 22px; border-bottom: 2px solid var(--grid); }
+    .mark { position: absolute; bottom: -7px; transform: translateX(-50%); text-align: center; font-size: 12px; white-space: nowrap; }
+    .mark .dot { display: block; width: 12px; height: 12px; border-radius: 50%; margin: 0 auto 0; }
+    .mark .lbl { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); }
+    .mark.exposed .dot { background: var(--muted); }
+    .mark.leak .dot { background: var(--block-edge); }
+    .mark.rotation .dot { background: var(--rotate-edge); width: 16px; height: 16px; }
+    .mark.blocked .dot { background: var(--text); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .final { margin-top: 14px; font-size: 15px; }
+    .legend { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    @media print {
+      :root { --bg: #fff; --panel: #fff; --text: #000; --muted: #444; --border: #bbb; --grid: #ccc; }
+      body { padding: 0; max-width: none; }
+      .report-head a { display: none; }
+      .secret { break-inside: avoid; border-color: #999; }
+    }
+  </style>
+</head>
+<body>
+  <header class="report-head">
+    <h1>Informe de incidente</h1>
+    <a href="split.html">Volver a la demo</a>
+  </header>
+  <p id="meta" class="meta">Cargando…</p>
+  <main id="secrets"></main>
+  <p class="meta">La medición es una cota inferior: «al menos» tantos bits. El informe no contiene valores de secretos.</p>
+  <script src="report.js"></script>
+</body>
+</html>
