@@ -34,7 +34,7 @@ Fuente: `proxy/agent/loop.py` (el agente solo actúa por el servidor MCP del pro
 
 ## 5. ¿Cómo lo instala todo un equipo de desarrollo?
 
-Es un servidor MCP: se agrega al archivo de configuración del agente con un comando y un manifiesto de las claves a proteger. PENDIENTE: enlace a `docs/QUICKSTART.md` (#138).
+Es un servidor MCP: se agrega al archivo de configuración del agente con un comando y un manifiesto de las claves a proteger. Los pasos, probados, están en `docs/QUICKSTART.md`; si varios agentes apuntan al mismo archivo de cuenta, suman en la misma cuenta por clave.
 
 Fuente: `proxy/server.py` (`python -m proxy.server`); `demo/secrets_manifest.json` (formato del manifiesto).
 
