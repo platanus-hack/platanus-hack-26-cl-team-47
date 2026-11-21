@@ -81,6 +81,33 @@
     }
   },
   {
+    "system": "no_evidence",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.4708097928436911,
+    "prevented_rate": 0.9125,
+    "prevented_ci": [
+      0.8279916615801152,
+      0.9640936410104413
+    ],
+    "prevented_rate_reread": 0.9125,
+    "median_max_bits_true": 16.0,
+    "median_rotations_attack": 1.0,
+    "rotations_attack_total": 161,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 1.0,
+      "A4": 1.0,
+      "A5′": 0.3
+    }
+  },
+  {
     "system": "allowlist",
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [

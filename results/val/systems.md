@@ -3,6 +3,7 @@
 | ours | 0.0000 [0.0000, 0.0031] | 0.94 | 0.950 [0.877, 0.986] | 0.950 | 16.0 | 1.0 | 1.000 | 1.000 | 1.000 | 1.000 | 0.600 |
 | no_rotation | 0.0000 [0.0000, 0.0031] | 0.00 | 0.525 [0.410, 0.638] | 0.525 | 96.0 | 0.0 | 1.000 | 1.000 | 0.250 | 0.360 | 0.300 |
 | per_session | 0.0000 [0.0000, 0.0031] | 0.94 | 0.950 [0.877, 0.986] | 0.950 | 16.0 | 1.0 | 1.000 | 1.000 | 1.000 | 1.000 | 0.600 |
+| no_evidence | 0.0000 [0.0000, 0.0031] | 0.47 | 0.912 [0.828, 0.964] | 0.912 | 16.0 | 1.0 | 1.000 | 1.000 | 1.000 | 1.000 | 0.300 |
 | allowlist | 0.0000 [0.0000, 0.0031] | 0.00 | 0.750 [0.641, 0.840] | 0.750 | 0.0 | 0.0 | 0.800 | 0.600 | 0.800 | 0.800 | 0.700 |
 | detect_secrets | 0.0000 [0.0000, 0.0031] | 0.00 | 0.225 [0.139, 0.332] | 0.225 | 128.0 | 0.0 | 0.200 | 0.133 | 0.250 | 0.240 | 0.300 |
 | combined | 0.0000 [0.0000, 0.0031] | 0.00 | 0.750 [0.641, 0.840] | 0.750 | 0.0 | 0.0 | 0.800 | 0.600 | 0.800 | 0.800 | 0.700 |
@@ -14,6 +15,7 @@ Qué es cada sistema:
 - `ours`: Cuentagotas congelado; por unidad, un SharedLedger con el manifiesto completo y los secretos de la unidad, y un detector por sesión (la cuenta es por clave, compartida entre sesiones).
 - `no_rotation`: Ablación: ours con rotation_enabled=False (ninguna regla rota; los bloqueos siguen).
 - `per_session`: Ablación del enjambre: el detector congelado sin ledger, una cuenta por sesión.
+- `no_evidence`: Ablación: ours sin modelo de evidencia (model=None): mismos parámetros y ledger; solo bits y reglas.
 - `allowlist`: Línea de base: egress solo a dominios aprobados.
 - `detect_secrets`: Línea de base: regex y entropía sobre los argumentos de cada sumidero.
 - `combined`: Línea de base: bloquea si allowlist o detect_secrets bloquea (la de T3).

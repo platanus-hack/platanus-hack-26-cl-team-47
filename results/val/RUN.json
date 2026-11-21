@@ -1,7 +1,7 @@
 {
   "status": "done",
   "split": "val",
-  "commit": "948f63525e0ac7dda718721c4603dff1887c1082",
+  "commit": "325da738a79abae1096daf2884868ef8cc92c37b",
   "dirty": false,
   "frozen_hash": "42cfa5e4610ae99b0d5af2f0a2bbf1800f7cfe87414ff46a0302400227e0432b",
   "params": {
@@ -11,7 +11,7 @@
     "lambda_rot": 0.1
   },
   "model_sha256": "9007f18a250a51dd75fedbcd12526ef099c1a16bc5d57366f7bb9888118ea495",
-  "started": "2026-11-21T12:07:02+00:00",
+  "started": "2026-11-21T12:12:57+00:00",
   "n_sessions": 130,
   "n_units": 130,
   "n_multi_session_units": 0,
@@ -19,12 +19,13 @@
     "ours",
     "no_rotation",
     "per_session",
+    "no_evidence",
     "allowlist",
     "detect_secrets",
     "combined",
     "budget",
     "reassembly"
   ],
-  "seconds": 51.5,
-  "finished": "2026-11-21T12:07:53+00:00"
+  "seconds": 70.2,
+  "finished": "2026-11-21T12:14:07+00:00"
 }
