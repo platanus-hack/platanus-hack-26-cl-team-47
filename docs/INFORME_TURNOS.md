@@ -40,7 +40,6 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosa
 - **#167, José Carlos:** la evaluación con las banderas del proxy, publicada junto a la actual, y una regla simple («leyó un secreto y envía a un destino no confiable: rota») como línea de base, para decir con números qué aporta cada pieza.
 - **#168, Matías:** la demo se corta a 1024×768 (resolución típica de proyector) y en teléfono, abre detenida sin avisar, y las láminas no están en el sitio público. Se arregla todo eso.
 - **#169, José Carlos, después de #167:** un hook de Claude Code que pasa por el contador de bits lo que el agente está por ejecutar con `Bash` y `WebFetch`. Es la respuesta a «¿lo puedo usar el lunes?».
-- **Demo nueva, en diseño:** hoy el ataque de la demo sale hacia un servidor desconocido, que una simple lista de destinos permitidos ya frenaría. La demo principal pasa a comparar contra las defensas que un equipo ya tiene (lista de destinos más escáner de secretos), con la fuga saliendo por un canal permitido.
 - **Después:** textos públicos (pitch, README y página de resultados) con las dos cifras y las frases corregidas.
 
 **Dónde verlo:**
@@ -110,7 +109,7 @@ Escrito por el orquestador (sesión nueva desde las 13:30).
 - Se comprobó con capturas que la demo se corta a 1024×768 y en teléfono (#168).
 - Se repartió un hook de Claude Code para usar el contador en un agente real (#169).
 
-**Decisiones del líder en este turno:** recalcular y publicar la cifra con las banderas del proxy, en vez de solo poner una salvedad; los arreglos de la demo y del pitch van a Matías con traspaso; la demo principal se rediseña a partir de la revisión.
+**Decisiones del líder en este turno:** recalcular y publicar la cifra con las banderas del proxy, en vez de solo poner una salvedad; los arreglos de la demo y del pitch van a Matías con traspaso.
 
 ### Sábado 21, 02:00 a 09:30
 
