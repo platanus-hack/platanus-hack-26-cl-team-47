@@ -136,3 +136,41 @@ def test_latency_200_calls():
     dt = time.perf_counter() - t0
     assert r["sources"] == ["c1"] and r["dominators"][0] == "c1" and r["dominators"][-1] == "c200"
     assert dt < 0.015, f"{dt * 1000:.1f} ms"
+
+
+def test_matches_networkx_on_random_dags():
+    """La pasada única coincide con networkx.immediate_dominators en DAGs aleatorios."""
+    import networkx as nx
+
+    rng = random.Random(5)
+    for trial in range(30):
+        d = CallDAG(SECRET_FILES)
+        outs = {}
+        n = rng.randint(5, 25)
+        for t in range(1, n + 1):
+            cid = f"n{t}"
+            parents = [p for p in outs if rng.random() < 0.25]
+            args = {"carry": " ".join(outs[p] for p in parents) or "nada"}
+            d.add(tc(cid, t, "read_file", args, ["README.md"], sink=(t == n), untrusted=rng.random() < 0.3))
+            outs[cid] = f"tok{t:03d}-" + "".join(rng.choice("pqrstu") for _ in range(10))
+            d.set_output(cid, outs[cid])
+        sink = f"n{n}"
+        r = dominators(d, sink)
+        G = nx.DiGraph()
+        for cid in d.order:
+            G.add_node(cid)
+            for p in d.parents(cid):
+                G.add_edge(p, cid)
+        reach = nx.ancestors(G, sink)
+        src = [i for i in reach if d.nodes[i].call.untrusted]
+        if not src:
+            assert r["dominators"] == []
+            continue
+        H = G.subgraph(reach | {sink}).copy()
+        H.add_edges_from(("R", s) for s in src)
+        idom = nx.immediate_dominators(H, "R")
+        chain, x = [], sink
+        while x != "R":
+            chain.append(x)
+            x = idom[x]
+        assert r["dominators"] == sorted(chain, key=lambda i: d.nodes[i].call.t), trial

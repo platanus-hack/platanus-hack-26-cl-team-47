@@ -3,7 +3,9 @@
 Para un sumidero, los dominadores son las llamadas por las que pasa todo camino desde
 una fuente no confiable hasta él: la explicación mínima del bloqueo y el mejor punto de
 corte. Se agrega una raíz virtual conectada a las fuentes no confiables que alcanzan el
-sumidero y se sube por la cadena de dominadores inmediatos.
+sumidero y se sube por la cadena de dominadores inmediatos. Como las aristas van hacia
+adelante en t, el orden por t es topológico y los dominadores salen en una pasada
+(intersección de Cooper, Harvey y Kennedy), sin networkx.
 
 Aristas: las de contenido del DAG; con include_suspicion=True, también las de sospecha
 con p >= min_p. El sumidero no cuenta como su propia fuente aunque sea no confiable.
@@ -13,7 +15,6 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit
 
-import networkx as nx
 import numpy as np
 
 from .dag import CallDAG
@@ -54,30 +55,59 @@ def dominators(dag: CallDAG, sink_id: str, include_suspicion: bool = False,
         raise ValueError("include_suspicion=True requiere graph")
     nodes = dag.nodes
     t_sink = nodes[sink_id].call.t
-    ids = [i for i in dag.order if nodes[i].call.t <= t_sink]
-
-    G = nx.DiGraph()
-    G.add_nodes_from(ids)
-    for j in ids:
-        for i in nodes[j].parents:
-            if i in G:
-                G.add_edge(i, j)
+    ids = sorted((i for i in dag.order if nodes[i].call.t <= t_sink), key=lambda i: nodes[i].call.t)
+    alive = set(ids)
+    preds: dict[str, set[str]] = {i: {p for p in nodes[i].parents if p in alive} for i in ids}
     if include_suspicion:
         from .suspicion import RPlus
 
         sids, _, _, _, _, P = RPlus(dag, graph)._setup(sink_id)
         for a, b in zip(*np.nonzero(P >= min_p)):
-            G.add_edge(sids[a], sids[b])
+            preds[sids[b]].add(sids[a])
 
-    reach = nx.ancestors(G, sink_id)
-    sources = sorted((i for i in reach if nodes[i].call.untrusted), key=lambda i: nodes[i].call.t)
+    # Llamadas que alcanzan el sumidero (BFS hacia atrás).
+    reach = {sink_id}
+    stack = [sink_id]
+    while stack:
+        for p in preds[stack.pop()]:
+            if p not in reach:
+                reach.add(p)
+                stack.append(p)
+    reach.discard(sink_id)
+    sources = [i for i in ids if i in reach and nodes[i].call.untrusted]
     if not sources:
         return _empty(sink_id)
 
-    sub = G.subgraph(reach | {sink_id}).copy()
-    sub.add_node(_ROOT)
-    sub.add_edges_from((_ROOT, s) for s in sources)
-    idom = nx.immediate_dominators(sub, _ROOT)
+    # Dominadores en un DAG: el orden por t es topológico, así que basta una pasada.
+    # idom(v) = intersección (ancestro común en el árbol de dominadores) de sus predecesores.
+    src = set(sources)
+    idom: dict = {_ROOT: _ROOT}
+    depth: dict = {_ROOT: 0}
+
+    def meet(a, b):
+        while a != b:
+            while depth[a] > depth[b]:
+                a = idom[a]
+            while depth[b] > depth[a]:
+                b = idom[b]
+            if a != b:
+                a, b = idom[a], idom[b]
+        return a
+
+    for v in ids:
+        if v not in reach and v != sink_id:
+            continue
+        ps = [p for p in preds[v] if p in idom]
+        if v in src:
+            ps.append(_ROOT)
+        if not ps:
+            continue  # no lo alcanza ninguna fuente no confiable
+        d = ps[0]
+        for p in ps[1:]:
+            d = meet(d, p)
+        idom[v] = d
+        depth[v] = depth[d] + 1
+
     chain = []
     n = sink_id
     while n != _ROOT:
