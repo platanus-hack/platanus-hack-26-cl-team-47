@@ -1,11 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "",
+  "buildCommand": "mkdir -p demo/viz/pitch && cp pitch/index.html pitch/slides.js pitch/style.css demo/viz/pitch/",
   "installCommand": "",
   "outputDirectory": "demo/viz",
   "cleanUrls": false,
   "redirects": [
-    { "source": "/", "destination": "/home.html", "permanent": false }
+    { "source": "/", "destination": "/home.html", "permanent": false },
+    { "source": "/pitch", "destination": "/pitch/index.html", "permanent": false },
+    { "source": "/demo/viz/:path*", "destination": "/:path*", "permanent": false }
   ]
 }

@@ -514,8 +514,71 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
 .split-page .meter-key { white-space: nowrap; flex: none; }
 .split-page .bar { backdrop-filter: none; background: #121824; }
 .split-page .call-list { position: relative; }
-.split-page .side-head { height: 118px; min-height: 0; overflow: hidden; }
-.split-page .meter { height: 136px; overflow: hidden; }
+
+/* Legible en 1024×768 y en teléfono (15n). Nada se corta: cabecera y medidor crecen con su
+   contenido, y en dos columnas las filas se comparten (subgrid), así los dos lados siguen
+   alineados aunque un lado tenga más texto. */
+.split-page .side-head { min-height: 104px; height: auto; overflow: visible; }
+.split-page .meter { height: auto; overflow: visible; }
+.split-page .side > * { min-width: 0; }  /* ningún panel ensancha su columna */
+.split-page .meter-key { white-space: normal; flex: 0 1 auto; text-align: right; }
+@media (min-width: 901px) {
+  @supports (grid-template-rows: subgrid) {
+    .split-page .split { grid-template-rows: repeat(5, auto); }
+    .split-page .side,
+    .split-page.with-graph .side {
+      display: grid;
+      grid-row: 1 / span 5;
+      grid-template-rows: subgrid;
+      row-gap: 12px;
+    }
+    .split-page .side > .side-head { grid-row: 1; }
+    .split-page .side > .meter { grid-row: 2; }
+    .split-page .side > .chart { grid-row: 3; }
+    .split-page .side > .calls { grid-row: 4; }
+    .split-page .side > .detail { grid-row: 5; }
+  }
+}
+/* Columnas angostas: el sello del resultado va debajo del título, a todo el ancho. */
+@media (max-width: 1100px) {
+  .split-page .side-head { flex-wrap: wrap; row-gap: 8px; }
+  .split-page .result { flex: 1 1 100%; }
+  .split-page .result-status { font-size: 14px; }
+  .split-page .meter-top { flex-wrap: wrap; row-gap: 4px; }
+  .split-page .meter-label { white-space: normal; overflow: visible; }
+  .split-page .meter-key { text-align: left; }
+}
+/* Teléfono: una columna, barra que no se sale y medidor más compacto. */
+@media (max-width: 900px) {
+  .split-page .bar { position: static; padding: 10px 16px; }
+  .split-page h1 { font-size: 18px; }
+  .split-page h1 .brand { display: block; border-right: 0; padding-right: 0; margin-bottom: 2px; }
+  .split-page .controls { width: 100%; }
+  .split-page .report-link { margin-left: 0 !important; }
+  .split-page .split { padding: 12px 16px 10px; gap: 16px; }
+  .split-page .side-title { white-space: normal; font-size: 18px; }
+  .split-page .meter-top { flex-wrap: wrap; }
+  .split-page .meter-num { font-size: 40px; }
+  .split-page .meter-pct { font-size: 22px; }
+  .split-page .call-list li { grid-template-columns: 2.2em 6.5em minmax(0, 1fr); }
+  .split-page .call-list li .marks { grid-column: 2 / -1; }
+  .split-page .chooser-hint { margin-left: 0; }
+}
+
+/* Aviso mientras la demo no ha empezado (15n). */
+.split-page .play-hint {
+  font-size: 14px; font-weight: 700; color: var(--current);
+  padding: 4px 10px; border: 1px dashed var(--current); border-radius: 8px;
+}
+.split-page .play-hint[hidden] { display: none; }
+/* Página abierta con doble clic (file://): explica cómo abrirla. */
+.split-page .needs-server {
+  margin: 16px 20px 0; padding: 14px 18px; border-radius: 12px;
+  border: 2px solid var(--rotate-edge); background: var(--rotate); color: var(--text); font-size: 16px; line-height: 1.5;
+}
+.split-page .needs-server a { color: var(--current); font-weight: 700; overflow-wrap: anywhere; }
+.split-page .needs-server code { font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+@media (min-width: 701px) { .split-page .needs-server code { white-space: nowrap; } }
 
 /* Marca */
 .home-page .home-tagline { margin: -10px 0 0; font-size: clamp(18px, 2.2vw, 26px); font-weight: 600; color: var(--muted); }

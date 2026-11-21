@@ -24,8 +24,35 @@ function aplicarEscenario(doc) {
   if (marker) marker.replaceWith(frase, nombre); else s3.append(frase, nombre);
 }
 
-(function () {
+/* Sitio público con la demo (tarea 15n). */
+const SITIO = "https://alicanto.vercel.app/";
+
+/**
+ * Función pura: con las láminas abiertas desde file://, un enlace a ../demo/viz/<archivo>
+ * pasa al sitio público, conservando el archivo y los parámetros. Otros enlaces no cambian.
+ */
+function enlaceDemo(href, protocol) {
+  const m = /^(?:\.\.\/)+demo\/viz\/(.*)$/.exec(String(href || ""));
+  if (protocol !== "file:" || !m) return href;
+  return SITIO + m[1];
+}
+
+/** Reescribe en la página los enlaces a la demo si se abrió con doble clic (file://). */
+function enlacesDemo(doc, protocol) {
+  for (const a of doc.querySelectorAll("a[href]")) {
+    const href = a.getAttribute("href");
+    const nuevo = enlaceDemo(href, protocol);
+    if (nuevo !== href) a.setAttribute("href", nuevo);
+  }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { enlaceDemo, SITIO };
+}
+
+if (typeof document !== "undefined" && document.getElementById("deck")) (function () {
   aplicarEscenario(document);
+  enlacesDemo(document, location.protocol);
   const slides = Array.from(document.querySelectorAll(".slide"));
   const deck = document.getElementById("deck");
   const counter = document.getElementById("counter");

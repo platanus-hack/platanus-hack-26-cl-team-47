@@ -350,7 +350,16 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     p.result.append(txt);
   }
 
+  // Aviso «Pulsa espacio o ▶»: visible mientras la reproducción no empezó (índice inicial y sin
+  // temporizador). Una vez que empieza, no vuelve a salir.
+  let started = false;
+  function updatePlayHint() {
+    if (clock.timer || clock.idx > 0) started = true;
+    $("play-hint").hidden = started || !clock.ts.length;
+  }
+
   function render() {
+    updatePlayHint();
     $("position").textContent = clock.ts.length ? `t = ${currentT()} / ${clock.ts[clock.ts.length - 1]}` : "—";
     const yMax = sharedYMax();
     for (const p of Object.values(panels)) {
@@ -392,6 +401,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     if (clock.timer || !clock.ts.length) return;
     if (atEnd()) clock.idx = -1;
     $("btn-play").classList.add("active");
+    started = true;
     tick();
   }
   function stop() {
@@ -503,7 +513,26 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     }).catch(showError);
   }
 
-  if (chooser.on) {
+  // Abierta con doble clic (file://), fetch falla con «Failed to fetch»: en vez del error,
+  // se explica cómo abrirla (el sitio público o un servidor local).
+  const NEEDS_SERVER_URL = "https://alicanto.vercel.app/split.html";
+  function showNeedsServer() {
+    const box = document.createElement("section");
+    box.className = "needs-server";
+    box.setAttribute("role", "alert");
+    const a = document.createElement("a");
+    a.href = NEEDS_SERVER_URL + location.search;
+    a.textContent = NEEDS_SERVER_URL;
+    const code = document.createElement("code");
+    code.textContent = "python -m http.server 8200 --directory demo/viz";
+    box.append("Esta página necesita un servidor. Ábrela en ", a, " o corre ", code);
+    document.querySelector(".bar").insertAdjacentElement("afterend", box);
+    for (const p of Object.values(panels)) p.detail.textContent = "Esta página necesita un servidor.";
+  }
+
+  if (location.protocol === "file:") {
+    showNeedsServer();
+  } else if (chooser.on) {
     document.body.classList.add("demo-choose");
     $("chooser").hidden = false;
     $("chooser-question").textContent = CHOOSER.question;

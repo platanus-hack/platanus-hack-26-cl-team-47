@@ -66,5 +66,30 @@ npx vercel deploy --prod --yes --scope cuenta-gotas1
 
   desde la raíz del repo, en una máquina con la sesión de Vercel iniciada (`npx vercel login`). La carpeta `.vercel/` y el archivo `.env.local` que crea la herramienta son locales y están en `.gitignore`: no se versionan.
 - **Por qué no la integración con GitHub:** se probó y Vercel bloqueó los despliegues con el motivo «no se pudo asociar el autor del commit a una cuenta de Vercel». En el plan Hobby, cada commit debe ser de un autor cuya cuenta de GitHub esté vinculada a Vercel, y aquí los commits son de cinco personas y de sus agentes. Con el repositorio conectado, además, tampoco funcionaba el despliegue manual; por eso se desconectó.
-- Comprobación después de cada despliegue: `/`, `/home.html`, `/split.html`, `/split.html?demo=enjambre`, `/split.html?demo=elige`, `/report.html` y `/results.html` responden 200 (la raíz redirige a la portada).
-- Las láminas del pitch no están en el sitio: se abren en local.
+- Comprobación después de cada despliegue: `/`, `/home.html`, `/split.html`, `/split.html?demo=enjambre`, `/split.html?demo=elige`, `/report.html`, `/results.html` y `/pitch/index.html` responden 200 (la raíz redirige a la portada y `/pitch` a `/pitch/index.html`). En `/pitch/index.html`, el enlace «Demo» debe abrir `/split.html`.
+
+## Las láminas en el sitio (tarea 15n)
+
+`vercel.json` publica solo `demo/viz`, así que las láminas entran con un paso de build que copia
+los tres archivos de `pitch/` al sitio, sin copiarlos dentro del repo:
+
+```
+"buildCommand": "mkdir -p demo/viz/pitch && cp pitch/index.html pitch/slides.js pitch/style.css demo/viz/pitch/"
+```
+
+- `demo/viz/pitch/` está en `.gitignore`: si corres el build en local, no lo versiones.
+- Las láminas enlazan la demo con `../demo/viz/split.html`. En el sitio eso es `/demo/viz/split.html`,
+  y la redirección `/demo/viz/:path*` → `/:path*` lo lleva a `/split.html`. En local, desde la raíz del
+  repo (`python -m http.server 8200`), el mismo enlace funciona sin redirección.
+- Si las láminas empiezan a usar otro archivo (una imagen, una fuente), agrégalo a la copia del
+  `buildCommand` y al test `test_vercel_json_publica_las_laminas`.
+- Abiertas con doble clic (`file://`), las láminas cambian sus enlaces a la demo por
+  `https://alicanto.vercel.app/...`. La demo, abierta así, explica que necesita un servidor.
+
+Para simularlo en local antes de desplegar:
+
+```
+rm -rf /tmp/sitio && cp -r demo/viz /tmp/sitio && mkdir -p /tmp/sitio/pitch
+cp pitch/index.html pitch/slides.js pitch/style.css /tmp/sitio/pitch/
+python -m http.server 8200 --directory /tmp/sitio   # abre http://127.0.0.1:8200/pitch/index.html
+```
