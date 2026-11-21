@@ -566,3 +566,34 @@ body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: bl
   position: absolute; inset: 0; display: grid; place-items: center;
   font-size: 24px; font-weight: 800; color: var(--muted);
 }
+
+/* ------------------------------------------------ resultados de la evaluación final (16f) */
+
+.home-duel .duel-results { grid-column: 1 / -1; border-color: var(--border); background: var(--panel); }
+.home-duel .duel-big { font-size: clamp(20px, 2.6vw, 28px); font-weight: 800; line-height: 1.25; margin-top: 6px; }
+.home-duel .duel-link { display: inline-block; margin-top: 8px; color: var(--current); font-weight: 600; }
+
+.results-page .results { max-width: 1100px; width: 100%; min-width: 0; box-sizing: border-box; }
+/* La tabla ancha se desplaza dentro de su caja; la página no se ensancha en un celular. */
+.results-page .results > *, .results-block, .results-scroll { min-width: 0; max-width: 100%; }
+.results-page .home-kicker a { color: inherit; text-decoration: none; }
+.results-page .results-title { font-size: clamp(28px, 4.2vw, 48px); }
+.results-block { display: flex; flex-direction: column; gap: 10px; }
+.results-block h2 { margin: 8px 0 0; font-size: 22px; color: var(--text); text-transform: none; letter-spacing: 0; }
+.results-note { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 0; }
+.results-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; }
+.results-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 640px; }
+.results-table th, .results-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.results-table thead th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.results-table tr.ours { background: color-mix(in srgb, var(--good) 10%, transparent); }
+.results-table .sys-name { display: block; font-weight: 700; }
+.results-table .sys-what { display: block; color: var(--muted); font-weight: 400; font-size: 13px; margin-top: 2px; }
+.results-limits ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; }
+.results-hashes { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: 14px; }
+.results-hashes dt { color: var(--muted); }
+.results-hashes dd { margin: 0; font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .results-hashes { grid-template-columns: minmax(0, 1fr); }
+  .results-hashes dd { margin-bottom: 6px; }
+}
+

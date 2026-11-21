@@ -150,3 +150,13 @@ td.pendiente { border-radius: 0; }
 .cifras li { margin: 0 0 18px; line-height: 1.3; }
 .cifras .num { display: inline-block; min-width: 230px; font-weight: 700; color: var(--accent); margin-right: 14px; }
 .cifras .num.pendiente { font-size: 22px; }
+
+/* Lámina de resultados (16f): cifras de la evaluación final con sus límites al lado. */
+.slide-resultados h2 { font-size: 52px; line-height: 1.15; }
+.slide-resultados .results.resultados { font-size: 30px; margin: 8px 0 22px; }
+.slide-resultados .results.resultados th, .slide-resultados .results.resultados td { padding: 14px 14px; }
+.slide-resultados .results.resultados th { width: auto; }
+.slide-resultados .results.resultados tr:first-child th { font-size: 26px; color: var(--muted); }
+.slide-resultados .results.resultados td.good { color: #3fb950; font-weight: 700; }
+.slide-resultados .results.resultados td.bad { color: #ff7b72; font-weight: 700; }
+.slide-resultados .limite { font-size: 28px; color: var(--muted); margin: 6px 0; }

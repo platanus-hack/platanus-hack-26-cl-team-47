@@ -79,14 +79,16 @@
       <p class="nota-pie">Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026.</p>
     </section>
 
-    <section class="slide" data-n="10">
-      <h2>Resultados</h2>
-      <table class="results">
-        <tr><th>Falsas alarmas por llamada expuesta</th><td class="pendiente">PENDIENTE: T1, eval/metrics</td></tr>
-        <tr><th>Ataques prevenidos</th><td class="pendiente">PENDIENTE: T2</td></tr>
-        <tr><th>Contra allowlist más detect-secrets</th><td class="pendiente">PENDIENTE: T3</td></tr>
-        <tr><th>Efecto de la rotación en el goteo</th><td class="pendiente">PENDIENTE: T4</td></tr>
+    <section class="slide slide-resultados" data-n="10">
+      <h2>180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h2>
+      <table class="results resultados">
+        <tr><th></th><th>Cuentagotas</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
+        <tr><th>Ataques de familias nuevas prevenidos, de 180</th><td class="good">100 % (180)</td><td>16,7 % (30)</td><td>38,9 % (70)</td></tr>
+        <tr><th>El ataque triunfa, de 180</th><td class="good">0 % (0)</td><td class="bad">83,3 % (150)</td><td>61,1 % (110)</td></tr>
+        <tr><th>Llamadas benignas bloqueadas, de 5.879</th><td class="good">0 % (0)</td><td>0 % (0)</td><td>4,8 % (283)</td></tr>
       </table>
+      <p class="limite">Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna.</p>
+      <p class="limite">Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas tras tres rotaciones.</p>
     </section>
 
     <section class="slide" data-n="11">
@@ -107,7 +109,7 @@
       <h2>36 horas en cifras</h2>
       <ul class="cifras">
         <li><span class="num">635</span> tests automáticos</li>
-        <li><span class="num pendiente">PENDIENTE</span> sistemas comparados</li>
+        <li><span class="num">9</span> sistemas comparados</li>
         <li><span class="num">80 + 80 + 180</span> ataques del equipo rojo; los 180, sellados con hash antes de evaluar</li>
         <li>El equipo rojo no vio el detector</li>
         <li>Red sin internet: gestor de secretos, API, atacante, GitHub y web simulados</li>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuentagotas · resultados y sus límites</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page results-page">
+  <main class="home results">
+    <p class="home-kicker"><a href="home.html">Cuentagotas</a> · evaluación final</p>
+    <h1 class="home-title results-title">180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h1>
+    <p class="home-tagline">Corrida única sobre un set de ataques grabados, sellado con hash antes de evaluar, con la configuración congelada antes de abrirlo. Todo el tráfico es sintético.</p>
+
+    <section class="results-block">
+      <h2>Los nueve sistemas, en el set de prueba</h2>
+      <p class="results-note">Prevenidos: de 180 ataques grabados de seis familias que el detector no había visto. Falsas alarmas: llamadas benignas bloqueadas, de 5.879 expuestas. Entre corchetes, el intervalo al 95 %.</p>
+      <div class="results-scroll">
+        <table class="results-table" id="systems-table">
+          <thead><tr><th>Sistema</th><th>Prevenidos</th><th>Falsas alarmas</th><th>Rotaciones benignas por 1.000 llamadas</th><th>Mediana de bits del atacante</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="results-note" id="tests-line"></p>
+    </section>
+
+    <section class="results-block results-limits">
+      <h2>Lo que este resultado no dice</h2>
+      <ol>
+        <li><strong>Son ataques grabados, no un atacante que se adapta:</strong> tras rotar, las grabaciones siguen enviando la clave vieja. El que se adapta se midió aparte (abajo).</li>
+        <li><strong>El contador de bits, solo, no generaliza:</strong> sin el modelo de evidencia se previenen 40 de 180; lo que frena estas familias nuevas es la evidencia de comportamiento.</li>
+        <li><strong>Tiene un costo:</strong> rotó una clave sin necesidad en 34 de 90 sesiones benignas difíciles (5,46 por cada 1.000 llamadas; la meta era 5). No bloqueó ninguna llamada benigna.</li>
+        <li><strong>El modelo de evidencia está saturado:</strong> se comporta como «leyó un secreto y después habla con un destino no confiable»; por eso generaliza y por eso rota de más.</li>
+        <li><strong>La cuenta compartida no se distingue aquí:</strong> la cuenta por sesión también previene todo, porque la evidencia rota antes; su valor se ve en la demo del enjambre.</li>
+        <li><strong>Todo es sintético:</strong> tráfico benigno y ataques son guiones de nuestro equipo.</li>
+        <li><strong>Las réplicas no son los productos:</strong> «presupuesto de bits» y «reensamblado por sesión» son réplicas simplificadas nuestras, no Pipelock, AgentBrake ni ningún artículo.</li>
+      </ol>
+    </section>
+
+    <section class="results-block">
+      <h2>El atacante que se adapta (simulación, reportada aparte)</h2>
+      <p class="results-note">Un atacante simulado relee la clave nueva antes de cada envío. Triunfa si saca más de 96 bits de alguna versión de la clave. Lo frena el tope de tres rotaciones: después, el modo escalado bloquea las salidas de esa clave y avisa a una persona. Es una detención con costo, no rotación sin fin, y ese costo sobre tráfico benigno no está medido.</p>
+      <div class="results-scroll">
+        <table class="results-table" id="adaptive-table">
+          <thead><tr><th>Sistema</th><th>Prevenidos</th><th>Máximo de bits de una versión</th><th>Termina en modo escalado</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="results-block">
+      <h2>Sello y configuración</h2>
+      <dl class="results-hashes" id="hashes"></dl>
+    </section>
+
+    <p class="home-note">Datos: <code>fixtures/results.json</code>, copia de <code>results/test/</code>, <code>results/adaptive/</code> y <code>redteam/SELLO.md</code>. Cómo leerlos: <code>results/test/LECTURA.md</code>.</p>
+    <div class="home-actions"><a class="home-secondary" href="home.html">Volver a la portada</a></div>
+  </main>
+  <script src="results.js"></script>
+</body>
+</html>

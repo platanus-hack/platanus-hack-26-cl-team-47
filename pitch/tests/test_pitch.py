@@ -75,11 +75,18 @@ def test_sin_internet():
         assert not ref.startswith("/")
 
 
-def test_resultados_solo_pendientes_y_sin_cifras():
+def test_resultados_con_las_cifras_de_la_evaluacion_final_y_sus_limites():
+    """16f: la lámina 10 lleva las cifras reales del set sellado y sus dos límites, en la misma lámina."""
     s10 = parse()[9]
-    assert s10["pendientes"] >= 4
-    sin_nombres = re.sub(r"\bT[1-4]\b", "", s10["text"])
-    assert not re.search(r"\d", sin_nombres), "la lámina 10 no puede tener cifras"
+    assert s10["pendientes"] == 0
+    assert norm(s10["title"]) == "180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits"
+    for cifra in ("180", "32", "150", "34 de 90", "5.879", "16,7 % (30)", "38,9 % (70)"):
+        assert cifra in s10["text"], cifra
+    assert "Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna." in norm(s10["body"])
+    assert ("Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas "
+            "tras tres rotaciones.") in norm(s10["body"])
+    for col in ("Cuentagotas", "Sin rotación", "Presupuesto de bits (réplica)"):
+        assert col in s10["text"], col
 
 
 def test_citas_literales():
@@ -119,10 +126,10 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 13
+    assert len(titulos) == 14
     claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
-              "resultados son reales", "Por qué un hospital", "varios agentes")
+              "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación")
     for clave, titulo in zip(claves, titulos):
         assert clave in titulo, f"falta la pregunta sobre {clave!r}"
 
@@ -290,7 +297,8 @@ def test_frases_desmentidas_fuera_de_pitch():
 def test_preguntas_nombran_competidores():
     for clave in ("Pipelock", "AgentBrake", "2607.07368", "2605.31593", "tarea o trayectoria",
                   "https://pipelab.org/blog/cross-request-exfiltration/", "https://github.com/Ujjwaljain16/AgentBrake",
-                  "3 rotaciones por secreto en 200 llamadas", "PENDIENTE: cifra de la familia de sustitución propia"):
+                  "3 rotaciones por secreto en 200 llamadas",
+                  "La familia de sustitución propia quedó en validación, no en el set de prueba"):
         assert clave in PREGUNTAS, clave
     titulos = re.findall(r"^## (\d+)\. (.+)$", PREGUNTAS, flags=re.M)
     i = next(k for k, (_, t) in enumerate(titulos) if "pasarela MCP" in t)
@@ -341,3 +349,49 @@ def test_ia_blanco_y_vector_sin_llm_real():
     sec = PREGUNTAS.split("¿Dónde está la IA")[1].split("\n## ")[0]
     assert "blanco y el vector" in sec and "determinista a propósito" in sec
     assert "PENDIENTE: resultado de las corridas con un LLM real (#139)" in sec
+
+
+# ------------------------------------------------ cifras de la evaluación final (16f)
+
+def _frases(texto):
+    """Frases de un archivo: en HTML, cada línea sin etiquetas; en el resto, partidas por puntuación."""
+    texto = re.sub(r"<[^>]+>", " ", texto)
+    return [f for linea in texto.splitlines() for f in re.split(r"(?<=[.!?»])\s+", linea)]
+
+
+def _sin_100_suelto(path):
+    for f in _frases(path.read_text(encoding="utf-8")):
+        if re.search(r"100\s?%", f):
+            assert "grabados" in f or "nuevas" in f, f"{path.name}: {f.strip()!r}"
+
+
+def test_nunca_100_por_ciento_a_secas():
+    for f in _pitch_files():
+        if f.suffix != ".css":   # en CSS «100%» es una medida, no una afirmación
+            _sin_100_suelto(f)
+    _sin_100_suelto(PITCH.parent / "demo" / "viz" / "results.html")
+
+
+def test_guion_cifra_contraste_costo_y_limite_en_orden():
+    hablado = norm(_texto_hablado(GUION)).lower()
+    partes = ["180 de 180 ataques de familias que el detector nunca vio; ninguno pasó de 32 bits de 160",
+              "sin rotación, 150 de 180 lo logran",
+              "cuando duda, rota en vez de bloquear: rotó de más en 34 de 90 casos difíciles y no interrumpió ninguno",
+              "son ataques grabados; contra uno que se adapta tenemos un tope de tres rotaciones y después bloqueo"]
+    pos = [hablado.find(x) for x in partes]
+    assert all(x >= 0 for x in pos), list(zip(partes, pos))
+    assert pos == sorted(pos)
+    assert "detiene el 100" not in GUION.lower()
+
+
+def test_preguntas_con_cifras_reales():
+    for clave in ("150 ataques que nosotros prevenimos y ella no, 0 al revés", "0 llamadas benignas bloqueadas de 5.879",
+                  "40 de 180", "`results/test/LECTURA.md`", "`redteam/SELLO.md`",
+                  "180 de 180 ataques no pasan de 96 bits", "tráfico sintético"):
+        assert clave.lower() in PREGUNTAS.lower(), clave
+    assert "PENDIENTE: la cifra T3" not in PREGUNTAS and "PENDIENTE: la corrida final" not in PREGUNTAS
+
+
+def test_lamina_36_horas_nueve_sistemas():
+    s = next(sl for sl in parse() if "36 horas" in sl["title"])
+    assert s["pendientes"] == 0 and "9" in s["text"] and "sistemas comparados" in s["text"]
