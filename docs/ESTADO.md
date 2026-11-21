@@ -24,7 +24,7 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
 
-**Reparto (decisión del líder, H8,5):** cuando `matix3000` termine #126, las tareas nuevas del área Análisis (`engine/`, `eval/`: congelamiento de H20 y evaluación final) se asignan a `JCBasulto`, con traspaso en cada issue.
+**Reparto (decisión del líder, H8,6):** `matix3000` y `Terdmannsdorffer` no reciben tareas ni pedidos de corridas. Todo lo del área Análisis (`engine/`, `eval/`: #126, congelamiento de H20 y evaluación final) es de `JCBasulto`, con traspaso en cada issue. Agentes activos: `JCBasulto`, `VictoriaGuerriero` y la sesión Rojo del líder.
 
 ## Lo que viene, en orden
 
