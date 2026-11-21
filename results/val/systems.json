@@ -7,12 +7,12 @@
       0.0030847461441212503
     ],
     "benign_rotations_per_1000": 0.9416195856873822,
-    "prevented_rate": 0.9,
+    "prevented_rate": 0.95,
     "prevented_ci": [
-      0.8124348925365683,
-      0.955829059846371
+      0.876901263556847,
+      0.9862106060235382
     ],
-    "prevented_rate_reread": 0.8375,
+    "prevented_rate_reread": 0.95,
     "median_max_bits_true": 16.0,
     "median_rotations_attack": 1.0,
     "rotations_attack_total": 163,
@@ -20,10 +20,10 @@
     "n_benign_units": 50,
     "by_family": {
       "A1": 1.0,
-      "A2": 0.9333333333333333,
+      "A2": 1.0,
       "A3": 1.0,
       "A4": 1.0,
-      "A5′": 0.3
+      "A5′": 0.6
     }
   },
   {
@@ -42,7 +42,7 @@
     "prevented_rate_reread": 0.525,
     "median_max_bits_true": 96.0,
     "median_rotations_attack": 0.0,
-    "rotations_attack_total": 28,
+    "rotations_attack_total": 0,
     "n_attack_units": 80,
     "n_benign_units": 50,
     "by_family": {
@@ -61,12 +61,12 @@
       0.0030847461441212503
     ],
     "benign_rotations_per_1000": 0.9416195856873822,
-    "prevented_rate": 0.9,
+    "prevented_rate": 0.95,
     "prevented_ci": [
-      0.8124348925365683,
-      0.955829059846371
+      0.876901263556847,
+      0.9862106060235382
     ],
-    "prevented_rate_reread": 0.8375,
+    "prevented_rate_reread": 0.95,
     "median_max_bits_true": 16.0,
     "median_rotations_attack": 1.0,
     "rotations_attack_total": 163,
@@ -74,10 +74,10 @@
     "n_benign_units": 50,
     "by_family": {
       "A1": 1.0,
-      "A2": 0.9333333333333333,
+      "A2": 1.0,
       "A3": 1.0,
       "A4": 1.0,
-      "A5′": 0.3
+      "A5′": 0.6
     }
   },
   {
