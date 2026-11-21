@@ -1,6 +1,6 @@
 # Estado del proyecto (traspaso entre sesiones de agente)
 
-Actualizado: sábado 21 de noviembre de 2026, 05:50 (H6,8). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
+Actualizado: sábado 21 de noviembre de 2026, 09:50 (H10,8). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
 
 ## En una frase
 
@@ -8,18 +8,20 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 ## Estado de `main`
 
-- 484 tests en verde en macOS; verde también en Windows.
+- 589 tests en verde en macOS.
 - Demo: `python demo/run_split.py --out-dir <tmp>` da 200 a la izquierda y 401 a la derecha. En vivo: `python -m services.scenarios goteo --out <tmp>`.
 - Demo visual: tema oscuro, medidor grande de bits por lado y sello 200/401 (`demo/viz/split.js`, `style.css`, `home.html`); la página se desplaza en vertical con paneles de altura fija.
 - Escenario: Hospital Regional Tres Cóndores, ficticio (`docs/ESCENARIO.md`). Es solo capa de presentación: no se renombran hosts, `SECRET_n`, keys, `demo/repo` ni datos.
 - Datos: `data/benign/sessions` (120 sesiones, 4.885 llamadas benignas) `redteam/train` (80 sesiones de ataque y 20 benignas difíciles, 458 llamadas de ataque) y `redteam/val` (mismo formato, semilla 1, 461 llamadas de ataque, etiquetas con `split: "val"`).
-- Primer modelo de evidencia en `models/model.json` y primera búsqueda en `models/search/` (validación: 0 falsas alarmas, 81 % de ataques prevenidos). Es el primer análisis de H12, no el congelamiento: los valores por defecto de `Params` no cambiaron.
+- Modelo de evidencia y búsqueda en `models/`. En validación, con la métrica por contenido: 0 falsas alarmas y 90 % de ataques prevenidos (cota pesimista 83,75 %). **Va a cambiar:** falta contar las rotaciones con eventos exactos y reajustar el modelo solo con la parte de entrenamiento del fondo benigno (ver #133). El congelamiento es el `frozen.json` que resulte de eso.
+- La demo y el goteo en vivo corren el detector **sin** modelo de evidencia, con rotación al 30 % de la clave. La configuración evaluada es otra (la congelada). Hay que decirlo así.
 
 ## Tareas abiertas
 
 | Issue | Quién | Qué | Vence |
 |---|---|---|---|
-| #120 | `jplira2` (sesión Rojo) | 11 Set de prueba sellado; rama `11-set-sellado`, fuera de `main` | H15 (14:00) |
+| #133 | `JCBasulto` | 14b Congelamiento y comando único de la evaluación final. Dos PR: primero rotaciones exactas y ablación sin rotación; después el comando, con siete sistemas más `reassembly` | H12 y H14 |
+| #136 | `VictoriaGuerriero` | 16d Pitch: corregir afirmaciones de novedad, nombrar competidores y responder las objeciones; video en WebM | H13 |
 
 
 `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
@@ -28,12 +30,15 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 ## Lo que viene, en orden
 
-1. Puerta H12 (11:00): primer análisis en validación. Sale de #110.
-2. Paso 11: set de prueba sellado (issue #120). Lo corre el líder en una sesión nueva con `/tarea-roja 120`; vive en la rama `11-set-sellado`, fuera de `main`, hasta H20.
-3. Puerta H20 (19:00): parámetros congelados con hash.
-4. H20–H23: evaluación final, una sola corrida (T1 a T6, ablación, líneas de base).
-5. Pitch: cifras reales en `pitch/index.html` (hoy dicen «PENDIENTE»), video de respaldo en H26, tres ensayos. Congelamiento total en H27 (domingo 02:00).
-6. Entrega (lo hace una persona): `README.md`, `project-description.md`, los cuatro campos de `platanus-hack-project.jsonc` y el deploy en Vercel desde el espejo.
+1. PR 1 de #133 en `main`. El orquestador reajusta el modelo (fondo benigno solo de entrenamiento) y repite la búsqueda: ese `frozen.json` es el congelamiento.
+2. PR 2 de #133: el comando `python -m eval.final.run`, probado en validación.
+3. El orquestador abre el set sellado (rama `11-set-sellado`, sello en `redteam/SELLO.md`), comprueba el sello y corre `--split test` **una sola vez**.
+4. Cifras reales en la lámina de resultados y en `pitch/PREGUNTAS.md`; ensayos.
+5. Entrega (lo hace una persona): revisar `README.md` y `project-description.md`, deploy en Vercel y `deploy-url`.
+
+Pendiente de decisión del líder: corridas con un LLM real a través del proxy (hoy todo es guion sin LLM; es el mayor riesgo de encaje con el track), y si la demo se regenera con la configuración congelada.
+
+Hallazgos de la auditoría de H10 que siguen abiertos: la herramienta `git` del proxy permite ejecutar comandos por alias (`proxy/tools.py`); `SharedLedger` no está conectado al proxy en vivo (solo demo y tests); los tests de `services/scenarios` exigen los puertos 8101 a 8103 libres.
 
 ## Decisiones vigentes
 
