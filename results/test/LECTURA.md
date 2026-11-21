@@ -36,6 +36,22 @@ El punto 1 de arriba se midió después, con el detector ya congelado, en una si
 - **Cómo lo frena, y a qué costo:** en el 100 % de los casos del set de prueba el sistema llega a su tope de tres rotaciones y pasa al modo escalado: bloquea toda salida de esa clave hacia destinos no permitidos y avisa a una persona. Contra un atacante persistente no rota indefinidamente: termina deteniendo las salidas. Es una detención con costo operativo, y el costo de ese modo sobre tráfico benigno no está medido.
 - Es una simulación: el atacante es un guion que relee y reenvía, no un modelo que busca caminos nuevos.
 
+## Qué aporta cada pieza (ablaciones en validación, hechas después)
+
+Una investigación posterior midió, solo sobre validación y sin tocar el detector, qué hace cada componente. El set de prueba no se volvió a usar.
+
+- **El grafo de archivos y el grafo de llamadas no «conectan pasos lejanos» en ninguna decisión.** La medida R⁺ y las aristas de sospecha están implementadas y probadas, pero ninguna regla las lee; la única regla que usa el grafo de llamadas no se disparó ni una vez en validación.
+- **Sí sirven como señales por llamada dentro del modelo de evidencia.** Quitar las señales de los dos grafos no baja los ataques prevenidos, pero sube las rotaciones en sesiones benignas de 0,47 a 7,5 por cada 1.000 llamadas, por encima de la meta de 5. Un indicador binario simple («la llamada toca algún archivo conocido») da lo mismo que la sensibilidad calculada.
+- **El modelo de evidencia equivale, en estos datos, a una regla simple:** «la sesión leyó un secreto y esta llamada envía algo a un destino no confiable». Esa regla sola da las mismas cifras que el modelo en validación. Explica por qué generaliza a familias nuevas y por qué rota de más en casos benignos difíciles.
+- **Aporte medido del grafo de archivos al separar llamadas de ataque de benignas** (lo que pretendía la prueba T6, aquí sobre validación): la diferencia de AUC es +0,0045, con intervalo al 95 % de 0,0027 a 0,0065. Existe y es muy chica.
+- **Conectar R⁺ no mejoraría nada medible con estos datos:** no marca ningún envío que la regla simple no marque. Validación no tiene sesiones benignas con contenido no confiable, así que tampoco puede medir su costo. Queda como trabajo futuro.
+
+Qué se puede decir: «El modelo de evidencia usa señales del grafo de archivos y del grafo de llamadas como indicadores por llamada; en validación reducen las rotaciones en sesiones benignas. La propagación entre pasos lejanos está implementada y probada, pero no conectada a las decisiones, y nuestros datos no permiten medir su aporte.»
+
+## La demo y la evaluación usan configuraciones distintas, a propósito
+
+La demo corre el detector sin modelo de evidencia y rota cuando se filtró el 30 % de la clave. La evaluación usa la configuración congelada, que rota al 10 % y suma la evidencia. Se probó la demo con la configuración congelada: funciona y termina en 401, pero rota en el primer fragmento (llamada 8, con 16 bits en vez de 48), así que el medidor casi no sube y no se ve el goteo. En la demo del enjambre, además, los dos lados terminan en 401 y se pierde el contraste entre cuenta por agente y cuenta global. Por eso la demo se deja como está y se dice.
+
 ## Frases que este resultado respalda
 
 - «En 180 ataques de seis familias que el detector no había visto, ninguno sacó más de 32 de los 160 bits de la clave vigente.»
