@@ -57,6 +57,7 @@ En la configuración MCP del agente (por ejemplo `.mcp.json` en la raíz de tu p
 - `PYTHONPATH`: dónde clonaste este repositorio; así el servidor arranca desde cualquier carpeta.
 - `AGENT_WORKSPACE`: el repositorio en el que trabaja el agente.
 - `PROXY_MODE=live`: el detector decide y rota. Sin esta variable el proxy deja pasar todo (sirve para comparar).
+- `PROXY_CONFIG=frozen` (opcional): el detector usa la configuración evaluada (`models/search/frozen.json` y su modelo, los de `results/test/`). Sin esta variable usa los parámetros por defecto, que deciden solo con el contador de bits.
 - `LEDGER_PATH`: la **cuenta compartida**. Todos los agentes que apunten al mismo archivo suman en la misma cuenta por clave, y la cuenta sobrevive entre sesiones. Sin esta variable, cada proceso lleva su propia cuenta.
 
 El servidor se anuncia como `alicanto` y expone seis herramientas: `read_file`, `list_dir`, `http_request`, `git`, `github_issue` y `github_comment`.

@@ -2,6 +2,7 @@
 
     PROXY_MODE=live python -m proxy.server
     PROXY_MODE=live LEDGER_PATH=/ruta/compartida/ledger.json python -m proxy.server   # enjambre (#138)
+    PROXY_MODE=live PROXY_CONFIG=frozen python -m proxy.server   # la configuración evaluada (make_frozen)
 
 El valor nuevo de un secreto rotado solo viaja al detector: no se escribe en el
 workspace ni en el registro. En el registro queda {secret_id, version}.
@@ -28,6 +29,9 @@ from contracts import Decision, Event, ToolCall, load_hosts, write_event
 from .core import Proxy, default_workspace
 
 DEFAULT_MANIFEST = "demo/secrets_manifest.json"
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FROZEN_PATH = os.path.join(REPO_ROOT, "models", "search", "frozen.json")
+MODEL_PATH = os.path.join(REPO_ROOT, "models", "model.json")
 DEFAULT_VAULT_TIMEOUT_S = 2.0
 RETRY_AFTER_S = 5.0  # tras una falla, no se vuelve a llamar al gestor por ese secreto durante este tiempo
 LOCK_TIMEOUT_S = 2.0   # cuánto se espera el cerrojo de la cuenta compartida
@@ -230,12 +234,29 @@ def shared_ledger_output(detector, ledger, path: str, value_of: Callable[[str], 
     return on_output
 
 
+def detector_factory(config: str | None = None) -> Callable[..., object]:
+    """Constructor del detector según la configuración: None (o «default») = Detector con los Params por
+    defecto, como siempre; «frozen» = la configuración evaluada (engine.detector.make_frozen, con las rutas
+    del repositorio, así funciona aunque el servidor arranque desde otra carpeta)."""
+    config = (config or "").strip().lower() or None
+    if config in (None, "default"):
+        from engine.detector import Detector  # import tardío: el modo por defecto no carga el motor
+
+        return Detector
+    if config == "frozen":
+        from engine.detector import make_frozen
+
+        return make_frozen(FROZEN_PATH, MODEL_PATH)
+    raise ValueError(f"PROXY_CONFIG desconocida: {config!r} (valores: frozen, default)")
+
+
 def build_live_proxy(workspace: str | None = None, manifest_path: str = DEFAULT_MANIFEST,
                      vault_url: str | None = None, session_id: str | None = None,
-                     client=None, ledger_path: str | None = None) -> Proxy:
+                     client=None, ledger_path: str | None = None, config: str | None = None) -> Proxy:
     """ledger_path (o la variable LEDGER_PATH): cuenta compartida por archivo entre procesos (#138).
-    Sin ninguno de los dos, el comportamiento de siempre: un detector con su cuenta propia."""
-    from engine.detector import Detector  # import tardío: el modo por defecto no carga el motor
+    config (o la variable PROXY_CONFIG): «frozen» usa la configuración evaluada (make_frozen).
+    Sin ninguno, el comportamiento de siempre: un detector con su cuenta propia y los Params por defecto."""
+    new_detector = detector_factory(config if config is not None else os.environ.get("PROXY_CONFIG"))
 
     workspace = workspace or default_workspace()
     vault_url = vault_url or load_hosts()["vault.test"]
@@ -249,8 +270,8 @@ def build_live_proxy(workspace: str | None = None, manifest_path: str = DEFAULT_
         pending.append({"secret_id": secret_id, "version": None, "error": reason})
 
     if ledger_path is None:
-        detector = Detector(workspace, manifest_path,
-                            rotate=vault_rotator(vault_url, on_rotate=on_rotate, client=client))
+        detector = new_detector(workspace=workspace, manifest_path=manifest_path,
+                                rotate=vault_rotator(vault_url, on_rotate=on_rotate, client=client))
         proxy = Proxy(workspace, decide=fail_safe(detector.decide, on_rotation_error), session_id=session_id,
                       on_output=detector.set_output)
     else:
@@ -261,8 +282,8 @@ def build_live_proxy(workspace: str | None = None, manifest_path: str = DEFAULT_
 
             client = httpx.Client(base_url=vault_url.rstrip("/"), timeout=vault_timeout())
         ledger = SharedLedger.from_manifest(manifest_path)
-        detector = Detector(workspace, manifest_path, ledger=ledger,
-                            rotate=vault_rotator(vault_url, on_rotate=on_rotate, client=client))
+        detector = new_detector(workspace=workspace, manifest_path=manifest_path, ledger=ledger,
+                                rotate=vault_rotator(vault_url, on_rotate=on_rotate, client=client))
         value_of = lambda sid: _vault_value(client, sid)  # noqa: E731
         decide = shared_ledger_decide(detector, ledger, ledger_path, value_of)
         proxy = Proxy(workspace, decide=fail_safe(decide, on_rotation_error), session_id=session_id,
