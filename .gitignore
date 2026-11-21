@@ -22,3 +22,7 @@ __pycache__/
 # Registros y sesiones grabadas del banco de pruebas, y salidas de la demo
 logs/
 demo/out/
+
+# Base de ejemplos de hypothesis y caché de pytest
+.hypothesis/
+.pytest_cache/
