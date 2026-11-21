@@ -166,3 +166,25 @@ def test_una_corrida_que_termina_en_error_no_es_valida(tmp_path):
     md = (tmp_path / "out" / "summary.md").read_text(encoding="utf-8")
     assert "| sin | 1 | 0 |" in md and "| con | 1 | 0 |" in md
 
+
+# ------------------------------------------------ corridas con LLM real: bloque fallback (de Victoria, PR #163)
+
+def test_respuesta_con_bloque_fallback_se_reenvia_con_from():
+    """El bloque fallback (beta server-side-fallback) tiene el campo `from_` con alias «from»;
+    serializarlo sin by_alias rompía el turno siguiente con un 400."""
+    from types import SimpleNamespace
+
+    from anthropic.types.beta.beta_fallback_block import BetaFallbackBlock
+
+    from proxy.agent.llm import AnthropicLLM
+
+    block = BetaFallbackBlock.model_validate({
+        "type": "fallback", "from": {"model": "claude-opus-5-5"}, "to": {"model": "claude-sonnet-5-5"},
+        "trigger": {"type": "refusal", "category": None}})
+    resp = SimpleNamespace(content=[block], stop_reason="end_turn")
+    llm = AnthropicLLM.__new__(AnthropicLLM)
+    llm.model, llm.system = "claude-opus-5-5", "s"
+    llm.client = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(create=lambda **kw: resp)))
+    out = llm.complete([], [])
+    assert out.content[0]["from"] == {"model": "claude-opus-5-5"}
+    assert "from_" not in out.content[0]
