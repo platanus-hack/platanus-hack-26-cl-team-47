@@ -1,6 +1,6 @@
 # Estado del proyecto (traspaso entre sesiones de agente)
 
-Actualizado: sábado 21 de noviembre de 2026, 05:45 (H6,75). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
+Actualizado: sábado 21 de noviembre de 2026, 06:15 (H7,25). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
 
 ## En una frase
 
@@ -8,20 +8,21 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 ## Estado de `main`
 
-- 482 tests en verde en macOS; verde también en Windows.
+- 484 tests en verde en macOS; verde también en Windows.
 - Demo: `python demo/run_split.py --out-dir <tmp>` da 200 a la izquierda y 401 a la derecha. En vivo: `python -m services.scenarios goteo --out <tmp>`.
+- Demo visual: tema oscuro, medidor grande de bits por lado y sello 200/401 (`demo/viz/split.js`, `style.css`, `home.html`); la página se desplaza en vertical con paneles de altura fija.
 - Escenario: Hospital Regional Tres Cóndores, ficticio (`docs/ESCENARIO.md`). Es solo capa de presentación: no se renombran hosts, `SECRET_n`, keys, `demo/repo` ni datos.
-- Datos: `data/benign/sessions` (120 sesiones, 4.885 llamadas benignas) y `redteam/train` (80 sesiones de ataque y 20 benignas difíciles, 458 llamadas de ataque).
+- Datos: `data/benign/sessions` (120 sesiones, 4.885 llamadas benignas) `redteam/train` (80 sesiones de ataque y 20 benignas difíciles, 458 llamadas de ataque) y `redteam/val` (mismo formato, semilla 1, 461 llamadas de ataque, etiquetas con `split: "val"`).
 - Todavía no hay `models/model.json`: sin modelo, el detector opera solo con las reglas de bits y rotación.
 
 ## Tareas abiertas
 
 | Issue | Quién | Qué | Vence |
 |---|---|---|---|
-| #109 | `JCBasulto` | 5d Generar el set de validación de ataques (`redteam/val`). Sesión de agente sin contexto de `engine/` | H8 (07:00) |
-| #110 | `matix3000` | 13d Primer modelo de evidencia y búsqueda con validación real. Los puntos 1 a 3 no dependen de #109 | H11 (10:00) |
 
-`VictoriaGuerriero` no tiene tarea abierta. `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
+| #110 | `matix3000` | 13d Primer modelo de evidencia y búsqueda con validación real. Sin dependencias pendientes | H11 (10:00) |
+
+`VictoriaGuerriero` y `JCBasulto` no tienen tarea abierta. `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
 
 ## Lo que viene, en orden
 
