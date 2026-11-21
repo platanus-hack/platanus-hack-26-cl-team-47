@@ -13,16 +13,14 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 - Demo visual: tema oscuro, medidor grande de bits por lado y sello 200/401 (`demo/viz/split.js`, `style.css`, `home.html`); la página se desplaza en vertical con paneles de altura fija.
 - Escenario: Hospital Regional Tres Cóndores, ficticio (`docs/ESCENARIO.md`). Es solo capa de presentación: no se renombran hosts, `SECRET_n`, keys, `demo/repo` ni datos.
 - Datos: `data/benign/sessions` (120 sesiones, 4.885 llamadas benignas) `redteam/train` (80 sesiones de ataque y 20 benignas difíciles, 458 llamadas de ataque) y `redteam/val` (mismo formato, semilla 1, 461 llamadas de ataque, etiquetas con `split: "val"`).
-- Todavía no hay `models/model.json`: sin modelo, el detector opera solo con las reglas de bits y rotación.
+- Primer modelo de evidencia en `models/model.json` y primera búsqueda en `models/search/` (validación: 0 falsas alarmas, 81 % de ataques prevenidos). Es el primer análisis de H12, no el congelamiento: los valores por defecto de `Params` no cambiaron.
 
 ## Tareas abiertas
 
 | Issue | Quién | Qué | Vence |
 |---|---|---|---|
+| #120 | `jplira2` (sesión Rojo) | 11 Set de prueba sellado; rama `11-set-sellado`, fuera de `main` | H15 (14:00) |
 
-| #110 | `matix3000` | 13d Primer modelo de evidencia y búsqueda con validación real. Sin dependencias pendientes | H11 (10:00) |
-| #114 | `JCBasulto` | 9o Cuenta global por secreto para un enjambre de agentes (`SharedLedger`). Paso 17 del plan | H12 (11:00) |
-| #115 | `VictoriaGuerriero` | 15k Demo del enjambre: cuenta por agente contra cuenta global. El punto 2 depende de #114. Paso 18 | H15 (14:00) |
 
 `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
 
@@ -38,7 +36,7 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 ## Decisiones vigentes
 
 - **Nombre del proyecto: Cuentagotas.** Ya está en la portada, la pantalla dividida, la lámina 1, `platanus-hack-project.jsonc` y `project-description.md`.
-- **Enjambre: es objetivo del proyecto** (pasos 17 y 18 de `docs/PLAN.md`). Mientras #114 no esté en `main`, nadie dice «la cuenta es por clave, no por agente»; la descripción lo presenta como «en curso».
+- **Enjambre: hecho y en `main`** (pasos 17 y 18 del plan). `SharedLedger` y `make_decide_shared` en `engine/detector`; demo en `split.html?demo=enjambre` (cuenta por agente 200, cuenta global 401). Ya se puede decir «la cuenta es por clave, no por agente», con el límite: un solo proceso, persistencia entre sesiones.
 - **Equipo morado.** El agente que haya leído `engine/` no escribe ataques ni el set sellado. Las tareas de `redteam/` se hacen en una sesión de agente nueva, con la instrucción de no abrir `engine/`, y siguiendo la especificación del issue al pie de la letra. Si te llega una tarea de `redteam/` y ya leíste `engine/`, avisa en el board.
 - **Todo PR que toque `engine/`** agrega su fila en `docs/BITACORA_DETECTOR.md`.
 - **Métricas** (`eval.metrics`): las claves son `max_bits_true`, `max_bits_true_by_secret` y `median_max_bits_true`. Tras una rotación, una llamada etiquetada sin `version` cuenta solo si hubo relectura del secreto.

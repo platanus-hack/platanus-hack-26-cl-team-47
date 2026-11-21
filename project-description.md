@@ -31,6 +31,17 @@ Un hospital ficticio, su sistema de agenda y ficha clínica, y un agente al que 
 
 Los bits que consiguió el atacante los cuenta **su propio servidor**, no nuestro detector. No nos ponemos la nota nosotros.
 
+## Y si atacan en enjambre
+
+Los ataques reales ya reparten el trabajo entre varios agentes, en pasos que por separado parecen inocentes. Con la fuga repartida entre cinco agentes, un monitor por agente no ve nunca más de 32 bits: nadie rota, y el atacante arma la clave completa.
+
+Cuentagotas lleva **una sola cuenta por clave**, no por agente. En la misma prueba rota al tercer fragmento, y el atacante recibe 401.
+
+| Cinco agentes se reparten la fuga | Cuenta por agente | Cuenta global de Cuentagotas |
+|---|---|---|
+| Rotaciones | 0 | 1, en la llamada 32 |
+| La API de fichas clínicas responde | **200** | **401** |
+
 ## Por qué importa
 
 Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad. Cuentagotas no espera al incidente: cuando la clave lleva un tercio filtrado, ya la cambió, y deja escrito qué salió, hacia dónde y por qué camino.
@@ -47,7 +58,7 @@ Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de 
 
 - Medimos una **cota inferior**: lo que pasa por el proxy, en las codificaciones que sabemos leer.
 - Rotar limita el daño; no impide que el agente lo intente.
-- Hoy la cuenta se lleva por sesión de un agente. **En curso:** una sola cuenta por clave para todo un enjambre de agentes, para que repartir la fuga entre varios no sirva de nada.
+- La cuenta compartida cubre a los agentes que pasan por el mismo proceso de Cuentagotas y se conserva entre sesiones; coordinar varios procesos o máquinas a la vez queda como trabajo futuro.
 
 ---
 
