@@ -72,7 +72,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     // Medidor grande por panel: bits de la clave vigente que ya salieron.
     const meter = document.createElement("div");
     meter.className = "meter";
-    meter.innerHTML = `<div class="meter-top"><span class="meter-label">Bits de la clave vigente en manos del atacante</span><span class="meter-key"></span></div>
+    meter.innerHTML = `<div class="meter-top"><span class="meter-label">Bits de la clave vigente ya filtrados</span><span class="meter-key"></span></div>
       <div class="meter-row"><span class="meter-num">0</span><span class="meter-total">/ 160 bits</span><span class="meter-pct">0 %</span></div>
       <div class="meter-bar"><div class="meter-fill"></div></div>`;
     root.querySelector(".side-head").insertAdjacentElement("afterend", meter);
@@ -138,7 +138,13 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       items[i].hidden = i >= n;
       items[i].classList.toggle("current", i === n - 1);
     }
-    if (items[n - 1]) items[n - 1].scrollIntoView({ block: "nearest" });
+    // Desplaza solo la lista (scrollIntoView movería también la página).
+    const cur = items[n - 1];
+    if (cur) {
+      if (cur.offsetTop < p.list.scrollTop) p.list.scrollTop = cur.offsetTop;
+      const bottom = cur.offsetTop + cur.offsetHeight;
+      if (bottom > p.list.scrollTop + p.list.clientHeight) p.list.scrollTop = bottom - p.list.clientHeight;
+    }
   }
 
   /* ---- curva de bits (misma escala en los dos paneles para compararlos) */

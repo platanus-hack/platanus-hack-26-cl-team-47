@@ -474,3 +474,45 @@ body.split-page, body.home-page {
   .home-duel, .home-page .home-points { grid-template-columns: 1fr; }
   .meter-num { font-size: 44px; }
 }
+
+/* Alturas fijas con desplazamiento vertical: en pantallas chicas los paneles ya no
+   se aplastan ni se montan. Orden por lado: título, medidor, curva, llamadas. */
+html:has(body.split-page) { height: auto; }
+body.split-page { height: auto; min-height: 100vh; overflow-y: auto; display: block; }
+.split-page .bar { position: sticky; top: 0; z-index: 5; backdrop-filter: blur(8px); }
+.split-page .split { flex: none; align-items: start; }
+.split-page .side,
+.split-page.with-graph .side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.split-page .side > .side-head { order: 0; }
+.split-page .side > .meter { order: 1; }
+.split-page .side > .chart { order: 2; height: 240px; flex: none; }
+.split-page .side > .calls { order: 3; height: 250px; flex: none; }
+.split-page .side > .detail { order: 4; }
+.split-page .chart-box { min-height: 0; overflow: hidden; }
+.split-page .call-list { min-height: 0; }
+.split-page .graph-strip,
+.split-page.with-graph .graph-strip { height: 420px; min-height: 0; padding-top: 8px; }
+.split-page .result { flex: 1; min-width: 0; }
+.split-page .side-head { flex-wrap: wrap; }
+@media (max-width: 1100px) {
+  .split-page .side-title { font-size: 18px; }
+  .meter-num { font-size: 44px; }
+  .split-page .result-code { font-size: 34px; }
+}
+@media (max-width: 900px) {
+  .split-page .graph-strip { height: auto; }
+}
+/* Los dos lados quedan alineados: cabecera y medidor con el mismo alto. */
+.split-page .side-head { min-height: 104px; flex-wrap: nowrap; }
+.split-page .meter-top { flex-wrap: nowrap; min-height: 28px; align-items: center; }
+.split-page .meter-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.split-page .meter-key { white-space: nowrap; flex: none; }
+.split-page .bar { backdrop-filter: none; background: #121824; }
+.split-page .call-list { position: relative; }
+.split-page .side-head { height: 118px; min-height: 0; overflow: hidden; }
+.split-page .meter { height: 136px; overflow: hidden; }
