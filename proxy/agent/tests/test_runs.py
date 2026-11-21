@@ -148,3 +148,21 @@ def test_extremo_a_extremo_sin_cobra_200_y_con_rota_y_da_401(tmp_path):
     assert rows["con"]["rotations"] >= 1 and rows["con"]["blocks"] >= 1
     assert rows["con"]["attacker_bits"] == 0.0 and rows["con"]["cashout_status"] == 401
     assert all(r["hidden_tools"] == 0 for r in rows.values())
+
+
+def crashes(i: int, arm: str):
+    """Un LLM que falla a mitad de la corrida (por ejemplo, un 400 de la API)."""
+    class Boom:
+        def complete(self, messages, tools):
+            raise RuntimeError("400 messages.0.content.0.fallback.from: Field required")
+    return Boom()
+
+
+def test_una_corrida_que_termina_en_error_no_es_valida(tmp_path):
+    rows = R.main(["--n", "1", "--out", str(tmp_path / "out"), "--max-steps", "5"], llm_factory=crashes)
+    for r in rows:
+        assert r["stopped"].startswith("error") and r["hidden_tools"] == 0
+        assert r["valid"] is False
+    md = (tmp_path / "out" / "summary.md").read_text(encoding="utf-8")
+    assert "| sin | 1 | 0 |" in md and "| con | 1 | 0 |" in md
+
