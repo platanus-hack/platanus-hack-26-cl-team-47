@@ -56,6 +56,22 @@ services:
         aliases: [attacker.test]
       publica: {}
 
+  # GitHub y web simulados (#8). Sin puertos publicados, igual que vault.
+  # Semillas: GITHUB_SIM_SEEDS / WEB_SIM_SEEDS quedan sin definir (ver docker/README.md).
+  github:
+    <<: *banco
+    command: ["uvicorn", "services.github_sim.app:app", "--host", "0.0.0.0", "--port", "8104"]
+    networks:
+      banco:
+        aliases: [github.test]
+
+  web:
+    <<: *banco
+    command: ["uvicorn", "services.web_sim.app:app", "--host", "0.0.0.0", "--port", "8105"]
+    networks:
+      banco:
+        aliases: [web.test]
+
   proxy:
     <<: *banco
     # Se usa con: docker compose -f docker/compose.yml exec -T proxy python -m proxy.server
@@ -64,7 +80,7 @@ services:
       <<: *env
       PROXY_MODE: live
       AGENT_WORKSPACE: demo/repo
-    depends_on: [vault, api, attacker]
+    depends_on: [vault, api, attacker, github, web]
     stdin_open: true
     networks:
       banco: {}
