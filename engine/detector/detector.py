@@ -87,7 +87,8 @@ class Detector:
             for f in fs:
                 self._file_to_secrets.setdefault(f, set()).add(sid)
         self.graph = FileGraph.from_workspace(workspace, manifest_path)
-        self.dag = CallDAG(self.secret_files)
+        # S del DAG viaja solo con material del valor vigente de cada secreto (#86, #94).
+        self.dag = CallDAG(self.secret_files, secret_values=dict(values))
         self.bits = BitsEngine(values, allowed_hosts=self.allowed)
         self.last_features: dict[str, float] = {}   # features de la última llamada (#57)
         self.cusum = Cusum()
@@ -233,6 +234,7 @@ class Detector:
             chars = _ALPHABET_CHARS[alphabet_of(old)[0]]
             new = "".join(self._rng.choice(chars) for _ in range(len(old)))
         self.bits.rotate(sid, new)
+        self.dag.set_secret_value(sid, new)
         self.first_read[sid] = None
         self.contrib[sid] = []
         self.e[sid] = 0
