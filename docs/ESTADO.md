@@ -1,6 +1,6 @@
 # Estado del proyecto (traspaso entre sesiones de agente)
 
-Actualizado: sábado 21 de noviembre de 2026, 06:15 (H7,25). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
+Actualizado: sábado 21 de noviembre de 2026, 05:50 (H6,8). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
 
 ## En una frase
 
