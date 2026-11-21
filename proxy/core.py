@@ -34,6 +34,7 @@ class Proxy:
         hosts: dict[str, str] | None = None,
         on_output: OutputHook | None = None,
         on_decision: DecisionHook | None = None,
+        recorder=None,
     ):
         self.workspace = str(Path(workspace or default_workspace()).resolve())
         self.decide = decide
@@ -42,6 +43,7 @@ class Proxy:
         self.t = 0
         self.on_output = on_output
         self.on_decision = on_decision
+        self.recorder = recorder  # proxy.recorder.SessionRecorder | None
 
     # --- Metadatos del ToolCall ---------------------------------------
 
@@ -111,6 +113,8 @@ class Proxy:
             self.on_decision(call, decision)
 
         if not decision.allowed:
+            if self.recorder is not None:
+                self.recorder.record(call, None, executed=False)
             return f"BLOQUEADA por el proxy: {decision.reason or decision.action}", decision
         try:
             output = self._execute(tool, args)
@@ -120,4 +124,6 @@ class Proxy:
             output = f"ERROR: argumentos inválidos para {tool}: {e}"
         if self.on_output is not None:
             self.on_output(call.id, output)
+        if self.recorder is not None:
+            self.recorder.record(call, output, executed=True)
         return output, decision

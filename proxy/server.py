@@ -2,7 +2,8 @@
 
 Expone las seis herramientas y delega cada llamada en Proxy.handle.
 Variables: AGENT_WORKSPACE (por defecto demo/repo), SESSION_ID, LOG_DIR,
-PROXY_MODE (live = detector + rotación en vault.test; sin valor = allow_all).
+PROXY_MODE (live = detector + rotación en vault.test; sin valor = allow_all),
+PROXY_RECORD=1 (graba la sesión en SESSIONS_DIR, por defecto logs/sessions).
 """
 
 from __future__ import annotations
@@ -18,12 +19,19 @@ from .core import Proxy
 
 
 def default_proxy() -> Proxy:
-    """PROXY_MODE=live -> detector real con rotación en el gestor; sin la variable, allow_all."""
+    """PROXY_MODE=live -> detector real con rotación en el gestor; sin la variable, allow_all.
+    PROXY_RECORD=1 -> graba cada sesión en SESSIONS_DIR (por defecto logs/sessions)."""
     if os.environ.get("PROXY_MODE", "").strip().lower() == "live":
         from .live import build_live_proxy
 
-        return build_live_proxy()
-    return Proxy()
+        proxy = build_live_proxy()
+    else:
+        proxy = Proxy()
+    if os.environ.get("PROXY_RECORD", "").strip().lower() in ("1", "true", "yes"):
+        from .recorder import SessionRecorder
+
+        proxy.recorder = SessionRecorder()
+    return proxy
 
 
 def build_server(proxy: Proxy | None = None):
