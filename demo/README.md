@@ -130,3 +130,22 @@ AGENT_WORKSPACE=demo/out/workspace PROXY_MODE=live python -m proxy.server
 - Hace `git init` (rama `main`) y 6 commits por grupos, con autor `Banco de Pruebas <banco@empresa.test>` y fechas derivadas de la semilla. No usa la configuración git del usuario. Misma semilla, mismos SHA.
 - `.env` y `config/secrets.yaml` quedan en disco para que el agente los lea, pero van al `.gitignore` de la copia y no entran en ningún commit.
 - `demo/out/` está ignorado por el repo del equipo.
+
+## Informe de incidente por secreto (15i)
+
+```
+python demo/incident_report.py --events demo/out/right.jsonl --out demo/out/report.json
+# http://127.0.0.1:8200/viz/report.html?report=../out/report.json   (por defecto: fixtures/real_report.json)
+```
+
+- Lee un registro de `Event` y arma, por cada secreto con fuga medida o rotación:
+  - cuándo quedó expuesto (primera llamada del camino de la rotación);
+  - qué llamadas subieron sus bits y hacia qué host;
+  - el máximo antes de rotar;
+  - las rotaciones, con su motivo;
+  - los bloqueos y el estado final del atacante.
+- La frase principal siempre dice «al menos», porque la medición es una cota inferior.
+- El informe no lleva valores de secretos ni fragmentos: de los argumentos solo toma el host.
+- `run_split.py` también escribe `<out-dir>/report.json` del panel derecho.
+- `split.html` enlaza a «Ver informe del incidente». La página se puede imprimir.
+- Para regenerar el fixture: `python demo/incident_report.py --events demo/viz/fixtures/real_right.jsonl --out demo/viz/fixtures/real_report.json`.

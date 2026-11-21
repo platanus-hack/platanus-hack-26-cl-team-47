@@ -233,6 +233,9 @@ def run_split(session: Path, decide_right=RIGHT_FACTORY, out_dir: Path = ROOT / 
     # Grafo de archivos para la franja de la pantalla dividida (?graph=).
     from demo.export_graph import write_graph
     write_graph(out_dir / "graph.json")
+    # Informe de incidente del panel derecho (report.html?report=).
+    from demo.incident_report import write_report
+    write_report(paths[1], out_dir / "report.json")
     return paths
 
 
