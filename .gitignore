@@ -26,3 +26,8 @@ demo/out/
 # Base de ejemplos de hypothesis y caché de pytest
 .hypothesis/
 .pytest_cache/
+
+# Vercel: enlace local del proyecto y credenciales temporales de la CLI
+.vercel
+.env.local
+.env*.local

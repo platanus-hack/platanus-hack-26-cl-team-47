@@ -14,6 +14,8 @@ Track: 🛡️ AI Security
 - Victoria Guerriero ([@VictoriaGuerriero](https://github.com/VictoriaGuerriero))
 - Matías Morgado ([@matix3000](https://github.com/matix3000))
 
+**Demo en línea:** https://cuentagotas-gamma.vercel.app · [resultados y sus límites](https://cuentagotas-gamma.vercel.app/results.html)
+
 ## Qué es
 
 Un proxy entre un agente de IA y sus herramientas. En cada llamada mide cuántos bits de cada clave ya salieron hacia afuera, aunque salgan de a pocos caracteres o codificados, y rota la clave en el gestor de secretos antes de que la fuga se complete. No modifica el agente y no usa un LLM para decidir.

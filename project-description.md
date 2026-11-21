@@ -54,7 +54,9 @@ Un hospital chileno tiene 3 horas para avisar de un incidente a la autoridad de 
 
 ## Pruébalo en 60 segundos
 
-Con Python 3.11 o superior, desde la raíz del repositorio:
+**En línea, sin instalar nada:** abre https://cuentagotas-gamma.vercel.app y pulsa «Ver la demo». Con la barra espaciadora se reproduce. Los resultados de la evaluación, con sus límites, están en https://cuentagotas-gamma.vercel.app/results.html.
+
+**En tu máquina,** con Python 3.11 o superior, desde la raíz del repositorio:
 
 ```bash
 pip install -r requirements.txt
