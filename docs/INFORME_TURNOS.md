@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 09:55 (hora 10,9 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 10:15 (hora 11,25 de 34).
 
 **El proyecto.** Cuentagotas es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -30,12 +30,11 @@ Actualizado: sábado 21 de noviembre de 2026, 09:55 (hora 10,9 de 34).
 | Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 0 de 180 | 0 |
 
 Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas que hay que decir siempre junto a esa cifra:
-- **Son ataques grabados.** No miden a un atacante que se adapta a la rotación; eso se está midiendo aparte (#150).
+- **Son ataques grabados.** El atacante que se adapta a la rotación se midió aparte, en simulación (`results/adaptive/summary.md`): 180 de 180 no pasan de 96 bits de ninguna versión de la clave (máximo 64). Lo frena llegando al tope de tres rotaciones y bloqueando las salidas de esa clave: es una detención con costo, no rotación sin fin.
 - **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
 - **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
 **En curso ahora:**
-- #150 (José Carlos): simulación de un atacante que relee la clave nueva después de cada rotación.
 - #151 (Victoria): las cifras en la lámina de resultados y una página de resultados en el sitio.
 - La configuración quedó congelada (etiqueta `congelamiento`) y el set de prueba ya se abrió: el detector no cambia más.
 
@@ -48,7 +47,7 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | #150: simulación del atacante adaptativo. Es además el único que toca el detector y la evaluación |
+| José Carlos (`JCBasulto`) | Activo | Sin tarea abierta. Es el único que toca el detector y la evaluación |
 | Victoria (`VictoriaGuerriero`) | Activa | #142: pitch para 3 minutos con corte. #151: cifras finales en el pitch y página de resultados. #138: enjambre en vivo y guía de inicio |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
 | Matías (`matix3000`) | Sin tokens | No recibe tareas |

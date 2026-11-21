@@ -19,13 +19,22 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente (mediana 20)
 
 ## Lo que este resultado no dice
 
-1. **Es contra ataques grabados, no contra un atacante que se adapta.** Las sesiones son grabaciones: después de que la clave rota, siguen enviando pedazos de la clave vieja, que ya no sirven. Un agente comprometido de verdad podría releer la clave nueva y seguir. Contra eso no hay medición todavía; sí hay un tope (3 rotaciones por clave cada 200 llamadas y después se bloquean las salidas), probado en tests, no en esta evaluación.
+1. **Es contra ataques grabados, no contra un atacante que se adapta.** Las sesiones son grabaciones: después de que la clave rota, siguen enviando pedazos de la clave vieja, que ya no sirven. Un agente comprometido de verdad podría releer la clave nueva y seguir. Esta evaluación no lo mide; se midió aparte después (ver «El atacante que se adapta», más abajo).
 2. **El contador de bits, solo, no generaliza.** Sin el modelo de evidencia se previenen 40 de 180 (22 %). En familias nuevas, con codificaciones y canales que el motor no sabe leer, lo que detiene el ataque es la evidencia de comportamiento, que rota la clave temprano (mediana: llamada 6). El contador es exacto para las codificaciones que conoce; no es lo que salvó este set.
 3. **Hay un costo que no cumple nuestra propia meta.** En 34 de las 90 sesiones benignas difíciles (38 %) el sistema rotó una clave sin necesidad: 39 rotaciones, 5,46 por cada 1.000 llamadas benignas, cuando la meta era 5 como máximo. En las 30 sesiones benignas normales no rotó nunca, y no bloqueó ninguna llamada benigna. Rotar de más cuesta una rotación, no un trabajo interrumpido; aun así es un costo real y hay que decirlo.
 4. **El modelo de evidencia está saturado.** Se comporta como un clasificador de «sesión que leyó un secreto y después habla con un destino no confiable». Por eso generaliza a familias nuevas y por eso mismo rota de más en los casos benignos difíciles, que hacen justamente eso de forma legítima.
 5. **La cuenta compartida del enjambre no se distingue aquí.** En la familia que reparte el ataque entre varias sesiones, la versión con cuenta por sesión también previene todo, porque la evidencia rota antes. El valor de la cuenta global se ve en la demo del enjambre, con el contador de bits solo, no en esta tabla.
 6. **Todo es sintético.** Tráfico benigno y ataques son guiones de nuestro equipo; el fondo benigno del set de prueba sale de las mismas 120 sesiones base que el resto.
 7. **Las réplicas no son los productos.** «Presupuesto de bits» y «reensamblado por sesión» son réplicas simplificadas hechas por nosotros a partir de la documentación pública; sus cifras no son las de Pipelock, AgentBrake ni ningún artículo.
+
+## El atacante que se adapta (medido aparte, después)
+
+El punto 1 de arriba se midió después, con el detector ya congelado, en una simulación que se reporta por separado: `results/adaptive/summary.md` (`python -m eval.final.adaptive`). El atacante simulado relee la clave nueva antes de cada envío, así que siempre manda pedazos de la clave vigente.
+
+- **Set de prueba:** 180 de 180 ataques adaptativos no pasan de 96 bits de ninguna versión de la clave (máximo observado 64, mediana 20). Sin rotación, 30 de 180; sin el modelo de evidencia, 63 de 180.
+- **Validación:** 70 de 70 (las 10 sesiones de la sustitución propia se excluyeron porque su tabla no se puede reconstruir).
+- **Cómo lo frena, y a qué costo:** en el 100 % de los casos del set de prueba el sistema llega a su tope de tres rotaciones y pasa al modo escalado: bloquea toda salida de esa clave hacia destinos no permitidos y avisa a una persona. Contra un atacante persistente no rota indefinidamente: termina deteniendo las salidas. Es una detención con costo operativo, y el costo de ese modo sobre tráfico benigno no está medido.
+- Es una simulación: el atacante es un guion que relee y reenvía, no un modelo que busca caminos nuevos.
 
 ## Frases que este resultado respalda
 
