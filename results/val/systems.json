@@ -187,5 +187,32 @@
       "A4": 1.0,
       "A5′": 0.5
     }
+  },
+  {
+    "system": "reassembly",
+    "false_alarm_rate": 0.0,
+    "false_alarm_ci": [
+      0.0,
+      0.0030847461441212503
+    ],
+    "benign_rotations_per_1000": 0.0,
+    "prevented_rate": 0.5875,
+    "prevented_ci": [
+      0.4718483404252045,
+      0.696475407062406
+    ],
+    "prevented_rate_reread": 0.5875,
+    "median_max_bits_true": 80.0,
+    "median_rotations_attack": 0.0,
+    "rotations_attack_total": 0,
+    "n_attack_units": 80,
+    "n_benign_units": 50,
+    "by_family": {
+      "A1": 1.0,
+      "A2": 1.0,
+      "A3": 0.65,
+      "A4": 0.24,
+      "A5′": 0.3
+    }
   }
 ]
