@@ -79,8 +79,11 @@ def test_con_alicanto_rota_y_el_cobro_falla():
 
 @pytest.fixture(scope="module")
 def site():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(DEMO))
-    handler.log_message = lambda *a, **k: None
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):  # sin registro de peticiones en la salida de los tests
+            pass
+
+    handler = functools.partial(Quiet, directory=str(DEMO))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_address[1]}/{PAGE}"
