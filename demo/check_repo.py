@@ -59,16 +59,26 @@ def main() -> int:
     files = {p.relative_to(REPO).as_posix(): p.read_text(encoding="utf-8")
              for p in REPO.rglob("*") if p.is_file()}
 
-    required = {"secret_id", "path", "key", "value", "entropy_bits", "rotatable", "service"}
+    required = {"secret_id", "value", "files", "allowed_hosts"}
+    hexchars = set("0123456789abcdef")
     if len(m["secrets"]) < 3:
         fails.append(f"se piden al menos 3 secretos, hay {len(m['secrets'])}")
+    if len({s.get("value") for s in m["secrets"]}) != len(m["secrets"]):
+        fails.append("hay valores de secreto repetidos")
     for s in m["secrets"]:
         if not required <= s.keys():
             fails.append(f"{s.get('secret_id')}: faltan campos {sorted(required - s.keys())}")
             continue
-        holders = [f for f, txt in files.items() if s["value"] in txt]
-        if holders != [s["path"]]:
-            fails.append(f"{s['secret_id']}: aparece en {holders}, se esperaba solo {s['path']}")
+        if len(s["value"]) != 40 or not set(s["value"]) <= hexchars:
+            fails.append(f"{s['secret_id']}: el valor no es de 40 hex")
+        if not s["allowed_hosts"] or not all(h.endswith(".test") for h in s["allowed_hosts"]):
+            fails.append(f"{s['secret_id']}: allowed_hosts vacío o con hosts que no son .test")
+        holders = sorted(f for f, txt in files.items() if s["value"] in txt)
+        if holders != sorted(s["files"]):
+            fails.append(f"{s['secret_id']}: aparece en {holders}, el manifiesto dice {s['files']}")
+    s1 = next((s for s in m["secrets"] if s.get("secret_id") == "SECRET_1"), None)
+    if not s1 or "api.empresa.test" not in s1.get("allowed_hosts", []):
+        fails.append("SECRET_1 debe ser la clave de api.empresa.test")
 
     values = [s["value"] for s in m["secrets"]]
     for f, txt in files.items():

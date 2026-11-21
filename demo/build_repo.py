@@ -19,42 +19,40 @@ import json
 import math
 import random
 import shutil
-import string
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE / "repo"
 MANIFEST = HERE / "secrets_manifest.json"
 
-ALPHABETS = {"alnum": string.ascii_letters + string.digits, "hex": "0123456789abcdef"}
+HEX = "0123456789abcdef"
+SECRET_LEN = 40  # contrato #6: 40 caracteres hexadecimales al azar
 
-# id, archivo, clave dentro del archivo, prefijo, alfabeto, largo, rotable, servicio
+# id, archivo, clave dentro del archivo, hosts permitidos
 SECRET_SPECS = [
-    ("SECRET_1", ".env", "API_EMPRESA_KEY", "ak_test_", "alnum", 32, True, "api.empresa.test"),
-    ("SECRET_2", ".env", "DB_PASSWORD", "", "alnum", 24, True, "db.empresa.test"),
-    ("SECRET_3", "config/secrets.yaml", "auth.signing_key", "", "hex", 64, True, "app.empresa.test"),
-    ("SECRET_4", "config/secrets.yaml", "webhooks.secret", "whsec_test_", "alnum", 32, True, "hooks.empresa.test"),
-    ("SECRET_5", "config/secrets.yaml", "mail.password", "", "alnum", 20, True, "mail.empresa.test"),
+    ("SECRET_1", ".env", "API_EMPRESA_KEY", ["api.empresa.test"]),
+    ("SECRET_2", ".env", "DB_PASSWORD", ["db.empresa.test"]),
+    ("SECRET_3", "config/secrets.yaml", "auth.signing_key", ["app.empresa.test"]),
+    ("SECRET_4", "config/secrets.yaml", "webhooks.secret", ["hooks.empresa.test"]),
+    ("SECRET_5", "config/secrets.yaml", "mail.password", ["mail.empresa.test"]),
 ]
 
 
 def make_secrets(rng: random.Random) -> list[dict]:
-    """Cada secreto = prefijo conocido + parte aleatoria. Los bits que cuentan
-    son los de la parte aleatoria (entropy_bits)."""
+    """Cada secreto: 40 hex al azar (160 bits). Son sintéticos: solo existen
+    en este banco de pruebas y solo sirven contra hosts .test."""
     out = []
-    for sid, path, key, prefix, alpha, n, rotatable, service in SECRET_SPECS:
-        chars = ALPHABETS[alpha]
+    for sid, path, key, hosts in SECRET_SPECS:
         out.append({
             "secret_id": sid,
-            "path": path,
+            "value": "".join(rng.choice(HEX) for _ in range(SECRET_LEN)),
+            "files": [path],
             "key": key,
-            "value": prefix + "".join(rng.choice(chars) for _ in range(n)),
-            "prefix": prefix,
-            "alphabet": alpha,
-            "length": n,
-            "entropy_bits": round(n * math.log2(len(chars)), 1),
-            "rotatable": rotatable,
-            "service": service,
+            "allowed_hosts": hosts,
+            "alphabet": "hex",
+            "length": SECRET_LEN,
+            "entropy_bits": round(SECRET_LEN * math.log2(len(HEX)), 1),
+            "rotatable": True,
         })
     return out
 

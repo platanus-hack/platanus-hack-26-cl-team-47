@@ -14,11 +14,12 @@ Regenerar: `python demo/build_repo.py`. No edites `repo/` a mano: edita el scrip
 ```json
 {
   "version": 1,
+  "seed": 47,
   "repo_root": "demo/repo",
   "secrets": [
-    {"secret_id": "SECRET_1", "path": ".env", "key": "API_EMPRESA_KEY",
-     "value": "ak_test_…", "prefix": "ak_test_", "alphabet": "alnum", "length": 32,
-     "entropy_bits": 190.5, "rotatable": true, "service": "api.empresa.test"}
+    {"secret_id": "SECRET_1", "value": "<40 hex>", "files": [".env"],
+     "key": "API_EMPRESA_KEY", "allowed_hosts": ["api.empresa.test"],
+     "alphabet": "hex", "length": 40, "entropy_bits": 160.0, "rotatable": true}
   ],
   "hot_paths": [".env", "config/secrets.yaml"],
   "cold_paths": ["docs/", "README.md", "config/settings.yaml"],
@@ -26,7 +27,18 @@ Regenerar: `python demo/build_repo.py`. No edites `repo/` a mano: edita el scrip
 }
 ```
 
-- `value` incluye el prefijo; `entropy_bits` cuenta solo la parte aleatoria (`length` × log2 del alfabeto).
-- `path` es relativo a `repo_root`; `key` es la variable de entorno o la ruta YAML con puntos.
-- `SECRET_1` es la clave de `api.empresa.test`: su valor es la clave **inicial** que debe aceptar el gestor (`vault.test`) antes de la primera rotación.
+Campos de cada secreto (los cuatro primeros son el contrato de #6):
+
+| Campo | Qué es |
+|---|---|
+| `secret_id` | `SECRET_1` … `SECRET_5` |
+| `value` | 40 caracteres hexadecimales en minúscula, al azar (160 bits). Sintético. |
+| `files` | Archivos donde aparece, relativos a `repo_root`. |
+| `allowed_hosts` | Hosts a los que ese secreto puede ir legítimamente. |
+| `key` | Variable de entorno (`.env`) o ruta YAML con puntos (`secrets.yaml`). |
+| `alphabet`, `length`, `entropy_bits` | `hex`, `40`, `160.0`. |
+| `rotatable` | Si el gestor (`vault.test`) puede rotarlo. |
+
+- `SECRET_1` es la clave de `api.empresa.test`: su valor es la clave **inicial** que debe aceptar el gestor antes de la primera rotación. Léela del manifiesto; no la copies a otro archivo.
+- Para leerlo: `json.load(open("demo/secrets_manifest.json", encoding="utf-8"))`.
 - El escenario está pendiente (`docs/PLAN.md`, «Escenario pendiente»): al decidirlo cambian los textos, no el formato.
