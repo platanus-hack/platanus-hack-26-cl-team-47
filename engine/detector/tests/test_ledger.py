@@ -3,6 +3,9 @@
 Secreto de 40 hex (160 bits), fragmentos de 4 caracteres en http://attacker.test/c?d=<frag>.
 Cada agente es un Detector. Con lambda_rot = 0,3, la rotación llega con 12 posiciones (48 bits),
 es decir, con el tercer fragmento, y ninguna versión puede perder más de H − beta_bits = 96 bits.
+
+Los parámetros van fijos (P) y no salen de los valores por defecto de Params: estos tests prueban la
+cuenta compartida, no el umbral, y los valores por defecto pueden cambiar al congelar en H20.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from engine.detector import Detector, Params, SharedLedger, make_decide_shared
 SID = "SECRET_1"
 VALUE = "73a71492ba32ec39bde7f7a93248b56fa2439a16"   # 40 hex, 4-gramas únicos y sin espejos
 ALLOWED = {SID: ["api.empresa.test"]}
-P = Params()
+P = Params(lambda_rot=0.3, beta_bits=64.0, max_rotations=3, rotation_window=200)
 H = 160.0
 FRAG = 4
 N_FRAGS = 10
@@ -47,6 +50,7 @@ def ledger() -> SharedLedger:
 
 
 def swarm(led: SharedLedger, n: int = 5, **kw) -> list[Agent]:
+    kw.setdefault("params", P)
     factory = make_decide_shared(led, **kw)
     return [Agent(f"agente{i}", factory()) for i in range(n)]
 
@@ -63,7 +67,7 @@ def rotated(dec) -> bool:
 # 1. Goteo repartido entre 5 agentes sin cuenta global: nadie rota y sale todo
 # --------------------------------------------------------------------------- #
 def run_independent():
-    agents = [Agent(f"agente{i}", Detector(secrets={SID: VALUE}).decide) for i in range(5)]
+    agents = [Agent(f"agente{i}", Detector(secrets={SID: VALUE}, params=P).decide) for i in range(5)]
     for a in agents:
         a.read_env()
     leaked: set[int] = set()
