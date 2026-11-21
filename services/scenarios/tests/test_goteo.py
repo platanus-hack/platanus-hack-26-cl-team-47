@@ -135,12 +135,23 @@ def test_goteo_failure_midway_frees_ports(tmp_path, monkeypatch):
 def test_busy_port_reports_which(tmp_path):
     u = urlsplit(load_hosts()["attacker.test"])
     with socket.socket() as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # el puerto puede estar en TIME_WAIT
+        # Misma regla que port_free: SO_EXCLUSIVEADDRUSE en Windows, SO_REUSEADDR (TIME_WAIT) en el resto.
+        s.setsockopt(socket.SOL_SOCKET, stack_mod.exclusive_bind_option(), 1)
         s.bind((u.hostname, u.port))
         s.listen()
         with pytest.raises(PortInUseError, match="attacker.test"):
             Stack(log_dir=str(tmp_path)).__enter__()
     assert all_ports_free()
+
+
+def test_port_free_detecta_puerto_escuchando():
+    """Puerto con otro socket escuchando -> False; al cerrarlo -> True (en Windows también)."""
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))  # puerto libre que elige el sistema
+        port = s.getsockname()[1]
+        s.listen()
+        assert port_free("127.0.0.1", port) is False
+    assert port_free("127.0.0.1", port) is True
 
 
 def test_no_files_left_in_repo():
