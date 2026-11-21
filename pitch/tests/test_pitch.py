@@ -169,9 +169,9 @@ def test_lamina_9_dice_hasta_donde_encontramos():
     assert "hasta donde encontramos" in s9["body"].lower()
 
 
-def test_lamina_12_tiene_pendiente():
-    assert slide("Dónde está la IA")["pendientes"] >= 1
-    assert "LLM" in slide("Dónde está la IA")["pend_text"]
+def test_lamina_de_la_ia_dice_el_resultado_con_modelos_reales():
+    assert slide("Dónde está la IA")["pendientes"] == 0
+    assert "ninguno obedeció" in slide("Dónde está la IA")["body"]
 
 
 # ------------------------------------------------ escenario del hospital (15j)
@@ -365,7 +365,8 @@ def test_lamina_36_horas():
 def test_ia_blanco_y_vector_sin_llm_real():
     sec = PREGUNTAS.split("¿Dónde está la IA")[1].split("\n## ")[0]
     assert "blanco y el vector" in sec and "determinista a propósito" in sec
-    assert "PENDIENTE: resultado de las corridas con un LLM real (#139)" in sec
+    assert "docs/LLM_EN_VIVO.md" in sec and "ninguno la obedeció" in sec
+    assert "PENDIENTE" not in sec
 
 
 # ------------------------------------------------ cifras de la evaluación final (16f)

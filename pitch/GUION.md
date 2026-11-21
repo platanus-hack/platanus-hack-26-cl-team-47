@@ -25,7 +25,6 @@ Preguntas del jurado y respuestas cortas: `pitch/PREGUNTAS.md` (empieza por «La
 
 | Lámina | Qué falta | De dónde sale | Quién |
 |---|---|---|---|
-| 15 | Corridas en vivo con un LLM siguiendo la inyección | `python -m proxy.agent.runs` (#139), cuando haya clave | Líder |
 | 6 | Confirmar el borrador de qué pedimos (dos equipos de TI de salud para un piloto) | Decisión del equipo | Equipo / líder |
 
 Resueltos: T1, T2, T3 y T4 de la lámina de resultados, con la evaluación final (`results/test/`, leer antes `results/test/LECTURA.md`).

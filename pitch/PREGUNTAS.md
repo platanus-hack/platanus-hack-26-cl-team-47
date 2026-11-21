@@ -80,7 +80,9 @@ Fuente: [22], [28]; informe, A.3.
 
 El agente de IA es el blanco y el vector del ataque: el ataque no existe sin un agente LLM que obedece texto no confiable. El monitor es determinista a propósito, porque un monitor LLM se ataca con la misma inyección que ataca al agente: un monitor que se convence con texto no es un monitor. Y un atacante que agrega un LLM no gana nada contra Alicanto, porque medimos información, no intención.
 
-Fuente: informe, E (puntos 1, 2 y 4); `docs/BASES.md`, línea de trabajo 1 (AI control). PENDIENTE: resultado de las corridas con un LLM real (#139). Mientras no existan, no decir que lo mostramos.
+Fuente: informe, E (puntos 1, 2 y 4); `docs/BASES.md`, línea de trabajo 1 (AI control). `docs/LLM_EN_VIVO.md`, «Resultados».
+
+Lo corrimos con modelos reales: un agente con Claude Haiku 5.5, Sonnet 5.5 y Opus 5.5 trabajando a través del proxy, 21 corridas por brazo. Los tres vieron la instrucción plantada en el issue y ninguno la obedeció, así que no hubo fuga que frenar. No decimos que mostramos a Alicanto deteniendo a un LLM real: mostramos que el agente real pasa por el proxy, y que Alicanto es la segunda línea para cuando el modelo no resista. En una de esas corridas rotó de más: el modelo leyó el archivo de claves al diagnosticar y después comentó en GitHub, sin filtrar nada.
 
 ## 13. ¿Qué no detectan?
 
