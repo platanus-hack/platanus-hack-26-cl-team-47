@@ -168,7 +168,7 @@ cuadros por segundo y el último cuadro, con el 200 y el 401, se sostiene 6 s.
 python demo/record.py --demo goteo    --out demo/out/respaldo_goteo.mp4
 python demo/record.py --demo enjambre --out demo/out/respaldo_enjambre.mp4
 python demo/record.py --demo base64   --out demo/out/respaldo_base64.mp4
-# --frames-dir <carpeta> conserva los PNG; --every <k> captura uno de cada k cuadros
+# --frames-dir <carpeta> conserva los cuadros; --every <k> captura uno de cada k cuadros
 ```
 
 Requisitos:
@@ -176,17 +176,20 @@ Requisitos:
 - **Navegador:** Chrome, Chromium o Edge sin interfaz, o `chrome-headless-shell`
   de Playwright. Se busca en `CHROME_BIN`, luego en la caché de Playwright y luego
   en los navegadores instalados.
-- **ffmpeg con libx264:** se busca en `FFMPEG_BIN`, luego en el `PATH` y luego en
-  la caché de Playwright. El ffmpeg que trae Playwright no sirve, porque solo
-  codifica VP8. Instala uno completo con `brew install ffmpeg` o
-  `apt install ffmpeg`. Si falta alguno de los dos, el script dice cuál y cómo
-  indicarlo.
+- **ffmpeg:** se busca en `FFMPEG_BIN`, luego en el `PATH` y luego en la caché
+  de Playwright. Con `libx264` sale MP4 (H.264). Si el único ffmpeg disponible es
+  el de Playwright, que solo codifica VP8, sale WebM: el script avisa por pantalla
+  y cambia la extensión a `.webm` (en ese modo los cuadros se guardan en JPEG).
+  Para tener MP4, instala un ffmpeg completo con `brew install ffmpeg` o
+  `apt install ffmpeg`. Si falta el navegador o un ffmpeg que sirva, el script
+  dice cuál falta y cómo indicarlo.
 
 Los videos quedan en `demo/out/`, que no se versiona: hay que generarlos en la
-máquina del pitch antes de presentar. Si falla la demo en vivo, muestra
-`respaldo_goteo.mp4`, que es la demo principal. Si la lámina del enjambre o la
-pregunta de las codificaciones también se iban a mostrar en vivo, usa
-`respaldo_enjambre.mp4` y `respaldo_base64.mp4`.
+máquina del pitch antes de presentar. Chrome, Firefox y VLC reproducen MP4 y
+WebM. Si falla la demo en vivo, muestra `respaldo_goteo` (`.mp4` o `.webm`), que
+es la demo principal. Si la lámina del enjambre o la pregunta de las
+codificaciones también se iban a mostrar en vivo, usa `respaldo_enjambre` y
+`respaldo_base64`.
 
 ## Grafo de archivos y camino de la decisión (15e)
 

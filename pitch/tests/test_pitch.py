@@ -8,9 +8,6 @@ PITCH = Path(__file__).resolve().parents[1]
 HTML = (PITCH / "index.html").read_text(encoding="utf-8")
 
 QUOTE_4 = "«No adivinamos la intención del atacante. Medimos cuánto sabe, y hacemos que robar despacio no sirva.»"
-QUOTE_8 = ("«Trabajos de este año muestran que contar la fuga acumulada ve lo que los detectores por turno no ven. "
-           "Nosotros lo hacemos sin acceso al modelo, con falsas alarmas medidas, y rotamos el secreto para que lo "
-           "filtrado deje de servir.»")
 
 
 class Slides(HTMLParser):
@@ -28,7 +25,8 @@ class Slides(HTMLParser):
         if self.cur is not None:
             if "pendiente" in cls:
                 self.cur["pendientes"] += 1
-            self.stack.append((tag, "cita" in cls, "pendiente" in cls))
+            # «table» y «nota-pie» (cita de fuente) van aparte: no cuentan como cuerpo.
+            self.stack.append((tag if "nota-pie" not in cls else "table", "cita" in cls, "pendiente" in cls))
 
     def handle_endtag(self, tag):
         if self.stack:
@@ -87,21 +85,14 @@ def test_resultados_solo_pendientes_y_sin_cifras():
 def test_citas_literales():
     slides = parse()
     assert norm(slides[3]["quote"]) == QUOTE_4
-    assert norm(slides[8]["quote"]) == QUOTE_8
 
 
 def test_maximo_cuarenta_palabras_de_cuerpo():
     """Cuerpo = todo menos el título, los marcadores PENDIENTE (no son texto final) y los datos
-    de las tablas (cifras, no prosa: lámina 8 del enjambre, 16c).
-    Única excepción: la cita literal de la lámina 9 (41 palabras en el documento v4.0;
-    no se recorta sin visto bueno del líder); su línea menor (tarea 16b) va aparte."""
+    de las tablas y las notas al pie de fuente (lámina 8 del enjambre, 16c; lámina 9 de competidores, 16d)."""
     for n, s in enumerate(parse(), 1):
         body = words(s["body"])
         quote = words(s["quote"])
-        if n == 9:
-            assert len(quote) == 41
-            assert len(body) <= 40, f"lámina 9: la línea menor tiene {len(body)} palabras"
-            continue
         total = len(body) + len(quote)
         assert total <= 40, f"lámina {n}: {total} palabras"
 
@@ -128,8 +119,8 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 12
-    claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "broker de credenciales",
+    assert len(titulos) == 13
+    claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes")
     for clave, titulo in zip(claves, titulos):
@@ -228,7 +219,6 @@ def test_pregunta_del_enjambre_con_fuentes():
     sec = PREGUNTAS.split("¿Y si el atacante reparte la fuga entre varios agentes?")[1]
     assert ANTHROPIC in sec and GTIG in sec
     assert "mismo proceso" in sec and "trabajo futuro" in sec
-    assert "No encontramos ningún trabajo que lleve una cuenta acumulada por secreto entre agentes".lower() in PREGUNTAS.lower()
 
 
 def test_guion_usa_cuentagotas_y_dice_el_tiempo_total():
@@ -280,3 +270,47 @@ def test_tabla_de_tiempos_con_total():
     assert m and int(m.group(2)) * 60 + int(m.group(3)) <= 180
     for clave in ("problema", "Cuentagotas", "200", "401", "enjambre", "Límites"):
         assert clave in _texto_hablado(GUION) or clave in GUION, clave
+
+
+# ------------------------------------------------ novedad corregida (16d)
+
+FRASE_NOVEDAD = ("Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada "
+                 "entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.")
+
+
+def test_frases_desmentidas_fuera_de_pitch():
+    for f in _pitch_files():
+        t = f.read_text(encoding="utf-8")
+        for frase in ("ninguna cuenta fragmentos", "ningún filtro", "6,64", "Paubox", "21.719",
+                      "PENDIENTE: nombre del escenario", "nadie junta fragmentos", "No encontramos ningún trabajo",
+                      "marcados como rotables"):
+            assert frase.lower() not in t.lower(), f"{f.name}: {frase}"
+
+
+def test_preguntas_nombran_competidores():
+    for clave in ("Pipelock", "AgentBrake", "2607.07368", "2605.31593", "tarea o trayectoria",
+                  "https://pipelab.org/blog/cross-request-exfiltration/", "https://github.com/Ujjwaljain16/AgentBrake",
+                  "3 rotaciones por secreto en 200 llamadas", "PENDIENTE: cifra de la familia de sustitución propia"):
+        assert clave in PREGUNTAS, clave
+    titulos = re.findall(r"^## (\d+)\. (.+)$", PREGUNTAS, flags=re.M)
+    i = next(k for k, (_, t) in enumerate(titulos) if "pasarela MCP" in t)
+    assert "Pipelock ya reensambla fragmentos" in titulos[i + 1][1]
+    assert [int(n) for n, _ in titulos] == list(range(1, len(titulos) + 1))
+
+
+def test_lamina_de_competidores():
+    s = parse()[8]
+    assert "Pipelock" in s["text"] and "AgentBrake" in s["text"] and "Cuentagotas" in s["text"]
+    assert FRASE_NOVEDAD in norm(s["body"])
+    assert "Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026" in norm(s["text"])
+
+
+def test_lamina_final_con_pedido():
+    s = parse()[12]
+    assert s["pendientes"] == 0 and "piloto" in s["body"]
+    assert "para que lo confirme una persona del equipo" in GUION
+
+
+def test_demo_dice_que_decide_solo_el_contador():
+    assert "la demo usa solo el contador de bits; la configuración evaluada suma la evidencia acumulada" in GUION
+    assert "independiente del detector" in PREGUNTAS

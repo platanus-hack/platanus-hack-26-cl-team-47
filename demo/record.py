@@ -11,7 +11,8 @@ con ffmpeg (3 cuadros por segundo, el último sostenido 6 s, H.264 yuv420p, sin 
 
 Binarios: CHROME_BIN, o chrome-headless-shell de la caché de Playwright, o Chrome,
 Chromium o Edge instalados. FFMPEG_BIN, o ffmpeg del PATH, o el de la caché de
-Playwright. Solo sirve un ffmpeg con libx264 (el de Playwright normalmente no lo trae).
+Playwright. Con libx264 graba MP4 (H.264); si el ffmpeg solo trae libvpx (el de
+Playwright), graba WebM con VP8 y cambia la extensión de salida a .webm, avisando.
 """
 
 from __future__ import annotations
@@ -127,32 +128,43 @@ def find_chrome(env=os.environ, home: Path | None = None, which=shutil.which) ->
                         "Instala uno o indica la ruta con CHROME_BIN=/ruta/al/chrome.")
 
 
-def has_x264(ffmpeg: Path) -> bool:
+def encoders(ffmpeg: Path) -> str:
+    """Salida de `ffmpeg -encoders` ("" si no se puede ejecutar)."""
     try:
         r = subprocess.run([str(ffmpeg), "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=20)
     except (OSError, subprocess.TimeoutExpired):
-        return False
-    return "libx264" in r.stdout
+        return ""
+    return r.stdout
 
 
-def find_ffmpeg(env=os.environ, home: Path | None = None, which=shutil.which, check=has_x264) -> Path:
-    """Orden: FFMPEG_BIN, PATH, caché de Playwright. Solo vale uno con libx264."""
-    tried = []
+def codec_of(listing: str) -> str | None:
+    """libx264 si está; si no, libvpx (VP8, WebM); si no, None."""
+    for codec in ("libx264", "libvpx"):
+        if codec in listing.split():
+            return codec
+    return None
+
+
+def find_ffmpeg(env=os.environ, home: Path | None = None, which=shutil.which, probe=encoders) -> tuple[Path, str]:
+    """(ruta, códec). Orden: FFMPEG_BIN, PATH, caché de Playwright. Prefiere uno con libx264;
+    si ninguno lo tiene, el primero con libvpx."""
     if env.get("FFMPEG_BIN"):
         p = Path(env["FFMPEG_BIN"])
         if not p.is_file():
             raise MissingBinary(f"FFMPEG_BIN apunta a {p}, que no existe.")
-        if not check(p):
-            raise MissingBinary(f"FFMPEG_BIN={p} no trae libx264 (hace falta para H.264).")
-        return p
+        codec = codec_of(probe(p))
+        if not codec:
+            raise MissingBinary(f"FFMPEG_BIN={p} no trae libx264 ni libvpx.")
+        return p, codec
     cands = [Path(which("ffmpeg"))] if which("ffmpeg") else []
-    cands += _globs(_playwright_caches(env, home), ["ffmpeg-*/ffmpeg*"])
-    for p in cands:
-        if p.suffix in ("", ".exe") and check(p):
-            return p
-        tried.append(str(p))
-    extra = f" Probé sin libx264: {', '.join(tried)}." if tried else ""
-    raise MissingBinary("Falta ffmpeg con libx264 (el de Playwright no sirve: solo trae VP8)." + extra +
+    cands += [p for p in _globs(_playwright_caches(env, home), ["ffmpeg-*/ffmpeg*"]) if p.suffix in ("", ".exe")]
+    found = [(p, codec_of(probe(p))) for p in cands]
+    for want in ("libx264", "libvpx"):
+        for p, codec in found:
+            if codec == want:
+                return p, codec
+    extra = f" Probé sin libx264 ni libvpx: {', '.join(str(p) for p in cands)}." if cands else ""
+    raise MissingBinary("Falta ffmpeg (con libx264 para MP4, o al menos libvpx para WebM)." + extra +
                         " Instálalo (brew install ffmpeg, apt install ffmpeg) o indica la ruta con "
                         "FFMPEG_BIN=/ruta/al/ffmpeg.")
 
@@ -182,6 +194,17 @@ def chrome_cmd(chrome: Path, shell: bool, png: Path, url: str) -> list[str]:
     return cmd
 
 
+def webm_cmd(ffmpeg: Path, out: Path) -> list[str]:
+    """VP8 en WebM leyendo JPEG por la entrada estándar (el ffmpeg de Playwright no lee PNG
+    ni archivos sueltos: solo image2pipe con mjpeg). El final se sostiene repitiendo el cuadro."""
+    return [str(ffmpeg), "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg",
+            "-i", "pipe:0", "-c:v", "libvpx", "-b:v", "1M", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an", str(out)]
+
+
+def output_path(out: Path, codec: str) -> Path:
+    return out.with_suffix(".webm") if codec == "libvpx" and out.suffix != ".webm" else out
+
+
 def ffmpeg_cmd(ffmpeg: Path, frames: Path, n: int, out: Path) -> list[str]:
     """Cuadros f00001.png… a 3 por segundo; el último se sostiene 6 s (tpad clona el final)."""
     return [str(ffmpeg), "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", str(frames / "f%05d.png"),
@@ -191,7 +214,13 @@ def ffmpeg_cmd(ffmpeg: Path, frames: Path, n: int, out: Path) -> list[str]:
 
 def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1) -> Path:
     chrome, shell = find_chrome()
-    ffmpeg = find_ffmpeg()
+    ffmpeg, codec = find_ffmpeg()
+    webm = codec == "libvpx"
+    if webm:
+        new = output_path(out, codec)
+        print(f"aviso: {ffmpeg} no trae libx264; grabo WebM (VP8) en {new}", file=sys.stderr)
+        out = new
+    ext = "jpeg" if webm else "png"
     ts = sample(times(demo), every)
     tmp = None
     if frames_dir is None:
@@ -203,7 +232,7 @@ def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1)
     try:
         with tempfile.TemporaryDirectory(prefix="chrome_") as profile:
             for i, t in enumerate(ts, 1):
-                png = frames_dir / f"f{i:05d}.png"
+                png = frames_dir / f"f{i:05d}.{ext}"
                 url = frame_url(base, demo, "end" if t == ts[-1] else t)
                 cmd = chrome_cmd(chrome, shell, png, url)
                 cmd.insert(1, f"--user-data-dir={profile}")
@@ -212,9 +241,17 @@ def record(demo: str, out: Path, frames_dir: Path | None = None, every: int = 1)
                     raise RuntimeError(f"El navegador no generó el cuadro t={t} ({url}).")
                 print(f"\r{demo}: cuadro {i}/{len(ts)}", end="", file=sys.stderr, flush=True)
         print(file=sys.stderr)
-        r = subprocess.run(ffmpeg_cmd(ffmpeg, frames_dir, len(ts), out), capture_output=True, text=True)
+        if webm:
+            imgs = [frames_dir / f"f{i:05d}.jpeg" for i in range(1, len(ts) + 1)]
+            imgs += [imgs[-1]] * (HOLD_S * FPS)  # el último cuadro, sostenido 6 s
+            data = b"".join(p.read_bytes() for p in imgs)
+            r = subprocess.run(webm_cmd(ffmpeg, out), input=data, capture_output=True)
+            err = r.stderr.decode("utf-8", "replace")
+        else:
+            r = subprocess.run(ffmpeg_cmd(ffmpeg, frames_dir, len(ts), out), capture_output=True, text=True)
+            err = r.stderr
         if r.returncode != 0 or not out.is_file():
-            raise RuntimeError(f"ffmpeg falló: {r.stderr.strip()}")
+            raise RuntimeError(f"ffmpeg falló: {err.strip()}")
     finally:
         httpd.shutdown()
         httpd.server_close()
