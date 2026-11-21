@@ -61,7 +61,7 @@ Para equipos que ya usan agentes de programación y tienen claves en sus reposit
 
 ## Hecho en 36 horas
 
-764 pruebas automáticas, una evaluación que se repite con un comando y resultados reproducidos en tres computadores. Lo demás está en el [README](https://github.com/platanus-hack/platanus-hack-26-cl-team-47#readme).
+Más de 800 pruebas automáticas, una evaluación que se repite con un comando y resultados reproducidos en tres computadores. Lo demás está en el [README](https://github.com/platanus-hack/platanus-hack-26-cl-team-47#readme).
 
 El nombre viene de una leyenda de Atacama: el alicanto es un ave que brilla como el oro, y quien la sigue por codicia termina con las manos vacías.
 
