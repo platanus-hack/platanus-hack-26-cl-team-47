@@ -132,3 +132,26 @@ def test_touch_latency_200_nodes():
         fg.touch(res)
         times.append(time.perf_counter() - t0)
     assert max(times) < 0.015
+
+
+def test_correlation_matches_dense():
+    G = _random_graph(50, 11)
+    labels = {"n0": 1.0, "n12": 0.0, "n25": 1.0, "n37": 0.0, "n49": 1.0}
+    fg = FileGraph(G, labels, 0.05, 0.2)
+    Q = precision(G, fg.nodes, 0.05).toarray()
+    P = np.zeros(50)
+    for n in labels:
+        P[fg.idx[n]] = 1.0
+    Sigma = np.linalg.inv(Q + np.diag(0.2 ** -2 * P))
+    rng = np.random.default_rng(0)
+    for _ in range(30):
+        u, v = (fg.nodes[i] for i in rng.integers(0, 50, size=2))
+        i, j = fg.idx[u], fg.idx[v]
+        dense = Sigma[i, j] / np.sqrt(Sigma[i, i] * Sigma[j, j])
+        assert abs(fg.correlation(u, v) - dense) < 1e-8
+    assert fg.correlation("n3", "n3") == 1.0
+    assert -1.0 <= fg.correlation("n0", "n25") <= 1.0
+
+
+def test_correlation_demo(demo):
+    assert demo.correlation(".env", "SECRET_1") > demo.correlation(".env", "docs/onboarding.md")

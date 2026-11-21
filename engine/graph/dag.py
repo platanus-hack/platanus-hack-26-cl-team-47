@@ -159,5 +159,10 @@ class CallDAG:
     def parents(self, call_id: str) -> list[str]:
         return list(self.nodes[call_id].parents)
 
+    def is_source(self, call_id: str) -> bool:
+        """Fuente en sentido amplio: no confiable o lee un secreto, aunque su kind sea sink."""
+        n = self.nodes[call_id]
+        return n.call.untrusted or bool(n.secrets_read)
+
     def exposed(self) -> list[str]:
-        return [cid for cid in self.order if self.nodes[cid].kind == "source"]
+        return [cid for cid in self.order if self.is_source(cid)]
