@@ -320,14 +320,15 @@ def run(split: str, out: str | Path, benign_dir: str = "data/benign/sessions", r
         print(f"{name}: prevenidos {_f(rows[-1]['prevented_rate'])}, falsas alarmas "
               f"{_f(rows[-1]['false_alarm_rate'], 4)}", flush=True)
 
+    # Los archivos se escriben antes de imprimir nada: si la consola falla, los resultados ya quedaron.
+    _write_json(out / "systems.json", rows)
+    (out / "systems.md").write_text(systems_markdown(rows), encoding="utf-8", newline="\n")
+
     if {"ours", "combined", "no_rotation"} <= set(systems):
         from .__main__ import main as final_main
         final_main(["--ours", str(out / "summary_ours.json"), "--baseline", str(out / "summary_combined.json"),
                     "--no-rotation", str(out / "summary_no_rotation.json"), "--out", str(out), "--seed", str(SEED)])
         _mark_not_computed(out)
-
-    _write_json(out / "systems.json", rows)
-    (out / "systems.md").write_text(systems_markdown(rows), encoding="utf-8", newline="\n")
     meta.update({"status": "done", "n_sessions": len(sessions), "n_units": len(units),
                  "n_multi_session_units": sum(1 for _, s in units if len(s) > 1),
                  "systems": list(systems), "seconds": round(time.perf_counter() - t0, 1),
