@@ -1,0 +1,2 @@
+-r ../../contracts/requirements.txt
+pytest>=8
