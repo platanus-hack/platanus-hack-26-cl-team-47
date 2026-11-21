@@ -36,6 +36,7 @@
         <li><strong>El modelo de evidencia está saturado:</strong> se comporta como «leyó un secreto y después habla con un destino no confiable»; por eso generaliza y por eso rota de más.</li>
         <li><strong>La cuenta compartida no se distingue aquí:</strong> la cuenta por sesión frena lo mismo que la compartida (120 con las banderas del proxy), porque la evidencia rota antes; su valor se ve en la demo del enjambre.</li>
         <li><strong>Todo es sintético:</strong> tráfico benigno y ataques son guiones de nuestro equipo.</li>
+        <li><strong>La cota de la rotación periódica vale para pedazos de 4 caracteres o más:</strong> con 4 o más, como máximo 84 bits de una versión. Pedazos de 1 a 3 caracteres el contador no los cuenta. Con la configuración evaluada, la evidencia rota al primer envío (máximo 12 bits). Con la de la demo, sin modelo de evidencia, la clave sale entera en 10 de 18 combinaciones. Medición aparte con sesiones sintéticas: <code>results/short_fragments/</code>.</li>
         <li><strong>Las réplicas no son los productos:</strong> «presupuesto de bits» y «reensamblado por sesión» son réplicas simplificadas nuestras, no Pipelock, AgentBrake ni ningún artículo.</li>
       </ol>
     </section>

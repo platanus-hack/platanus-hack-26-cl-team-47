@@ -81,6 +81,7 @@ Los registros quedan en `logs/`: `proxy.jsonl` (cada llamada y su decisión), `a
 ## Límites, con honestidad
 
 - **El agente debe tener solo estas herramientas.** Si conserva su terminal o su lectura de archivos propia, se salta el proxy y Alicanto no ve nada. En agentes de código, desactiva sus herramientas integradas o córrelos sin ellas.
+- **Pedazos de 1 a 3 caracteres no cuentan sin el modelo de evidencia.** Con los parámetros por defecto (sin `PROXY_CONFIG=frozen`) decide solo el contador, que no cuenta pedazos de menos de 4 caracteres: en una medición aparte, enviados de a 1 a 3, la clave salió entera en 10 de 18 combinaciones ([results/short_fragments/summary.md](../results/short_fragments/summary.md)).
 - **La cuenta compartida es un archivo local.** Sirve para varios agentes en la misma máquina (con un cerrojo de archivo); no coordina varias máquinas.
 - **Si el cerrojo o el gestor no responden, falla cerrado:** bloquea las salidas hasta poder decidir con la cuenta.
 - **Es una cota inferior:** una codificación que el motor no sabe leer no se ve por contenido; ahí actúan la evidencia de comportamiento y la rotación periódica. Cómo leer los resultados de la evaluación: `results/test/LECTURA.md`.

@@ -55,7 +55,8 @@ def test_pagina_de_resultados():
     assert "fixtures/results.json" in (VIZ / "results.js").read_text(encoding="utf-8")
     assert "no dice" in html
     limits = html.split("no dice", 1)[1].split("</ol>", 1)[0]
-    assert len(re.findall(r"<li>", limits)) == 10
+    assert len(re.findall(r"<li>", limits)) == 11
+    assert "10 de 18 combinaciones" in limits and "84 bits" in limits and "12 bits" in limits
     assert "A9" in limits and "A13" in limits and "4 de 6 familias" in limits and "regla simple empata" in limits
     assert "180 ataques grabados de seis familias nuevas: Alicanto frenó 120, cuatro de las seis" in html
     assert "como lo calcula el proxy en vivo" in html and "con las marcas de las grabaciones" in html
