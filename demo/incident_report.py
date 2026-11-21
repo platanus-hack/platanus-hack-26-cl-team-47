@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -21,6 +22,41 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from contracts import Event, read_events  # noqa: E402
+
+SCENARIO = ROOT / "demo" / "scenario.json"
+VIZ_SCENARIO = ROOT / "demo" / "viz" / "scenario.json"  # copia para el sitio estático (demo/viz)
+_FEMININE = {"clave", "llave", "api"}
+
+
+def load_scenario(path: str | Path = SCENARIO) -> dict:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def sync_viz_scenario(src: Path = SCENARIO, dst: Path = VIZ_SCENARIO) -> Path:
+    """Copia demo/scenario.json junto a las páginas: el despliegue sirve solo demo/viz."""
+    shutil.copyfile(src, dst)
+    return dst
+
+
+def _labeler(scenario: dict | None):
+    """id -> «etiqueta (id)» con artículo («la Clave… (SECRET_1)»); sin escenario, el id."""
+    if not scenario:
+        return lambda i: i
+    names = {**(scenario.get("hosts") or {}), **(scenario.get("secrets") or {})}
+
+    def lab(i: str) -> str:
+        name = names.get(i)
+        if not name:
+            return i
+        first = name.split()[0].lower()
+        art = "la" if first in _FEMININE or first.endswith("a") else "el"
+        return f"{art} {name} ({i})"
+
+    return lab
+
+
+def _de(text: str) -> str:
+    return "del " + text[3:] if text.startswith("el ") else "de " + text
 
 
 def _destination(call: dict) -> str | None:
@@ -42,10 +78,10 @@ def _plural(n: int, one: str, many: str) -> str:
 
 
 def _statement(sid: str, bits: float, H: float | None, dests: list[str], n_calls: int,
-               rotations: list[dict], final_status: int | None) -> str:
+               rotations: list[dict], final_status: int | None, lab=lambda i: i) -> str:
     total = f" de {H:.0f}" if H else ""
-    where = f" hacia {', '.join(dests)}" if dests else ""
-    s = (f"Salieron al menos {bits:.0f} bits{total} de {sid}{where} "
+    where = f" hacia {', '.join(lab(d) for d in dests)}" if dests else ""
+    s = (f"Salieron al menos {bits:.0f} bits{total} {_de(lab(sid))}{where} "
          f"en {n_calls} {_plural(n_calls, 'llamada', 'llamadas')}.")
     if rotations:
         s += f" La clave se rotó en la llamada {rotations[0]['t']}."
@@ -58,7 +94,11 @@ def _statement(sid: str, bits: float, H: float | None, dests: list[str], n_calls
     return s
 
 
-def build_report(events: list[Event], generated_from: str | None = None) -> dict:
+def build_report(events: list[Event], generated_from: str | None = None,
+                 scenario: dict | None = None) -> dict:
+    """Sin escenario el texto usa los identificadores; con escenario, sus etiquetas
+    («la Clave de la API de ficha clínica (SECRET_1)») y el nombre de la organización."""
+    lab = _labeler(scenario)
     calls: dict[str, dict] = {}
     decisions: list[tuple[dict, dict]] = []  # (llamada, decisión) en orden
     rotation_events: list[Event] = []
@@ -144,15 +184,19 @@ def build_report(events: list[Event], generated_from: str | None = None) -> dict
             "final_status": final_status,
             "statement": _statement(sid, bits_before if rotations else max_bits, H,
                                     sorted({c["destination"] for c in before if c["destination"]}),
-                                    len(before), rotations, final_status),
+                                    len(before), rotations, final_status, lab),
         })
 
-    return {"session_id": session_id, "generated_from": generated_from or "", "secrets": out}
+    report = {"session_id": session_id, "generated_from": generated_from or "", "secrets": out}
+    if scenario:
+        report["organization"] = scenario.get("organization", "")
+        report["fictional_note"] = scenario.get("fictional_note", "")
+    return report
 
 
-def write_report(events_path: str | Path, out_path: str | Path) -> Path:
+def write_report(events_path: str | Path, out_path: str | Path, scenario: dict | None = None) -> Path:
     events_path, out_path = Path(events_path), Path(out_path)
-    report = build_report(read_events(events_path), generated_from=events_path.name)
+    report = build_report(read_events(events_path), generated_from=events_path.name, scenario=scenario)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return out_path
@@ -162,8 +206,15 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python demo/incident_report.py")
     ap.add_argument("--events", required=True, help="registro JSONL de Event (p. ej. demo/out/right.jsonl)")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--scenario", help="demo/scenario.json: textos con las etiquetas del escenario "
+                                       "(y copia el archivo a demo/viz/ para el sitio estático)")
     a = ap.parse_args(argv)
-    path = write_report(a.events, a.out)
+    scenario = None
+    if a.scenario:
+        scenario = load_scenario(a.scenario)
+        if Path(a.scenario).resolve() == SCENARIO.resolve():
+            sync_viz_scenario()
+    path = write_report(a.events, a.out, scenario)
     for s in json.loads(path.read_text(encoding="utf-8"))["secrets"]:
         print(s["statement"])
     print(path)

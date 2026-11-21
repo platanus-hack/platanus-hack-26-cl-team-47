@@ -1,7 +1,31 @@
 /* Navegación de las láminas: flechas, espacio, clic, inicio/fin. ?s=N abre la lámina N. */
 "use strict";
 
+/* Escenario de la demo (tarea 15j, docs/ESCENARIO.md). Ficticio: no es un hospital real. */
+const ESCENARIO = {
+  organization: "Hospital Regional Tres Cóndores",
+  fictional_note: "Hospital, pacientes y claves ficticios.",
+  frase: "Un hospital tiene 3 horas para avisar a la ANCI de un incidente. Su equipo de TI ya programa " +
+         "con agentes de IA, y las claves de la ficha clínica están en el mismo repositorio que el agente lee.",
+};
+
+/** Lámina 3: reemplaza el marcador del escenario por la frase y el nombre (con nota de ficticio). */
+function aplicarEscenario(doc) {
+  const s3 = doc.querySelector('.slide[data-n="3"]');
+  if (!s3) return;
+  const marker = s3.querySelector(".pendiente");
+  const frase = doc.createElement("p");
+  frase.textContent = ESCENARIO.frase;
+  const nombre = doc.createElement("p");
+  nombre.className = "escenario-nombre";
+  nombre.style.fontSize = "26px";
+  nombre.style.color = "var(--muted)";
+  nombre.textContent = `${ESCENARIO.organization} · ${ESCENARIO.fictional_note}`;
+  if (marker) marker.replaceWith(frase, nombre); else s3.append(frase, nombre);
+}
+
 (function () {
+  aplicarEscenario(document);
   const slides = Array.from(document.querySelectorAll(".slide"));
   const deck = document.getElementById("deck");
   const counter = document.getElementById("counter");

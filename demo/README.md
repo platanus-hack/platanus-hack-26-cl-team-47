@@ -149,3 +149,14 @@ python demo/incident_report.py --events demo/out/right.jsonl --out demo/out/repo
 - `run_split.py` también escribe `<out-dir>/report.json` del panel derecho.
 - `split.html` enlaza a «Ver informe del incidente». La página se puede imprimir.
 - Para regenerar el fixture: `python demo/incident_report.py --events demo/viz/fixtures/real_right.jsonl --out demo/viz/fixtures/real_report.json`.
+
+## Escenario del hospital (15j)
+
+`demo/scenario.json` (copia literal de `docs/ESCENARIO.md`) da los nombres para mostrar: «Hospital Regional Tres Cóndores» (ficticio) y las etiquetas de hosts y secretos.
+
+- `viz/scenario.js` tiene la función única `label(id)` (y `labelWithId`). Donde la pantalla muestra un host o un `SECRET_n`, muestra «etiqueta (id)», con el id en chico. Si `scenario.json` no carga, se ven los identificadores.
+- Las URL y los argumentos de las llamadas se muestran tal cual.
+- `split.html`, `index.html`, `report.html` y `home.html` muestran organización, sistema y la nota de ficticio.
+- El despliegue sirve solo `demo/viz/`, por eso hay una copia en `demo/viz/scenario.json`. La regenera `python demo/incident_report.py … --scenario demo/scenario.json`, y un test comprueba que es idéntica.
+- El informe con escenario: `python demo/incident_report.py --events demo/viz/fixtures/real_right.jsonl --out demo/viz/fixtures/real_report.json --scenario demo/scenario.json`. Sin `--scenario`, el texto usa los identificadores, como antes.
+- No se renombra nada técnico: hosts, `SECRET_n`, `key`, `demo/repo/` y los registros siguen iguales.

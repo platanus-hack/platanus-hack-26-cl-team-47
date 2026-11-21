@@ -113,7 +113,7 @@ def test_guion_doce_secciones_y_pendientes():
     secciones = re.findall(r"^## (\d+)\. ", guion, flags=re.M)
     assert secciones == [str(i) for i in range(1, 13)]
     assert re.search(r"^## Pendientes", guion, flags=re.M)
-    for falta in ("T1", "T2", "T3", "T4", "escenario", "qué pedimos"):
+    for falta in ("T1", "T2", "T3", "T4", "qué pedimos"):  # el escenario ya se decidió (15j)
         assert falta in guion
 
 
@@ -123,12 +123,12 @@ PREGUNTAS = (PITCH / "PREGUNTAS.md").read_text(encoding="utf-8")
 GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 
-def test_preguntas_tiene_las_diez():
+def test_preguntas_tiene_las_diez_y_la_del_hospital():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 10
+    assert len(titulos) == 11
     claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
-              "resultados son reales")
+              "resultados son reales", "Por qué un hospital")
     for clave, titulo in zip(claves, titulos):
         assert clave in titulo, f"falta la pregunta sobre {clave!r}"
 
@@ -158,3 +158,28 @@ def test_lamina_8_dice_hasta_donde_encontramos():
 def test_lamina_11_tiene_pendiente():
     assert parse()[10]["pendientes"] >= 1
     assert "LLM" in parse()[10]["pend_text"]
+
+
+# ------------------------------------------------ escenario del hospital (15j)
+
+def test_escenario_en_el_pitch():
+    assert "PENDIENTE: contar el escenario" not in GUION
+    assert "Tres Cóndores" in GUION
+    assert "Tres Cóndores" in (PITCH / "slides.js").read_text(encoding="utf-8")
+    assert "ficticio" in (PITCH / "slides.js").read_text(encoding="utf-8")
+
+
+def test_nada_prohibido_del_escenario_en_pitch():
+    for f in PITCH.rglob("*"):
+        if f.is_file() and f.suffix in (".md", ".html", ".js", ".css") and "tests" not in f.parts:
+            text = f.read_text(encoding="utf-8")
+            assert "1 de diciembre de 2026" not in text, f.name
+            assert "Hospital Clínico" not in text, f.name
+
+
+def test_pregunta_del_hospital_solo_con_datos_verificados_y_url():
+    sec = PREGUNTAS.split("¿Por qué un hospital?")[1]
+    urls = re.findall(r"https://\S+?(?=\)|\s|$)", sec)
+    assert set(urls) <= {"https://www.suseso.gob.cl/612/w3-propertyvalue-130626.html",
+                         "https://www.cariola.cl/app/uploads/2025/03/Alerta-Legal_04.03.2025.pdf"}
+    assert len(urls) >= 2

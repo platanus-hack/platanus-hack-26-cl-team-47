@@ -26,9 +26,13 @@ if (typeof document !== "undefined" && document.getElementById("secrets")) {
     return e;
   };
 
+  const lbl = (id) => (typeof labelWithId === "function" ? labelWithId(id) : id);
+
   function renderSecret(s) {
     const box = el("section", "secret");
-    box.append(el("h2", null, s.secret_id), el("p", "statement", s.statement));
+    const h2 = el("h2");
+    h2.append(typeof labelNode === "function" ? labelNode(s.secret_id) : document.createTextNode(s.secret_id));
+    box.append(h2, el("p", "statement", s.statement));
 
     box.append(el("div", "legend", "● exposición  ● envío con bits  ● rotación  ● bloqueo"));
     const tl = el("div", "timeline");
@@ -48,12 +52,12 @@ if (typeof document !== "undefined" && document.getElementById("secrets")) {
     table.append(head);
     for (const c of s.leak_calls || []) {
       const tr = el("tr");
-      for (const v of [c.call_id, c.t, c.tool, c.destination || "—", c.bits_after, c.action]) tr.append(el("td", null, String(v)));
+      for (const v of [c.call_id, c.t, c.tool, c.destination ? lbl(c.destination) : "—", c.bits_after, c.action]) tr.append(el("td", null, String(v)));
       table.append(tr);
     }
     box.append(table);
 
-    const lines = [`Destinos: ${(s.destinations || []).join(", ") || "—"}`];
+    const lines = [`Destinos: ${(s.destinations || []).map(lbl).join(", ") || "—"}`];
     if (s.exposed_at) lines.push(`Expuesto en la llamada ${s.exposed_at.t} (${s.exposed_at.tool} ${s.exposed_at.resource || ""})`);
     for (const r of s.rotations || []) lines.push(`Rotación en la llamada ${r.t}, versión ${r.version}: ${r.reason}`);
     if (s.final_status != null) lines.push(`Intento final del atacante con la clave: ${s.final_status}`);
@@ -63,7 +67,8 @@ if (typeof document !== "undefined" && document.getElementById("secrets")) {
 
   const params = new URLSearchParams(location.search);
   const url = params.get("report") || DEFAULT_REPORT;
-  fetch(url)
+  const ready = typeof scenarioReady !== "undefined" ? scenarioReady : Promise.resolve(null);
+  ready.then(() => fetch(url))
     .then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); })
     .then((rep) => {
       document.getElementById("meta").textContent =

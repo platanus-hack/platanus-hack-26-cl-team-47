@@ -66,6 +66,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
   };
   const $ = (id) => document.getElementById(id);
   let graphView = null;
+  const lbl = (id) => (typeof labelWithId === "function" ? labelWithId(id) : id);
 
   function makePanel(root) {
     return {
@@ -115,7 +116,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       for (const r of f.rotations) {
         const m = document.createElement("span");
         m.className = "mark rotation";
-        m.textContent = `rotación ${r.secret_id} → v${r.version}`;
+        m.textContent = `rotación ${lbl(r.secret_id)} → v${r.version}`;
         li.children[3].appendChild(m);
       }
       p.list.appendChild(li);
@@ -177,9 +178,11 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       g.append("path").datum(pts).attr("fill", "none").style("stroke", c).attr("stroke-width", 2).attr("d", line);
       if (pts.length) g.append("circle").attr("r", 3).style("fill", c)
         .attr("cx", x(pts[pts.length - 1].t)).attr("cy", y(pts[pts.length - 1].y));
-      const lg = g.append("g").attr("class", "legend").attr("transform", `translate(${w - (i + 1) * 92},-18)`);
+      const name = lbl(sid);  // etiqueta del escenario; una fila por secreto para que quepa
+      const lg = g.append("g").attr("class", "legend")
+        .attr("transform", `translate(${Math.max(0, w - 24 - name.length * 6.2)},${-18 + i * 14})`);
       lg.append("rect").attr("width", 10).attr("height", 10).attr("y", -1).style("fill", c);
-      lg.append("text").attr("x", 14).attr("y", 8).text(sid);
+      lg.append("text").attr("x", 14).attr("y", 8).text(name);
     });
   }
 
@@ -211,7 +214,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     p.result.className = "result";
     if (!atEnd()) return;
     const fr = finalFractions(p.frames);
-    const leaks = Object.entries(fr).filter(([sid]) => p.secrets.includes(sid)).map(([sid, x]) => `${sid}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
+    const leaks = Object.entries(fr).filter(([sid]) => p.secrets.includes(sid)).map(([sid, x]) => `${lbl(sid)}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
     const big = document.createElement("div");
     big.className = "result-status";
     big.textContent = resultText(p.events);
@@ -310,7 +313,9 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     return r.json();
   });
   if (left && right) {
-    Promise.all([fetchLog(left), fetchLog(right), graphUrl ? fetchGraph(graphUrl) : null]).then(([l, r, graph]) => {
+    // Se espera al escenario para que el grafo nazca con las etiquetas (si no carga, sigue igual).
+    const ready = typeof scenarioReady !== "undefined" ? scenarioReady.catch(() => null) : null;
+    Promise.all([fetchLog(left), fetchLog(right), graphUrl ? fetchGraph(graphUrl) : null, ready]).then(([l, r, graph]) => {
       if (graph) {
         document.body.classList.add("with-graph");
         $("graph-strip").hidden = false;
@@ -330,5 +335,12 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     });
   } else {
     for (const p of Object.values(panels)) p.detail.textContent = "Faltan ?left=…&right=… en la URL.";
+  }
+  // Al cargar scenario.json se vuelve a dibujar con las etiquetas del hospital.
+  if (typeof scenarioReady !== "undefined") {
+    scenarioReady.then(() => {
+      for (const p of Object.values(panels)) if (p.events.length) renderList(p);
+      if (clock.ts.length) render();
+    });
   }
 }
