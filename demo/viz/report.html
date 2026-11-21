@@ -35,12 +35,16 @@
 </head>
 <body>
   <header class="report-head">
-    <h1>Informe de incidente</h1>
+    <div>
+      <h1>Informe de incidente</h1>
+      <p class="scenario-sub"><span id="scenario-org"></span> · <span id="scenario-system"></span> · <span id="scenario-note" class="scenario-note"></span></p>
+    </div>
     <a href="split.html">Volver a la demo</a>
   </header>
   <p id="meta" class="meta">Cargando…</p>
   <main id="secrets"></main>
   <p class="meta">La medición es una cota inferior: «al menos» tantos bits. El informe no contiene valores de secretos.</p>
+  <script src="scenario.js"></script>
   <script src="report.js"></script>
 </body>
 </html>

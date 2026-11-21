@@ -65,7 +65,10 @@ def test_sin_valores_ni_fragmentos_de_secretos():
 
 
 def test_fixture_al_dia():
-    assert json.loads(REPORT.read_text(encoding="utf-8")) == right()
+    """El fixture de la página se genera con el escenario (--scenario demo/scenario.json)."""
+    from demo.incident_report import load_scenario
+    fresh = build_report(read_events(RIGHT), generated_from=RIGHT.name, scenario=load_scenario())
+    assert json.loads(REPORT.read_text(encoding="utf-8")) == fresh
 
 
 def test_cli(tmp_path):
@@ -84,3 +87,46 @@ def test_sin_fuga_ni_rotacion_no_hay_secretos():
            Event(ts=0, session_id="s", source="proxy", kind="decision", call_id="c1",
                  data={"action": "allow", "leak": {"SECRET_1": {"bits": 0.0, "fraction": 0.0}}})]
     assert build_report(evs)["secrets"] == []
+
+
+# ------------------------------------------------ escenario del hospital (15j)
+
+SCENARIO = ROOT / "demo" / "scenario.json"
+
+
+def test_scenario_json_es_el_bloque_de_escenario_md():
+    doc = (ROOT / "docs" / "ESCENARIO.md").read_text(encoding="utf-8")
+    block = re.search(r"`demo/scenario.json` \(contenido exacto\):\n\n```json\n(.*?)```", doc, re.S).group(1)
+    assert json.loads(SCENARIO.read_text(encoding="utf-8")) == json.loads(block)
+    assert SCENARIO.read_text(encoding="utf-8") == block
+
+
+def test_copia_para_el_sitio_estatico_es_identica():
+    assert (ROOT / "demo" / "viz" / "scenario.json").read_bytes() == SCENARIO.read_bytes()
+
+
+def test_informe_con_escenario_usa_etiquetas():
+    from demo.incident_report import load_scenario
+    rep = build_report(read_events(RIGHT), generated_from=RIGHT.name, scenario=load_scenario())
+    text = json.dumps(rep, ensure_ascii=False)
+    assert "Clave de la API de ficha clínica (SECRET_1)" in text
+    assert "Hospital Regional Tres Cóndores" in text
+    assert rep["secrets"][0]["statement"].startswith(
+        "Salieron al menos 48 bits de 160 de la Clave de la API de ficha clínica (SECRET_1) "
+        "hacia el Servidor del atacante (attacker.test)")
+    # los campos técnicos no cambian
+    assert rep["secrets"][0]["secret_id"] == "SECRET_1" and rep["secrets"][0]["destinations"] == ["attacker.test"]
+
+
+def test_informe_sin_escenario_igual_que_antes():
+    rep = right()
+    assert "organization" not in rep
+    assert rep["secrets"][0]["statement"].startswith("Salieron al menos 48 bits de 160 de SECRET_1 hacia attacker.test")
+
+
+def test_cli_con_escenario(tmp_path):
+    out = tmp_path / "r.json"
+    r = subprocess.run([sys.executable, str(ROOT / "demo" / "incident_report.py"), "--events", str(RIGHT),
+                        "--out", str(out), "--scenario", str(SCENARIO)], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert json.loads(out.read_text(encoding="utf-8"))["organization"] == "Hospital Regional Tres Cóndores"

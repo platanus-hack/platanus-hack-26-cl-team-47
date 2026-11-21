@@ -328,3 +328,12 @@ code { font-family: ui-monospace, Consolas, monospace; }
 .home-cta:hover, .home-cta:focus-visible { filter: brightness(1.1); }
 .home-secondary { color: var(--current); font-size: 15px; }
 .home-note { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* Escenario (tarea 15j) */
+.title-block { display: flex; flex-direction: column; gap: 2px; }
+.scenario-sub { margin: 0; font-size: 13px; color: var(--muted); }
+.scenario-sub:has(#scenario-org:empty) { display: none; }
+.scenario-note { font-style: italic; }
+.tech-id { font-size: 0.75em; color: var(--muted); font-weight: normal; }
+.home-scenario { color: var(--muted); margin-top: -4px; }
+.home-scenario:has(#scenario-org:empty) { display: none; }

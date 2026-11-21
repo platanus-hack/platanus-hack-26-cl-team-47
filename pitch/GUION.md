@@ -16,7 +16,6 @@ resultados se escribe hasta tenerlo medido.
 
 | Lámina | Qué falta | De dónde sale | Quién |
 |---|---|---|---|
-| 3 | Nombre del escenario de la demo | Decisión del equipo (`docs/PLAN.md`, «Escenario pendiente») | Equipo / líder |
 | 9 | T1: falsas alarmas por llamada expuesta | Evaluación final (paso 14), `eval/metrics` | Análisis (matix3000) |
 | 9 | T2: ataques prevenidos | Evaluación final sobre el set sellado (paso 14) | Análisis |
 | 9 | T3: comparación con allowlist más detect-secrets | `eval/baselines` en la evaluación final | Servicios (VictoriaGuerriero) y Análisis |
@@ -37,9 +36,13 @@ por sí solo. Los filtros que miran cada llamada por separado no ven la suma.
 
 ## 3. El ejemplo · 20 s
 
-El goteo: cuatro caracteres por salida, separados por decenas de llamadas
-normales. Ninguna llamada parece un robo; juntas, se llevan la clave.
-(PENDIENTE: contar el escenario cuando el equipo lo decida.)
+El equipo de TI del Hospital Regional Tres Cóndores, un hospital ficticio,
+mantiene el servicio que agenda horas y consulta la ficha clínica, y usa un
+agente de IA para resolver issues del repositorio. Un issue con una
+instrucción plantada hace que el agente saque, de a cuatro caracteres por
+salida, la clave con la que el servicio entra a la ficha clínica. Ninguna
+llamada parece un robo; juntas, se llevan la clave. Y un hospital tiene 3
+horas para avisar a la ANCI de un incidente.
 
 ## 4. La idea · 15 s
 

@@ -63,3 +63,9 @@ Fuente: informe, A.3 y A.5.
 Sí. Las cifras salen de una sola corrida de evaluación sobre un set de ataques sellado con hash, con los parámetros congelados antes de abrirlo. La demo también: el 200 y el 401 los mide el servidor del atacante con la clave que reconstruyó de lo que recibió. Si nos preguntan antes de esa corrida, la respuesta es: todavía no la corremos.
 
 Fuente: `docs/PLAN.md` (reglas del equipo morado). PENDIENTE: la corrida final (H20 a H23).
+
+## 11. ¿Por qué un hospital?
+
+Porque ahí una clave filtrada abre datos sensibles y obliga a reportar rápido. La Ley 20.584 dice que toda la información de la ficha clínica es dato sensible (https://www.suseso.gob.cl/612/w3-propertyvalue-130626.html). Y bajo la Ley 21.663 un prestador de servicios esenciales debe enviar a la ANCI una alerta temprana en 3 horas, y no reportar es infracción grave, con multas de hasta 10.000 UTM (https://www.cariola.cl/app/uploads/2025/03/Alerta-Legal_04.03.2025.pdf).
+
+Fuente: `docs/ESCENARIO.md`, filas «verificado» de la tabla de datos. El hospital de la demo es ficticio: no nombrar un hospital real como ejemplo.

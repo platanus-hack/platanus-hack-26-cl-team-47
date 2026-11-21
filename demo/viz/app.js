@@ -107,6 +107,7 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
   const state = { frames: [], idx: -1, speed: 1, timer: null, secrets: [] };
   const $ = (id) => document.getElementById(id);
   const color = (sid) => d3.schemeTableau10[state.secrets.indexOf(sid) % 10];
+  const lbl = (id) => (typeof labelWithId === "function" ? labelWithId(id) : id);
 
   function load(text) {
     stop();
@@ -225,12 +226,18 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
 
     if (series.length > 1 || opts.legend) {
       // Leyenda horizontal en el margen superior, para no tapar curvas ni rotaciones.
+      // Etiquetas del escenario (scenario.js) cuando existen; si no, el id.
+      const names = series.map((s) => (typeof labelWithId === "function" ? labelWithId(s.name) : s.name));
+      const widths = names.map((n) => 24 + n.length * 6.2);
+      const total = widths.reduce((a, b) => a + b, 0);
       const lg = g.append("g").attr("class", "legend")
-        .attr("transform", `translate(${w - series.length * 92},-18)`);
+        .attr("transform", `translate(${Math.max(0, w - total)},-18)`);
+      let xoff = 0;
       series.forEach((s, i) => {
-        const row = lg.append("g").attr("transform", `translate(${i * 92},0)`);
+        const row = lg.append("g").attr("transform", `translate(${xoff},0)`);
+        xoff += widths[i];
         row.append("rect").attr("width", 10).attr("height", 10).attr("y", -1).style("fill", s.color);
-        row.append("text").attr("x", 14).attr("y", 8).text(s.name);
+        row.append("text").attr("x", 14).attr("y", 8).text(names[i]);
       });
     }
   }
@@ -268,7 +275,7 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
     };
     add("razón", d.reason || "—");
     add("camino", (d.path && d.path.length) ? d.path.join(" → ") : "—");
-    if (f.rotations.length) add("rotación", f.rotations.map((r) => `${r.secret_id} → v${r.version}`).join(", "));
+    if (f.rotations.length) add("rotación", f.rotations.map((r) => `${lbl(r.secret_id)} → v${r.version}`).join(", "));
     el.appendChild(dl);
   }
 
@@ -335,6 +342,7 @@ if (typeof document !== "undefined" && document.getElementById("call-list")) {
   const DEFAULT_LOG = "fixtures/real_right.jsonl";
   const log = params.get("log") || DEFAULT_LOG;
   if (log) loadUrl(log);
+  if (typeof scenarioReady !== "undefined") scenarioReady.then(() => { if (state.frames.length) render(); });
   if (params.get("t")) {
     // ?t=N salta a la llamada N una vez cargado (útil para capturas).
     const target = Number(params.get("t"));

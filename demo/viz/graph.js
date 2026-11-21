@@ -89,7 +89,11 @@ if (typeof document !== "undefined") {
       .style("fill", (d) => color(Math.max(0, Math.min(1, d.mu))))
       .attr("class", (d) => `node k-${d.kind}`);
     g.append("title").text((d) => `${d.id}  μ=${d.mu.toFixed(2)}  (${d.kind})`);
-    g.append("text").attr("x", 10).attr("y", 4).attr("class", "node-label").text((d) => d.id);
+    // Hosts y secretos con la etiqueta del escenario (scenario.js); archivos tal cual.
+    const txt = g.append("text").attr("x", 10).attr("y", 4).attr("class", "node-label");
+    txt.append("tspan").text((d) => (typeof label === "function" ? label(d.id) : d.id));
+    txt.filter((d) => typeof label === "function" && label(d.id) !== d.id)
+      .append("tspan").attr("class", "tech-id").style("font-size", "8px").text((d) => ` (${d.id})`);
 
     // Leyenda de color.
     const lg = svg.append("g").attr("class", "g-legend").attr("transform", `translate(${W - 84},${H - 40})`);
