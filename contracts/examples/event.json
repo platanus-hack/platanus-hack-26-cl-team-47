@@ -1,0 +1,8 @@
+{
+  "ts": 1763700000.123,
+  "session_id": "s1",
+  "source": "proxy",
+  "kind": "rotation",
+  "call_id": "s1-0003",
+  "data": {"secret_id": "SECRET_1", "version": 2}
+}

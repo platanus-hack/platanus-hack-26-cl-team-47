@@ -1,0 +1,9 @@
+{
+  "action": "rotate+block",
+  "S": 4.2,
+  "R_plus": 0.83,
+  "leak": {"SECRET_1": {"bits": 96.0, "fraction": 0.375}},
+  "path": ["s1-0001", "s1-0002", "s1-0003"],
+  "reason": "sumidero desciende de entrada no confiable y de lectura de SECRET_1",
+  "latency_ms": 3.1
+}

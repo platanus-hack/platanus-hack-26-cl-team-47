@@ -1,0 +1,7 @@
+{
+  "vault.test": "http://127.0.0.1:8101",
+  "api.empresa.test": "http://127.0.0.1:8102",
+  "attacker.test": "http://127.0.0.1:8103",
+  "github.test": "http://127.0.0.1:8104",
+  "web.test": "http://127.0.0.1:8105"
+}
