@@ -440,6 +440,7 @@ def test_lamina_del_problema_situa_el_track():
 def test_lamina_36_horas():
     s = slide("36 horas")
     assert idx("36 horas") > idx("Respaldo")   # en el respaldo (16e)
+    assert "Más de 800 tests automáticos" in norm(s["text"])   # una cota, no la cifra exacta: la suite sigue creciendo
     for clave in ("tests automáticos", "80 + 80 + 180",
                   "Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)", "sin internet"):
         assert clave in norm(s["text"]), clave
