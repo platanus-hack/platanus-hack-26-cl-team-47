@@ -5,6 +5,8 @@
 .env
 .env.*
 !.env.example
+# Ajustes locales de Claude Code: pueden llevar la URL del proxy de LLM con el token personal
+.claude/settings.local.json
 
 # Dependencias y builds
 node_modules/
