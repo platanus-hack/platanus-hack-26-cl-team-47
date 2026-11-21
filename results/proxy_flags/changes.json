@@ -1,0 +1,35 @@
+{
+  "calls": 15281,
+  "changed": 810,
+  "by": [
+    {
+      "label": "attack",
+      "tool": "http_request",
+      "where": "api.empresa.test",
+      "flags": "11 -> 10",
+      "calls": 300
+    },
+    {
+      "label": "attack",
+      "tool": "http_request",
+      "where": "attacker.test",
+      "flags": "11 -> 10",
+      "calls": 300
+    },
+    {
+      "label": "attack",
+      "tool": "git",
+      "where": "commit",
+      "flags": "11 -> 00",
+      "calls": 120
+    },
+    {
+      "label": "benign",
+      "tool": "read_file",
+      "where": "",
+      "flags": "01 -> 00",
+      "calls": 90
+    }
+  ],
+  "flags_legend": "dos dígitos: is_sink y untrusted (1 = sí)"
+}

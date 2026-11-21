@@ -52,15 +52,59 @@ Qué se puede decir: «El modelo de evidencia usa señales del grafo de archivos
 
 La demo corre el detector sin modelo de evidencia y rota cuando se filtró el 30 % de la clave. La evaluación usa la configuración congelada, que rota al 10 % y suma la evidencia. Se probó la demo con la configuración congelada: funciona y termina en 401, pero rota en el primer fragmento (llamada 8, con 16 bits en vez de 48), así que el medidor casi no sube y no se ve el goteo. En la demo del enjambre, además, los dos lados terminan en 401 y se pierde el contraste entre cuenta por agente y cuenta global. Por eso la demo se deja como está y se dice.
 
+## Las banderas de cada llamada venían de las grabaciones
+
+Análisis aparte, hecho después de la evaluación final, con el detector congelado: `results/proxy_flags/` (`python -m eval.final.proxy_flags --out results/proxy_flags`).
+
+**Qué pasó.** El 180 de 180 se midió con las banderas `is_sink` (la llamada saca datos) y `untrusted` (su salida es contenido no confiable) que escribió el generador de los ataques: en el set de prueba todas las llamadas de ataque venían marcadas como las dos cosas. El proxy en vivo las calcula de otra forma (`proxy.core.is_sink` y `proxy.core.untrusted`). Con el cálculo del proxy cambian **810 de 15.281 llamadas**:
+
+| Llamadas | Cuántas | Banderas: generador → proxy |
+|---|---|---|
+| Ataque, `http_request` a `api.empresa.test` | 300 | sale y no confiable → sale, confiable |
+| Ataque, `http_request` a `attacker.test` | 300 | sale y no confiable → sale, confiable |
+| Ataque, `git commit` | 120 | sale y no confiable → no sale |
+| Benignas, `read_file` | 90 | no confiable → confiable |
+
+**Las cifras con las banderas del proxy** (ataques prevenidos, de 30 por familia):
+
+| | A5 | A7 | A9 | A10 | A12 | A13 | Total |
+|---|---|---|---|---|---|---|---|
+| Alicanto, banderas del generador | 30 | 30 | 30 | 30 | 30 | 30 | **180 de 180** |
+| Alicanto, banderas del proxy | 30 | 30 | 0 | 30 | 30 | 0 | **120 de 180** |
+| Alicanto, banderas del proxy e inspección del push | 30 | 30 | 0 | 30 | 30 | 0 | **120 de 180** |
+
+Quedan sin cubrir dos familias:
+- **A9:** la clave sale por su **propio destino permitido** (`api.empresa.test`, en una cabecera). Para el proxy ese envío es legítimo, así que no lo cuenta como fuga.
+- **A13:** el `git commit` **no es una salida**; la salida es el `push`. Con la inspección del push (la variante que agrega al push los mensajes de los commits, como hace el proxy en vivo), Alicanto **rota y bloquea el push en las 30 sesiones**, así que la clave no sale. Aun así la cifra sigue en 0 de 30, porque las etiquetas del set ponen la fuga en cada `commit` y no en el `push`: la métrica cuenta lo que dicen las etiquetas. Es un límite de cómo está etiquetada la familia, no algo que haya que ajustar.
+
+Falsas alarmas y rotaciones benignas de Alicanto no cambian con las banderas del proxy: 0 bloqueos y 5,46 rotaciones por cada 1.000 llamadas benignas. Sin el modelo de evidencia, con las banderas del proxy se previenen 10 de 180 (40 con las del generador).
+
+**La regla simple como línea de base** (`eval/baselines/taint_rule.py`: «leyó un secreto y esta llamada sale hacia un destino no confiable», rota y nunca bloquea):
+
+| | Banderas del generador | Banderas del proxy | Rotaciones benignas por 1.000 |
+|---|---|---|---|
+| Alicanto | 180 de 180 | 120 de 180 | 5,46 |
+| Regla simple | **180 de 180** | 90 de 180 | 4,20 |
+
+Con las banderas del generador, la regla simple empata con Alicanto: el set de prueba no separa a Alicanto de una regla de una línea. Con las banderas del proxy, Alicanto previene 120 y la regla simple 90. La diferencia es A10 (el XOR hacia `attacker.test`), que el proxy no marca como destino no confiable y Alicanto igual frena por la evidencia de comportamiento. La regla simple rota algo menos en el tráfico benigno.
+
+**Cómo leer los números.** Cada familia son 30 réplicas de una misma plantilla: el resultado se lee como «4 de 6 familias» con las banderas del proxy (6 de 6 con las del generador), no como 180 casos independientes. Los valores p de `report.md` tratan las réplicas como independientes, así que exageran la evidencia.
+
+**Nada se ajustó después de ver esto.** El detector, sus parámetros y el modelo son los congelados (`cf56ce20…`); este análisis no se usó para cambiar nada.
+
 ## Frases que este resultado respalda
 
-- «En 180 ataques de seis familias que el detector no había visto, ninguno sacó más de 32 de los 160 bits de la clave vigente.»
-- «Cero llamadas benignas bloqueadas en 5.879.»
-- «Sin rotación, los mismos ataques triunfan en 150 de 180.»
+- «En 180 ataques grabados de seis familias que el detector no había visto, con las banderas que escribió el generador, ninguno sacó más de 32 de los 160 bits de la clave vigente.»
+- «Con las banderas que calcula el proxy en vivo, 120 de 180: cuatro de las seis familias; las dos que no se cubren son la clave enviada a su propio destino permitido y la fuga por commits de git.»
+- «Cero llamadas benignas bloqueadas en 5.879», con las banderas del generador y con las del proxy.
+- «Con las banderas del generador, sin rotación los mismos ataques triunfan en 150 de 180.»
 - «Cuando duda, rota en vez de bloquear: en los casos benignos más difíciles rotó de más en 34 de 90 sesiones, y no interrumpió ninguna.»
 
 ## Frases que no respalda
 
 - «Detiene el 100 % de los ataques», sin decir «grabados» o «no adaptativos».
+- «180 de 180» sin decir que se midió con las banderas que escribió el generador (con las del proxy son 120 de 180).
+- «Es mejor que una regla simple» sobre el set de prueba con las banderas del generador: ahí empatan (180 de 180).
+- «Son 180 casos independientes» o leer los valores p como evidencia fuerte: son 30 réplicas de seis plantillas.
 - «El contador de bits detecta codificaciones desconocidas.»
 - «No tiene costo en el uso normal.»

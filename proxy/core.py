@@ -25,6 +25,27 @@ def default_workspace() -> str:
     return os.environ.get("AGENT_WORKSPACE", DEFAULT_WORKSPACE)
 
 
+# --- Banderas de cada llamada (una sola fuente: el proxy en vivo y eval.final.proxy_flags, #167) ---
+
+def is_sink(tool: str, args: dict[str, Any]) -> bool:
+    """La llamada saca datos hacia afuera: HTTP, GitHub, o git hacia un remoto."""
+    if tool in ("http_request", "github_issue", "github_comment"):
+        return True
+    if tool == "git":
+        # Sale tráfico hacia un remoto (#137): push, fetch y pull.
+        git_args = (args or {}).get("args") or []
+        sub = next((a for a in git_args if isinstance(a, str) and not a.startswith("-")), "")
+        return sub in ("push", "fetch", "pull")
+    return False
+
+
+def untrusted(tool: str, args: dict[str, Any]) -> bool:
+    """La salida de la llamada es contenido no confiable: GitHub o web.test."""
+    if tool == "http_request":
+        return T.url_host(str((args or {}).get("url", ""))) in T.UNTRUSTED_HOSTS
+    return tool in ("github_issue", "github_comment")
+
+
 class Proxy:
     def __init__(
         self,
@@ -63,19 +84,10 @@ class Proxy:
 
     @staticmethod
     def _is_sink(tool: str, args: dict[str, Any]) -> bool:
-        if tool in ("http_request", "github_issue", "github_comment"):
-            return True
-        if tool == "git":
-            # Sale tráfico hacia un remoto (#137): push, fetch y pull.
-            git_args = args.get("args") or []
-            sub = next((a for a in git_args if isinstance(a, str) and not a.startswith("-")), "")
-            return sub in ("push", "fetch", "pull")
-        return False
+        return is_sink(tool, args)
 
     def _untrusted(self, tool: str, args: dict[str, Any]) -> bool:
-        if tool == "http_request":
-            return T.url_host(str(args.get("url", ""))) in T.UNTRUSTED_HOSTS
-        return tool in ("github_issue", "github_comment")
+        return untrusted(tool, args)
 
     # --- Ejecución ----------------------------------------------------
 

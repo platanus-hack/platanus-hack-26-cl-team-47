@@ -1,0 +1,14 @@
+{
+  "commit": "8f1ec16831718eed28d610f32047d4899c33529e",
+  "dirty": false,
+  "split": "test",
+  "frozen_hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+  "params": {
+    "T": 75,
+    "b": 4,
+    "b_rot": 2,
+    "lambda_rot": 0.1
+  },
+  "model_sha256": "993976e78299ba6ba143954d500b07ca0ec15ca77bcd3e28d4618fd9442ce381",
+  "date": "2026-11-21T17:07:40+00:00"
+}
