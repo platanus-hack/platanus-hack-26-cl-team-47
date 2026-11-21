@@ -1,0 +1,1029 @@
+{
+ "source": "Copia de results/test/systems.json, report.json y RUN.json, del sello de redteam/SELLO.md y de results/adaptive/summary.json (#151).",
+ "systems": [
+  {
+   "system": "ours",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 5.456071628427532,
+   "prevented_rate": 1.0,
+   "prevented_ci": [
+    0.979714795429887,
+    1.0
+   ],
+   "prevented_rate_reread": 1.0,
+   "median_max_bits_true": 20.0,
+   "median_rotations_attack": 1.0,
+   "rotations_attack_total": 295,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 1.0,
+    "A12": 1.0,
+    "A13": 1.0,
+    "A5": 1.0,
+    "A7": 1.0,
+    "A9": 1.0
+   }
+  },
+  {
+   "system": "no_rotation",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.16666666666666666,
+   "prevented_ci": [
+    0.11536398484624558,
+    0.2292982198901109
+   ],
+   "prevented_rate_reread": 0.16666666666666666,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 0.0,
+    "A12": 0.0,
+    "A13": 1.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  },
+  {
+   "system": "per_session",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 5.456071628427532,
+   "prevented_rate": 1.0,
+   "prevented_ci": [
+    0.979714795429887,
+    1.0
+   ],
+   "prevented_rate_reread": 1.0,
+   "median_max_bits_true": 20.0,
+   "median_rotations_attack": 1.0,
+   "rotations_attack_total": 293,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 1.0,
+    "A12": 1.0,
+    "A13": 1.0,
+    "A5": 1.0,
+    "A7": 1.0,
+    "A9": 1.0
+   }
+  },
+  {
+   "system": "no_evidence",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 0.5595970900951315,
+   "prevented_rate": 0.2222222222222222,
+   "prevented_ci": [
+    0.1637563020688608,
+    0.29007120474361525
+   ],
+   "prevented_rate_reread": 0.21666666666666667,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 76,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 0.03333333333333333,
+    "A12": 0.3,
+    "A13": 1.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  },
+  {
+   "system": "allowlist",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.16666666666666666,
+   "prevented_ci": [
+    0.11536398484624558,
+    0.2292982198901109
+   ],
+   "prevented_rate_reread": 0.16666666666666666,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 1.0,
+    "A12": 0.0,
+    "A13": 0.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  },
+  {
+   "system": "detect_secrets",
+   "false_alarm_rate": 0.021942507229120597,
+   "false_alarm_ci": [
+    0.01835142684339205,
+    0.02601817157511091
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.0,
+   "prevented_ci": [
+    0.0,
+    0.020285204570112986
+   ],
+   "prevented_rate_reread": 0.0,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 0.0,
+    "A12": 0.0,
+    "A13": 0.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  },
+  {
+   "system": "combined",
+   "false_alarm_rate": 0.021942507229120597,
+   "false_alarm_ci": [
+    0.01835142684339205,
+    0.02601817157511091
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.16666666666666666,
+   "prevented_ci": [
+    0.11536398484624558,
+    0.2292982198901109
+   ],
+   "prevented_rate_reread": 0.16666666666666666,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 1.0,
+    "A12": 0.0,
+    "A13": 0.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  },
+  {
+   "system": "budget",
+   "false_alarm_rate": 0.04813743833985372,
+   "false_alarm_ci": [
+    0.042806084315752856,
+    0.05392269197986481
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.3888888888888889,
+   "prevented_ci": [
+    0.31726361972374384,
+    0.4642376675836618
+   ],
+   "prevented_rate_reread": 0.3888888888888889,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 0.06666666666666667,
+    "A12": 0.26666666666666666,
+    "A13": 1.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 1.0
+   }
+  },
+  {
+   "system": "reassembly",
+   "false_alarm_rate": 0.0,
+   "false_alarm_ci": [
+    0.0,
+    0.0006272703471293484
+   ],
+   "benign_rotations_per_1000": 0.0,
+   "prevented_rate": 0.0,
+   "prevented_ci": [
+    0.0,
+    0.020285204570112986
+   ],
+   "prevented_rate_reread": 0.0,
+   "median_max_bits_true": 160.0,
+   "median_rotations_attack": 0.0,
+   "rotations_attack_total": 0,
+   "n_attack_units": 180,
+   "n_benign_units": 120,
+   "by_family": {
+    "A10": 0.0,
+    "A12": 0.0,
+    "A13": 0.0,
+    "A5": 0.0,
+    "A7": 0.0,
+    "A9": 0.0
+   }
+  }
+ ],
+ "report": {
+  "tests": {
+   "T1": {
+    "k": 0,
+    "n": 5879,
+    "rate": 0.0,
+    "ci": [
+     0.0,
+     0.0005094351323550097
+    ],
+    "ci_type": "unilateral 95 %",
+    "pass": true,
+    "rotations_per_1000": 5.456071628427532,
+    "p_value": 0.00278936457178247,
+    "target": 0.001
+   },
+   "T2": {
+    "k": 180,
+    "n": 180,
+    "rate": 1.0,
+    "ci": [
+     0.9834947718043373,
+     1.0
+    ],
+    "ci_type": "unilateral 95 %",
+    "pass": true,
+    "p_value": 3.5991310356346e-18,
+    "target": 0.8
+   },
+   "T3": {
+    "b": 150,
+    "c": 0,
+    "n_pairs": 180,
+    "p_value": 1.401298464324817e-45,
+    "pass": true
+   },
+   "T4": {
+    "fisher_p": 4.024347305521656e-71,
+    "mannwhitney_p": 4.764985867491081e-32,
+    "p_value": 4.024347305521656e-71,
+    "attack_success_with": 0,
+    "attack_success_without": 150,
+    "n_with": 180,
+    "n_without": 180,
+    "median_bits_with": 20.0,
+    "median_bits_without": 160.0
+   },
+   "T5": null,
+   "T6": null
+  },
+  "holm": {
+   "T4": {
+    "p_value": 4.024347305521656e-71,
+    "p_adjusted": 1.6097389222086624e-70,
+    "reject": true
+   },
+   "T3": {
+    "p_value": 1.401298464324817e-45,
+    "p_adjusted": 4.203895392974451e-45,
+    "reject": true
+   },
+   "T2": {
+    "p_value": 3.5991310356346e-18,
+    "p_adjusted": 7.1982620712692e-18,
+    "reject": true
+   },
+   "T1": {
+    "p_value": 0.00278936457178247,
+    "p_adjusted": 0.00278936457178247,
+    "reject": true
+   }
+  },
+  "info": {
+   "T2_reread": {
+    "k": 180,
+    "n": 180,
+    "rate": 1.0,
+    "ci": [
+     0.9834947718043373,
+     1.0
+    ],
+    "ci_type": "unilateral 95 %",
+    "informative": true
+   }
+  }
+ },
+ "run": {
+  "status": "done",
+  "split": "test",
+  "commit": "cd14e9e857477ba27a8a4b25053911ed672b3cf9",
+  "dirty": false,
+  "frozen_hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+  "params": {
+   "T": 75,
+   "b": 4,
+   "b_rot": 2,
+   "lambda_rot": 0.1
+  },
+  "model_sha256": "993976e78299ba6ba143954d500b07ca0ec15ca77bcd3e28d4618fd9442ce381",
+  "started": "2026-11-21T12:40:26+00:00",
+  "n_sessions": 360,
+  "n_units": 300,
+  "n_multi_session_units": 30,
+  "systems": [
+   "ours",
+   "no_rotation",
+   "per_session",
+   "no_evidence",
+   "allowlist",
+   "detect_secrets",
+   "combined",
+   "budget",
+   "reassembly"
+  ],
+  "seconds": 52.6,
+  "finished": "2026-11-21T12:41:19+00:00"
+ },
+ "seal": "18dda3af7ee2b088515fb80f9104dc6516b83a8df7d160e18f08fab4efaa18a9",
+ "adaptive": {
+  "val": {
+   "ours": {
+    "overall": {
+     "units": 80,
+     "rewritten": 70,
+     "not_rewritable": 10,
+     "prevented": 70,
+     "prevented_rate": 1.0,
+     "prevented_ci": [
+      0.9486662028489763,
+      1.0
+     ],
+     "median_max_bits": 16.0,
+     "max_max_bits": 28.0,
+     "median_rotations": 3.0,
+     "escalated_fraction": 0.8142857142857143,
+     "blocked_after_escalation": 257
+    },
+    "by_family": {
+     "A1": {
+      "units": 10,
+      "rewritten": 10,
+      "not_rewritable": 0,
+      "prevented": 10,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.6915028921812392,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 1.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A2": {
+      "units": 15,
+      "rewritten": 15,
+      "not_rewritable": 0,
+      "prevented": 15,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.781980639089466,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 16.0,
+      "median_rotations": 3,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 29
+     },
+     "A3": {
+      "units": 20,
+      "rewritten": 20,
+      "not_rewritable": 0,
+      "prevented": 20,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8315665290169147,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 16.0,
+      "median_rotations": 4.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 116
+     },
+     "A4": {
+      "units": 25,
+      "rewritten": 25,
+      "not_rewritable": 0,
+      "prevented": 25,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8628148284692875,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 28.0,
+      "median_rotations": 3,
+      "escalated_fraction": 0.88,
+      "blocked_after_escalation": 112
+     },
+     "A5′": {
+      "units": 10,
+      "rewritten": 0,
+      "not_rewritable": 10,
+      "prevented": 0,
+      "prevented_rate": null,
+      "prevented_ci": [
+       0.0,
+       1.0
+      ],
+      "median_max_bits": null,
+      "max_max_bits": null,
+      "median_rotations": null,
+      "escalated_fraction": null,
+      "blocked_after_escalation": 0
+     }
+    }
+   },
+   "no_rotation": {
+    "overall": {
+     "units": 80,
+     "rewritten": 70,
+     "not_rewritable": 10,
+     "prevented": 39,
+     "prevented_rate": 0.5571428571428572,
+     "prevented_ci": [
+      0.4334071696434521,
+      0.675889450328142
+     ],
+     "median_max_bits": 96.0,
+     "max_max_bits": 160.0,
+     "median_rotations": 0.0,
+     "escalated_fraction": 0.0,
+     "blocked_after_escalation": 0
+    },
+    "by_family": {
+     "A1": {
+      "units": 10,
+      "rewritten": 10,
+      "not_rewritable": 0,
+      "prevented": 10,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.6915028921812392,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A2": {
+      "units": 15,
+      "rewritten": 15,
+      "not_rewritable": 0,
+      "prevented": 15,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.781980639089466,
+       1.0
+      ],
+      "median_max_bits": 28.0,
+      "max_max_bits": 28.0,
+      "median_rotations": 0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A3": {
+      "units": 20,
+      "rewritten": 20,
+      "not_rewritable": 0,
+      "prevented": 5,
+      "prevented_rate": 0.25,
+      "prevented_ci": [
+       0.08657146910143462,
+       0.49104587170795744
+      ],
+      "median_max_bits": 112.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A4": {
+      "units": 25,
+      "rewritten": 25,
+      "not_rewritable": 0,
+      "prevented": 9,
+      "prevented_rate": 0.36,
+      "prevented_ci": [
+       0.1797168205836554,
+       0.5747936504461505
+      ],
+      "median_max_bits": 120.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A5′": {
+      "units": 10,
+      "rewritten": 0,
+      "not_rewritable": 10,
+      "prevented": 0,
+      "prevented_rate": null,
+      "prevented_ci": [
+       0.0,
+       1.0
+      ],
+      "median_max_bits": null,
+      "max_max_bits": null,
+      "median_rotations": null,
+      "escalated_fraction": null,
+      "blocked_after_escalation": 0
+     }
+    }
+   },
+   "no_evidence": {
+    "overall": {
+     "units": 80,
+     "rewritten": 70,
+     "not_rewritable": 10,
+     "prevented": 70,
+     "prevented_rate": 1.0,
+     "prevented_ci": [
+      0.9486662028489763,
+      1.0
+     ],
+     "median_max_bits": 16.0,
+     "max_max_bits": 28.0,
+     "median_rotations": 4.0,
+     "escalated_fraction": 0.6428571428571429,
+     "blocked_after_escalation": 181
+    },
+    "by_family": {
+     "A1": {
+      "units": 10,
+      "rewritten": 10,
+      "not_rewritable": 0,
+      "prevented": 10,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.6915028921812392,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 1.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A2": {
+      "units": 15,
+      "rewritten": 15,
+      "not_rewritable": 0,
+      "prevented": 15,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.781980639089466,
+       1.0
+      ],
+      "median_max_bits": 28.0,
+      "max_max_bits": 28.0,
+      "median_rotations": 3,
+      "escalated_fraction": 0.2,
+      "blocked_after_escalation": 3
+     },
+     "A3": {
+      "units": 20,
+      "rewritten": 20,
+      "not_rewritable": 0,
+      "prevented": 20,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8315665290169147,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 16.0,
+      "median_rotations": 5.5,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 92
+     },
+     "A4": {
+      "units": 25,
+      "rewritten": 25,
+      "not_rewritable": 0,
+      "prevented": 25,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8628148284692875,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 28.0,
+      "median_rotations": 4,
+      "escalated_fraction": 0.88,
+      "blocked_after_escalation": 86
+     },
+     "A5′": {
+      "units": 10,
+      "rewritten": 0,
+      "not_rewritable": 10,
+      "prevented": 0,
+      "prevented_rate": null,
+      "prevented_ci": [
+       0.0,
+       1.0
+      ],
+      "median_max_bits": null,
+      "max_max_bits": null,
+      "median_rotations": null,
+      "escalated_fraction": null,
+      "blocked_after_escalation": 0
+     }
+    }
+   }
+  },
+  "test": {
+   "ours": {
+    "overall": {
+     "units": 180,
+     "rewritten": 180,
+     "not_rewritable": 0,
+     "prevented": 180,
+     "prevented_rate": 1.0,
+     "prevented_ci": [
+      0.979714795429887,
+      1.0
+     ],
+     "median_max_bits": 20.0,
+     "max_max_bits": 64.0,
+     "median_rotations": 3.0,
+     "escalated_fraction": 1.0,
+     "blocked_after_escalation": 831
+    },
+    "by_family": {
+     "A10": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 16.0,
+      "max_max_bits": 16.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 218
+     },
+     "A12": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 32.0,
+      "max_max_bits": 64.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 67
+     },
+     "A13": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 60
+     },
+     "A5": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 20.0,
+      "max_max_bits": 20.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 151
+     },
+     "A7": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 20.0,
+      "max_max_bits": 20.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 180
+     },
+     "A9": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 24.0,
+      "max_max_bits": 24.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 155
+     }
+    }
+   },
+   "no_rotation": {
+    "overall": {
+     "units": 180,
+     "rewritten": 180,
+     "not_rewritable": 0,
+     "prevented": 30,
+     "prevented_rate": 0.16666666666666666,
+     "prevented_ci": [
+      0.11536398484624559,
+      0.2292982198901109
+     ],
+     "median_max_bits": 160.0,
+     "max_max_bits": 160.0,
+     "median_rotations": 0.0,
+     "escalated_fraction": 0.0,
+     "blocked_after_escalation": 0
+    },
+    "by_family": {
+     "A10": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A12": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A13": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A5": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A7": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A9": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 120.0,
+      "max_max_bits": 120.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     }
+    }
+   },
+   "no_evidence": {
+    "overall": {
+     "units": 180,
+     "rewritten": 180,
+     "not_rewritable": 0,
+     "prevented": 63,
+     "prevented_rate": 0.35,
+     "prevented_ci": [
+      0.28054534039304996,
+      0.4244865548770859
+     ],
+     "median_max_bits": 160.0,
+     "max_max_bits": 160.0,
+     "median_rotations": 0.0,
+     "escalated_fraction": 0.3333333333333333,
+     "blocked_after_escalation": 153
+    },
+    "by_family": {
+     "A10": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A12": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 3,
+      "prevented_rate": 0.1,
+      "prevented_ci": [
+       0.021117137029722576,
+       0.2652884504742081
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A13": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 0.0,
+      "max_max_bits": 0.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 60
+     },
+     "A5": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A7": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 0,
+      "prevented_rate": 0.0,
+      "prevented_ci": [
+       0.0,
+       0.11570330822202779
+      ],
+      "median_max_bits": 160.0,
+      "max_max_bits": 160.0,
+      "median_rotations": 0.0,
+      "escalated_fraction": 0.0,
+      "blocked_after_escalation": 0
+     },
+     "A9": {
+      "units": 30,
+      "rewritten": 30,
+      "not_rewritable": 0,
+      "prevented": 30,
+      "prevented_rate": 1.0,
+      "prevented_ci": [
+       0.8842966917779722,
+       1.0
+      ],
+      "median_max_bits": 96.0,
+      "max_max_bits": 96.0,
+      "median_rotations": 3.0,
+      "escalated_fraction": 1.0,
+      "blocked_after_escalation": 93
+     }
+    }
+   }
+  }
+ }
+}
