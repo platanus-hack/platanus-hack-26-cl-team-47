@@ -56,13 +56,13 @@ Complétalo en el arranque para que cada agente sepa qué archivos son de quién
 | Área | Dueño (login de GitHub) | Carpetas |
 |---|---|---|
 | Líder y orquestador | `jplira2` | `docs/PLAN.md`, `AGENTS.md`, `tools/board.conf`, `contracts/` |
-| Proxy: proxy MCP, herramientas, agente mínimo, GFF, DAG | `jcbasulto` | `proxy/`, `engine/graph/` |
-| Análisis: motor de bits, arnés, features, CUSUM, evaluación | `matix3000` | `engine/` (salvo `engine/graph/`), `eval/` |
+| Proxy: contratos, proxy MCP, herramientas, GFF, DAG | `jcbasulto` | `proxy/` (salvo `proxy/agent/`), `engine/graph/` |
+| Análisis: motor de bits, features, CUSUM, evaluación | `matix3000` | `engine/` (salvo `engine/graph/`), `eval/` (salvo `eval/replay/` y `eval/baselines/`) |
 | Servicios: gestor de secretos, API protegida, atacante, rotación, líneas de base | `VictoriaGuerriero` | `services/`, `eval/baselines/` |
 | Rojo: plantillas de ataque, trazas, GitHub y web simulados, set sellado | `jplira2` | `redteam/`, `services/github_sim/`, `services/web_sim/` |
-| Demo: repositorio de demo, visualización, pitch | `terdmannsdorffer` | `demo/`, `pitch/` |
+| Demo: repositorio de demo, agente mínimo, arnés de reproducción, visualización, pitch | `terdmannsdorffer` | `demo/`, `pitch/`, `proxy/agent/`, `eval/replay/` |
 
-Las áreas y sus pasos están en `docs/PLAN.md`. Las carpetas son una propuesta: se confirman en el paso 1 del plan. El agente del área Rojo no abre `engine/` antes de H20 (regla del equipo morado).
+Las áreas y sus pasos están en `docs/PLAN.md`. Las carpetas son una propuesta: se confirman en el paso 1a del plan. El agente del área Rojo no abre `engine/` antes de H20 (regla del equipo morado).
 
 Las bases del track (AI Security) y la rúbrica de los jueces están en `docs/BASES.md`. Antes de proponer o cambiar el alcance de algo, comprueba que pase la prueba del track.
 
