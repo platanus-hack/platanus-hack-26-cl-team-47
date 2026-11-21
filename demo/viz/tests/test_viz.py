@@ -63,10 +63,14 @@ def test_fixture_cumple_las_condiciones():
 
 
 def test_make_fixture_es_determinista(tmp_path):
-    before = FIXTURE.read_bytes()
-    for _ in range(2):
-        subprocess.run([sys.executable, str(VIZ / "make_fixture.py")], check=True, capture_output=True)
-        assert FIXTURE.read_bytes() == before
+    """Genera en una carpeta temporal (no reescribe el fixture versionado) y compara
+    sin importar el fin de línea (en Windows el checkout puede traer CRLF)."""
+    committed = FIXTURE.read_text(encoding="utf-8").splitlines()
+    for i in range(2):
+        out = tmp_path / f"sample_{i}.jsonl"
+        subprocess.run([sys.executable, str(VIZ / "make_fixture.py"), "--out", str(out)], check=True,
+                       capture_output=True)
+        assert out.read_text(encoding="utf-8").splitlines() == committed
 
 
 def test_index_no_carga_nada_de_internet():
