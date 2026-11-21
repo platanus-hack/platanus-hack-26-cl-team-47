@@ -143,3 +143,10 @@ td.pendiente { border-radius: 0; }
 .slide-compare .novedad { font-size: 25px; margin: 6px 0; }
 .slide-compare .nota-pie { font-size: 17px; color: var(--muted); margin: 0; }
 .slide p .k { display: inline-block; font-weight: 700; color: var(--accent); margin-right: 8px; }
+
+/* Línea del track (lámina 2) y «36 horas en cifras» (16d, segundo comentario) */
+.slide .track { font-size: 24px; color: var(--muted); margin-top: 18px; }
+.cifras { list-style: none; padding: 0; margin: 10px 0 0; font-size: 30px; }
+.cifras li { margin: 0 0 18px; line-height: 1.3; }
+.cifras .num { display: inline-block; min-width: 230px; font-weight: 700; color: var(--accent); margin-right: 14px; }
+.cifras .num.pendiente { font-size: 22px; }

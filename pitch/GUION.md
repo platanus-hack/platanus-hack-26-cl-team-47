@@ -6,8 +6,8 @@ las secciones numeradas; las notas para el presentador van en «Si sobra tiempo 
 preguntan». Si la demo en vivo falla, usar el video de respaldo (`demo/README.md`,
 «Video de respaldo»).
 
-Tiempo total: 2 min 40 s sin la demo (404 palabras a 150 por minuto), más 60
-a 90 s de demo en vivo. Con el texto de la lámina 7 incluido son 445 palabras.
+Tiempo total: 2 min 38 s sin la demo (397 palabras a 150 por minuto), más 60
+a 90 s de demo en vivo. Con el texto de la lámina 7 incluido son 426 palabras.
 
 Preguntas del jurado y respuestas cortas: `pitch/PREGUNTAS.md`.
 
@@ -18,20 +18,21 @@ resultados se escribe hasta tenerlo medido.
 
 | Lámina | Parte | Palabras | Tiempo a 150 palabras por minuto |
 |---|---|---|---|
-| 1 | Título | 17 | 7 s |
-| 2 | El problema | 34 | 14 s |
-| 3 | El ejemplo | 41 | 16 s |
+| 1 | Título | 33 | 13 s |
+| 2 | El problema | 28 | 11 s |
+| 3 | El ejemplo | 32 | 13 s |
 | 4 | La idea | 16 | 6 s |
-| 5 | Cómo funciona | 28 | 11 s |
-| 6 | La pinza | 33 | 13 s |
-| 7 | Demo | 41 | 16 s (más la demo en vivo, 60–90 s) |
-| 8 | Y si atacan en enjambre | 51 | 20 s |
-| 9 | Qué hace cada uno | 50 | 20 s |
+| 5 | Cómo funciona | 23 | 9 s |
+| 6 | La pinza | 32 | 13 s |
+| 7 | Demo | 29 | 12 s (más la demo en vivo, 60–90 s) |
+| 8 | Y si atacan en enjambre | 46 | 18 s |
+| 9 | Qué hace cada uno | 36 | 14 s |
 | 10 | Resultados | 20 | 8 s |
-| 11 | Límites | 36 | 14 s |
+| 11 | Límites | 29 | 12 s |
 | 12 | ¿Dónde está la IA? | 27 | 11 s |
-| 13 | Usuario y cierre | 51 | 20 s |
-| | **Total sin la demo** | **404** | **2 min 40 s** |
+| 13 | 36 horas en cifras | 36 | 14 s |
+| 14 | Usuario y cierre | 39 | 16 s |
+| | **Total sin la demo** | **397** | **2 min 38 s** |
 
 ## Pendientes
 
@@ -42,59 +43,63 @@ resultados se escribe hasta tenerlo medido.
 | 10 | T3: comparación con allowlist más detect-secrets | `eval/baselines` en la evaluación final | Servicios (VictoriaGuerriero) y Análisis |
 | 10 | T4: efecto de la rotación en el goteo | Ablación del paso 14 | Análisis |
 | 12 | Corridas en vivo con un LLM siguiendo la inyección | Paso de nivel 2 (`docs/PLAN.md`) | Equipo |
-| 13 | Confirmar el borrador de qué pedimos (dos equipos de TI de salud para un piloto) | Decisión del equipo | Equipo / líder |
+| 14 | Confirmar el borrador de qué pedimos (dos equipos de TI de salud para un piloto) | Decisión del equipo | Equipo / líder |
 
-## 1. Título · 7 s
+## 1. Título · 13 s
 
-Somos team-47, del track AI Security. Construimos Cuentagotas, un medidor de información filtrada para agentes de IA.
+«Si el agente que corre en tu máquina quisiera hacer daño, ¿cómo te darías cuenta?» Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva. Somos team-47.
 
-## 2. El problema · 14 s
+## 2. El problema · 11 s
 
-Un agente de código con archivos, terminal y red puede ser manipulado para sacar un secreto en muchos pasos, cada uno inocente. Los filtros que miran cada llamada por separado no ven la suma.
+Un agente con archivos, terminal y red puede ser manipulado para sacar un secreto en muchos pasos inocentes. Quien mira cada llamada por separado no ve la suma.
 
-## 3. El ejemplo · 16 s
+## 3. El ejemplo · 13 s
 
-En el Hospital Regional Tres Cóndores, un hospital ficticio, un agente resuelve issues del repositorio. Un issue plantado le hace sacar, de a cuatro caracteres, la clave de la ficha clínica. Ninguna llamada parece un robo; juntas, se llevan la clave.
+En el Hospital Regional Tres Cóndores, un hospital ficticio, un issue plantado hace que el agente saque, de a cuatro caracteres, la clave de la ficha clínica. Ninguna llamada parece un robo.
 
 ## 4. La idea · 6 s
 
 No adivinamos la intención del atacante. Medimos cuánto sabe, y hacemos que robar despacio no sirva.
 
-## 5. Cómo funciona · 11 s
+## 5. Cómo funciona · 9 s
 
-En cada llamada contamos cuántos bits de cada secreto ya salieron y cuánta evidencia de ataque hay. Cuando el atacante se acerca a saber la clave, la rotamos.
+Contamos cuántos bits de cada clave ya salieron y cuánta evidencia de ataque hay. Antes de que el atacante la complete, la rotamos.
 
 ## 6. La pinza · 13 s
 
-Si filtra lento, la rotación anula lo que juntó. Si filtra rápido, la evidencia acumulada lo delata. Ojo: la demo usa solo el contador de bits; la configuración evaluada suma la evidencia acumulada.
+Si filtra lento, la rotación anula lo que juntó; si filtra rápido, la evidencia lo delata. Ojo: la demo usa solo el contador de bits; la configuración evaluada suma la evidencia acumulada.
 
-## 7. Demo · 16 s
+## 7. Demo · 12 s
 
-El mismo ataque dos veces. A la izquierda, sin protección: los bits suben hasta el final y el atacante entra, 200. A la derecha, con Cuentagotas: al llegar al umbral la clave rota, la curva cae y el atacante recibe 401.
+El mismo ataque dos veces. Sin protección, los bits suben y el atacante entra: 200. Con Cuentagotas, la clave rota al llegar al umbral y el atacante recibe 401.
 
-## 8. Y si atacan en enjambre · 20 s
+## 8. Y si atacan en enjambre · 18 s
 
-¿Y si cinco agentes se reparten la fuga, dos fragmentos cada uno? Con un monitor por agente ninguno ve más de 32 de 160 bits y el atacante entra con 200. Con la cuenta global la clave rota en la llamada 32: 401. La cuenta es por clave, no por agente.
+¿Y si cinco agentes se reparten la fuga? Con un monitor por agente, ninguno ve más de 32 de 160 bits y el atacante entra: 200. Con la cuenta global, la clave rota en la llamada 32: 401. La cuenta es por clave, no por agente.
 
-## 9. Qué hace cada uno · 20 s
+## 9. Qué hace cada uno · 14 s
 
-Hay quien ya junta fragmentos: Pipelock y AgentBrake, y presupuestos de fuga como OCELOT. Pero no leen fragmentos cortos ni codificados, no cuentan por clave ni entre agentes, y no rotan. Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial para rotarla antes de que se complete.
+Pipelock y AgentBrake ya juntan fragmentos, pero no leen los cortos ni los codificados, y no rotan. Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial para rotarla antes de que se complete.
 
 ## 10. Resultados · 8 s
 
 Cuatro números, todos medidos: falsas alarmas, ataques prevenidos, comparación con la mejor alternativa práctica y el efecto de la rotación.
 
-## 11. Límites · 14 s
+## 11. Límites · 12 s
 
-Medimos una cota inferior: decimos «al menos tantos bits». Una transformación que los decodificadores no conocen no se ve; para eso están la evidencia y la rotación. Y la cuenta compartida cubre hoy un solo proceso.
+Medimos una cota inferior. Lo que los decodificadores no leen no se ve; para eso están la evidencia y la rotación. La cuenta compartida cubre hoy un solo proceso.
 
 ## 12. ¿Dónde está la IA? · 11 s
 
-La IA es el blanco y el vector. El monitor no es un LLM a propósito: un guardia que se convence con texto no es un guardia.
+La IA es el blanco y el vector. El monitor no es un LLM a propósito: un monitor que se convence con texto no es un monitor.
 
-## 13. Usuario y cierre (borrador, para que lo confirme una persona del equipo) · 20 s
+## 13. 36 horas en cifras · 14 s
 
-Es para seguridad y plataforma en prestadores de salud y en sus proveedores de software. Un incidente obliga a alertar a la ANCI en 3 horas, y nuestro informe dice qué salió, de qué clave, hacia dónde y cuándo rotó. Pedimos dos equipos de TI de salud para un piloto. Gracias.
+En 36 horas: 635 tests automáticos, 340 ataques escritos por un equipo rojo que no vio el detector, 180 de ellos sellados con hash antes de evaluar, y un banco de pruebas sin salida a internet.
+
+## 14. Usuario y cierre (borrador, para que lo confirme una persona del equipo) · 16 s
+
+Es para seguridad y plataforma en salud y sus proveedores de software. La ANCI exige alertar en 3 horas, y nuestro informe dice qué salió y cuándo rotó. Pedimos dos equipos de TI de salud para un piloto. Gracias.
 
 ## Si sobra tiempo o preguntan
 
@@ -120,9 +125,25 @@ Lo que salió del texto hablado al recortarlo a 3 minutos. No es parte del tiemp
   un monitor LLM se ataca con la misma inyección; un atacante que suma un LLM no
   gana nada contra Cuentagotas, porque medimos información, no intención.
   PENDIENTE: corridas en vivo con un LLM; no decir que las mostramos hasta hacerlas.
-- **Lámina 13 (borrador, para que lo confirme una persona del equipo):** quién lo
+- **Lámina 14 (borrador, para que lo confirme una persona del equipo):** quién lo
   compra, por qué ahora y qué pedimos. La ANCI lista como servicios esenciales a los
   prestadores de salud y a los servicios de TI gestionados por terceros.
+- **Lámina 1, de dónde sale la pregunta:** es la de «Preguntas para partir» de las
+  bases del track (`docs/BASES.md`); el primer ejemplo de «Califica» es un monitor que
+  vigila a un agente y lo frena. La lámina 2 lo sitúa en la línea 1, AI control.
+- **Lámina 13, cómo se calcula cada cifra** (para defenderla si preguntan):
+  - Tests automáticos: el número que imprime `python -m pytest -q` el día de la
+    entrega (635 al escribir esto; actualízalo).
+  - Sistemas comparados: el nuestro, dos ablaciones y cinco líneas de base, cuando la
+    evaluación final (#133) esté en `main`. Hasta entonces la lámina dice PENDIENTE.
+  - Ataques: 80 de entrenamiento y 80 de validación
+    (`python -c "import json; print(len({json.loads(l)['session_id'] for l in open('redteam/train/labels.jsonl')}))"`,
+    y lo mismo con `redteam/val`), y 180 sellados (seis familias de ataque de 30 en
+    `redteam/SELLO.md`; las tres de 30 benignas no cuentan). Total: 340.
+  - Equipos separados: quien escribió los ataques no abrió `engine/` (regla del
+    equipo morado en `AGENTS.md`).
+  - Banco de pruebas: `services/` (gestor, API protegida, atacante) y
+    `services/github_sim`, `services/web_sim`, en la red aislada de docker compose.
 - **Rotación de la industria:** «la rotación automática existe por calendario, por
   TTL o tras una fuga pública completa; nada la dispara por fuga parcial dentro
   del tráfico de un agente».
