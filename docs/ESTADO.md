@@ -29,7 +29,7 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 ## Lo que viene, en orden
 
 1. Puerta H12 (11:00): primer análisis en validación. Sale de #110.
-2. Paso 11: set de prueba sellado con familias que no están en entrenamiento. Sin asignar. Lo escribe un agente que no haya leído `engine/`.
+2. Paso 11: set de prueba sellado (issue #120). Lo corre el líder en una sesión nueva con `/tarea-roja 120`; vive en la rama `11-set-sellado`, fuera de `main`, hasta H20.
 3. Puerta H20 (19:00): parámetros congelados con hash.
 4. H20–H23: evaluación final, una sola corrida (T1 a T6, ablación, líneas de base).
 5. Pitch: cifras reales en `pitch/index.html` (hoy dicen «PENDIENTE»), video de respaldo en H26, tres ensayos. Congelamiento total en H27 (domingo 02:00).
