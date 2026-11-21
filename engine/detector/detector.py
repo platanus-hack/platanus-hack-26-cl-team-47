@@ -85,6 +85,10 @@ class Detector:
         self.exposed: dict[str, bool] = {sid: False for sid in self.secret_files}
         self.e: dict[str, int] = {sid: 0 for sid in self.secret_files}
         self._prev_kind: str | None = None
+        # Para el camino explicativo (#51): primera lectura y sumideros que aportaron, desde la última rotación.
+        self.first_read: dict[str, str | None] = {sid: None for sid in self.secret_files}
+        self.contrib: dict[str, list[str]] = {sid: [] for sid in self.secret_files}
+        self._t_of: dict[str, int] = {}
 
     # --- API ---------------------------------------------------------------
 
@@ -116,6 +120,15 @@ class Detector:
         for r in call.resources:
             for sid in self._file_to_secrets.get(r, ()):
                 self.exposed[sid] = True
+                if self.first_read[sid] is None:
+                    self.first_read[sid] = call.id
+        self._t_of[call.id] = call.t
+        if call.is_sink:
+            for sid, v in bits.items():
+                st = self.bits._s[sid]
+                prev_total = (len(before[sid][0]) + len(before[sid][1] - before[sid][0])) * st.bits_per_char
+                if v["bits"] + v["candidate_bits"] > prev_total:
+                    self.contrib[sid].append(call.id)
 
         # leak = confirmadas + candidatas (lo mismo que compara la regla de rotación), antes de rotar.
         leak = {}
@@ -123,8 +136,10 @@ class Detector:
             total = v["bits"] + v["candidate_bits"]
             H = self.bits.H(sid)
             leak[sid] = Leak(bits=total, fraction=min(1.0, total / H) if H else 0.0)
-        path = list(dag_info.get("path") or [])
-        R_plus = 1.0 if path else 0.0
+        dag_path = list(dag_info.get("path") or [])
+        R_plus = 1.0 if dag_path else 0.0
+        path_ids: set[str] = set()   # camino explicativo (#51), se ordena por t al final
+        read_and_now = lambda sid: [i for i in (self.first_read[sid], call.id) if i]  # noqa: E731
 
         to_rotate: list[str] = []
         reasons: list[str] = []
@@ -137,6 +152,7 @@ class Detector:
                     blocked = True
                     to_rotate.append(sid)
                     reasons.append(f"Sumidero con material de {sid} hacia {dest or 'destino desconocido'}")
+                    path_ids.update(dag_path or read_and_now(sid))
         if blocked:
             action = "rotate+block"
         else:
@@ -146,17 +162,21 @@ class Detector:
                 frac = (v["bits"] + v["candidate_bits"]) / H if H else 0.0
                 if frac >= p.lambda_rot:
                     reasons.append(f"Rotación de {sid}: fracción filtrada {frac:.2f} ≥ {p.lambda_rot}")
+                    path_ids.update([i for i in [self.first_read[sid], *self.contrib[sid]] if i])
                 elif self.exposed[sid] and S >= p.b_rot:
                     reasons.append(f"Rotación de {sid}: expuesto y evidencia S={S:.2f} ≥ {p.b_rot}")
+                    path_ids.update(read_and_now(sid))
                 elif self.exposed[sid] and self.e[sid] >= p.T:
                     reasons.append(f"Rotación periódica de {sid}: {self.e[sid]} llamadas desde la última")
+                    path_ids.update(read_and_now(sid))
                 else:
                     continue
                 to_rotate.append(sid)
             # 3. Bloqueo por evidencia
-            evidence_block = bool(self.dag.exposed()) and S > p.b and bool(path)
+            evidence_block = bool(self.dag.exposed()) and S > p.b and bool(dag_path)
             if evidence_block:
                 reasons.append(f"Bloqueo por evidencia: S={S:.2f} > {p.b} con camino no confiable → secreto → sumidero")
+                path_ids.update(dag_path)
             if to_rotate and evidence_block:
                 action = "rotate+block"
             elif to_rotate:
@@ -166,6 +186,7 @@ class Detector:
             else:
                 action = "allow"
 
+        path = sorted(path_ids, key=lambda i: (self._t_of.get(i, call.t), i))
         reason = "; ".join(reasons) if reasons else "Sin evidencia ni fuga"
         if self.enforce:
             for sid in to_rotate:
@@ -202,6 +223,8 @@ class Detector:
             chars = _ALPHABET_CHARS[alphabet_of(old)[0]]
             new = "".join(self._rng.choice(chars) for _ in range(len(old)))
         self.bits.rotate(sid, new)
+        self.first_read[sid] = None
+        self.contrib[sid] = []
         self.e[sid] = 0
         self.exposed[sid] = False
 

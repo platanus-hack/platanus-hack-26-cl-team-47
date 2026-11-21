@@ -239,3 +239,46 @@ code { font-family: ui-monospace, Consolas, monospace; }
 }
 /* Las áreas con nombre del visor simple no aplican dentro de cada panel. */
 .split-page .side > * { grid-area: auto; }
+
+/* ------------------------------------------------ franja del grafo (15e) */
+
+.graph-strip[hidden] { display: none; }
+.split-page.with-graph .split { padding-bottom: 6px; }
+.split-page.with-graph .side { grid-template-rows: auto minmax(0, 1fr) minmax(120px, 30%) auto; }
+.split-page.with-graph .detail { display: none; } /* el detalle de la derecha lo explica la franja */
+
+.graph-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  padding: 0 16px 16px;
+  height: 34vh;
+  min-height: 230px;
+}
+.graph-box { flex: 1; min-height: 0; position: relative; }
+.graph-box svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.g-links line { stroke: var(--border); stroke-width: 1; }
+.g-nodes circle { stroke: var(--panel); stroke-width: 1.5; }
+.g-nodes .k-secret { stroke-dasharray: 2 2; }
+.g-nodes .node-label { font-size: 10px; fill: var(--muted); pointer-events: none; }
+.g-nodes .touched-before circle { stroke: var(--current); stroke-width: 2; }
+.g-nodes .touched-now circle { stroke: var(--current); stroke-width: 5; }
+.g-nodes .touched-now .node-label { fill: var(--text); font-weight: 700; font-size: 11px; }
+.g-legend text { font-size: 10px; fill: var(--muted); }
+
+.path-box-wrap { overflow: auto; font-size: 13px; }
+.path-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.path-box { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; background: var(--bg); min-width: 84px; }
+.path-box .pb-id { font-size: 11px; color: var(--muted); }
+.path-box .pb-tool { font-weight: 600; }
+.path-box .pb-res { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.path-arrow { color: var(--muted); font-size: 16px; }
+.path-reason { margin: 0; }
+.path-reason .action { display: inline-block; padding: 1px 8px; border-radius: 4px; font-weight: 600; margin-right: 8px; border: 1px solid var(--border); }
+.path-reason .action.a-block { background: var(--block); border-color: var(--block-edge); }
+.path-reason .action.a-rotate { background: var(--rotate); border-color: var(--rotate-edge); }
+
+@media (max-width: 900px) {
+  .graph-strip { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .graph-box { height: 300px; }
+}

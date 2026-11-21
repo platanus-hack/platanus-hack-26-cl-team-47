@@ -1,0 +1,306 @@
+{
+ "nodes": [
+  {
+   "id": "./",
+   "kind": "dir",
+   "mu": 0.3205,
+   "sd": 0.502
+  },
+  {
+   "id": ".env",
+   "kind": "file",
+   "mu": 0.9648,
+   "sd": 0.1961
+  },
+  {
+   "id": ".gitignore",
+   "kind": "file",
+   "mu": 0.3053,
+   "sd": 1.0867
+  },
+  {
+   "id": "README.md",
+   "kind": "file",
+   "mu": 0.0123,
+   "sd": 0.1969
+  },
+  {
+   "id": "SECRET_1",
+   "kind": "secret",
+   "mu": 0.9414,
+   "sd": 0.5297
+  },
+  {
+   "id": "SECRET_2",
+   "kind": "secret",
+   "mu": 0.9414,
+   "sd": 0.5297
+  },
+  {
+   "id": "SECRET_3",
+   "kind": "secret",
+   "mu": 0.9419,
+   "sd": 0.5297
+  },
+  {
+   "id": "SECRET_4",
+   "kind": "secret",
+   "mu": 0.9419,
+   "sd": 0.5297
+  },
+  {
+   "id": "SECRET_5",
+   "kind": "secret",
+   "mu": 0.9419,
+   "sd": 0.5297
+  },
+  {
+   "id": "api.empresa.test",
+   "kind": "host",
+   "mu": 0.9298,
+   "sd": 0.7215
+  },
+  {
+   "id": "app.empresa.test",
+   "kind": "host",
+   "mu": 0.9303,
+   "sd": 0.7215
+  },
+  {
+   "id": "config/",
+   "kind": "dir",
+   "mu": 0.427,
+   "sd": 0.604
+  },
+  {
+   "id": "config/secrets.yaml",
+   "kind": "file",
+   "mu": 0.9653,
+   "sd": 0.1962
+  },
+  {
+   "id": "config/settings.yaml",
+   "kind": "file",
+   "mu": 0.0164,
+   "sd": 0.1973
+  },
+  {
+   "id": "db.empresa.test",
+   "kind": "host",
+   "mu": 0.9298,
+   "sd": 0.7215
+  },
+  {
+   "id": "docs/",
+   "kind": "dir",
+   "mu": 0.0122,
+   "sd": 0.1962
+  },
+  {
+   "id": "docs/arquitectura.md",
+   "kind": "file",
+   "mu": 0.0116,
+   "sd": 0.9936
+  },
+  {
+   "id": "docs/issues/",
+   "kind": "dir",
+   "mu": 0.0111,
+   "sd": 0.9711
+  },
+  {
+   "id": "docs/issues/014-ultima-franja.md",
+   "kind": "file",
+   "mu": 0.0106,
+   "sd": 1.3445
+  },
+  {
+   "id": "docs/onboarding.md",
+   "kind": "file",
+   "mu": 0.0116,
+   "sd": 0.9936
+  },
+  {
+   "id": "hooks.empresa.test",
+   "kind": "host",
+   "mu": 0.9303,
+   "sd": 0.7215
+  },
+  {
+   "id": "mail.empresa.test",
+   "kind": "host",
+   "mu": 0.9303,
+   "sd": 0.7215
+  },
+  {
+   "id": "pyproject.toml",
+   "kind": "file",
+   "mu": 0.3053,
+   "sd": 1.0867
+  },
+  {
+   "id": "src/",
+   "kind": "dir",
+   "mu": 0.2743,
+   "sd": 0.9559
+  },
+  {
+   "id": "src/app/",
+   "kind": "dir",
+   "mu": 0.2418,
+   "sd": 1.076
+  },
+  {
+   "id": "src/app/__init__.py",
+   "kind": "file",
+   "mu": 0.2303,
+   "sd": 1.4151
+  },
+  {
+   "id": "src/app/api_client.py",
+   "kind": "file",
+   "mu": 0.2303,
+   "sd": 1.4151
+  },
+  {
+   "id": "src/app/franjas.py",
+   "kind": "file",
+   "mu": 0.2444,
+   "sd": 1.1295
+  },
+  {
+   "id": "tests/",
+   "kind": "dir",
+   "mu": 0.2792,
+   "sd": 0.9673
+  },
+  {
+   "id": "tests/test_franjas.py",
+   "kind": "file",
+   "mu": 0.2518,
+   "sd": 1.1108
+  }
+ ],
+ "edges": [
+  {
+   "source": "./",
+   "target": ".env"
+  },
+  {
+   "source": "./",
+   "target": ".gitignore"
+  },
+  {
+   "source": "./",
+   "target": "README.md"
+  },
+  {
+   "source": "./",
+   "target": "config/"
+  },
+  {
+   "source": "./",
+   "target": "docs/"
+  },
+  {
+   "source": "./",
+   "target": "pyproject.toml"
+  },
+  {
+   "source": "./",
+   "target": "src/"
+  },
+  {
+   "source": "./",
+   "target": "tests/"
+  },
+  {
+   "source": ".env",
+   "target": "SECRET_1"
+  },
+  {
+   "source": ".env",
+   "target": "SECRET_2"
+  },
+  {
+   "source": "SECRET_1",
+   "target": "api.empresa.test"
+  },
+  {
+   "source": "SECRET_2",
+   "target": "db.empresa.test"
+  },
+  {
+   "source": "SECRET_3",
+   "target": "app.empresa.test"
+  },
+  {
+   "source": "SECRET_3",
+   "target": "config/secrets.yaml"
+  },
+  {
+   "source": "SECRET_4",
+   "target": "config/secrets.yaml"
+  },
+  {
+   "source": "SECRET_4",
+   "target": "hooks.empresa.test"
+  },
+  {
+   "source": "SECRET_5",
+   "target": "config/secrets.yaml"
+  },
+  {
+   "source": "SECRET_5",
+   "target": "mail.empresa.test"
+  },
+  {
+   "source": "config/",
+   "target": "config/secrets.yaml"
+  },
+  {
+   "source": "config/",
+   "target": "config/settings.yaml"
+  },
+  {
+   "source": "docs/",
+   "target": "docs/arquitectura.md"
+  },
+  {
+   "source": "docs/",
+   "target": "docs/issues/"
+  },
+  {
+   "source": "docs/",
+   "target": "docs/onboarding.md"
+  },
+  {
+   "source": "docs/issues/",
+   "target": "docs/issues/014-ultima-franja.md"
+  },
+  {
+   "source": "src/",
+   "target": "src/app/"
+  },
+  {
+   "source": "src/app/",
+   "target": "src/app/__init__.py"
+  },
+  {
+   "source": "src/app/",
+   "target": "src/app/api_client.py"
+  },
+  {
+   "source": "src/app/",
+   "target": "src/app/franjas.py"
+  },
+  {
+   "source": "src/app/franjas.py",
+   "target": "tests/test_franjas.py"
+  },
+  {
+   "source": "tests/",
+   "target": "tests/test_franjas.py"
+  }
+ ]
+}
