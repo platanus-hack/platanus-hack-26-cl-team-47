@@ -123,7 +123,7 @@ def main(argv: list[str] | None = None) -> dict:
     print(f"validación: {n_val_b} benignas, {len(val) - n_val_b} de ataque; {len(rows)} combinaciones en {secs:.1f} s")
     print(f"{len(ok)} combinaciones cumplen las metas; Pareto: {len(front)}; elegida: {best}")
     if by_family is not None:
-        print("elegida por familia: " + json.dumps(by_family, ensure_ascii=False))
+        print("elegida por familia: " + json.dumps(by_family))
     return {"rows": rows, "pareto": front, "chosen": best, "frozen": frozen, "seconds": secs,
             "families": families, "parts": parts, "by_family": by_family}
 
