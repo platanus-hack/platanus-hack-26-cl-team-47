@@ -245,3 +245,28 @@ def test_versionado_coincide(tmp_path):
     have = {p.relative_to(VERSIONED).as_posix(): p.read_bytes()
             for p in sorted(VERSIONED.rglob("*")) if p.is_file()}
     assert have == want
+
+
+# --------------------------------------------------------------------------- #
+# Set de validación (issue #109)
+# --------------------------------------------------------------------------- #
+VERSIONED_VAL = ROOT / "redteam" / "val"
+
+
+def test_val_versionado_coincide(tmp_path):
+    if not VERSIONED_VAL.exists():
+        pytest.skip("redteam/val no versionado")
+    fresh = gen(tmp_path, n=80, seed=1, split="val")
+    want = _all_files(fresh)
+    have = _all_files(VERSIONED_VAL)
+    assert have == want
+
+
+def test_val_y_train_no_comparten_secretos():
+    if not (VERSIONED_VAL.exists() and VERSIONED.exists()):
+        pytest.skip("redteam/val o redteam/train no versionado")
+    val = set(read_secrets(VERSIONED_VAL).values())
+    train_text = (VERSIONED / "secrets.jsonl").read_text(encoding="utf-8")
+    assert val
+    compartidos = [v for v in val if v in train_text]
+    assert not compartidos, compartidos
