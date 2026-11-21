@@ -14,7 +14,7 @@ def _benign(n_exposed, fa=0, n_sessions=10):
 
 def _attacks(prevented: list[bool], bits=None, prefix="a"):
     bits = bits or [32.0] * len(prevented)
-    return [{"session_id": f"{prefix}{i}", "is_attack": True, "prevented": p, "bits_true_at_action": b}
+    return [{"session_id": f"{prefix}{i}", "is_attack": True, "prevented": p, "max_bits_true": b}
             for i, (p, b) in enumerate(zip(prevented, bits))]
 
 

@@ -20,7 +20,7 @@ from eval.replay.core import replay
 GRID = {"b": [4, 6, 8, 9.2, 11, 13], "b_rot": [2, 3, 4, 5, 6],
         "lambda_rot": [0.1, 0.2, 0.3, 0.4, 0.5], "T": [50, 100, 200, 400, 800]}   # 750 combinaciones
 
-OBJECTIVES = ("false_alarm_rate", "benign_rotations_per_1000", "median_bits_at_action")   # se minimizan
+OBJECTIVES = ("false_alarm_rate", "benign_rotations_per_1000", "median_max_bits_true")   # se minimizan
 
 
 def combos(grid: dict[str, list]) -> list[dict]:
@@ -40,7 +40,7 @@ def evaluate(params: Params, model, sessions: list[list[ToolCall]], labels: list
         events += replay([s], lambda sec=sec: Detector(params=params, model=model, secrets=sec, seed=seed).decide)
     agg = aggregate(session_summary(events, labels), n_boot=50, seed=seed)
     row = {k: getattr(params, k) for k in ("b", "b_rot", "lambda_rot", "T")}
-    for k in ("false_alarm_rate", "benign_rotations_per_1000", "prevented_rate", "median_bits_at_action"):
+    for k in ("false_alarm_rate", "benign_rotations_per_1000", "prevented_rate", "median_max_bits_true"):
         row[k] = agg[k]
     return row
 
@@ -98,7 +98,7 @@ def choose(rows: list[dict], max_false_alarm: float = 1e-3, max_benign_rot_per_1
           and (r.get("benign_rotations_per_1000") or 0.0) <= max_benign_rot_per_1000]
     if not ok:
         return None
-    return min(ok, key=lambda r: (_obj(r, "median_bits_at_action"), -(r.get("prevented_rate") or 0.0)))
+    return min(ok, key=lambda r: (_obj(r, "median_max_bits_true"), -(r.get("prevented_rate") or 0.0)))
 
 
 # --- congelamiento --------------------------------------------------------------

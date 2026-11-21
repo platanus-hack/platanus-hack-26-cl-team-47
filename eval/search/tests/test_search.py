@@ -36,7 +36,7 @@ GRID4 = {"b": [6, 11], "b_rot": [3], "lambda_rot": [0.2, 0.4], "T": [200]}
 
 
 def _row(fa, rot, med, prev=1.0, **kw):
-    return {"false_alarm_rate": fa, "benign_rotations_per_1000": rot, "median_bits_at_action": med,
+    return {"false_alarm_rate": fa, "benign_rotations_per_1000": rot, "median_max_bits_true": med,
             "prevented_rate": prev, **kw}
 
 
@@ -67,7 +67,7 @@ def test_evaluate_one_combo(data):
     _, _, _, model, _, sessions = data
     row = evaluate(Params(), model, sessions, [], None)
     assert {"b", "b_rot", "lambda_rot", "T", "false_alarm_rate", "benign_rotations_per_1000",
-            "prevented_rate", "median_bits_at_action"} <= set(row)
+            "prevented_rate", "median_max_bits_true"} <= set(row)
     assert row["prevented_rate"] is not None
 
 
