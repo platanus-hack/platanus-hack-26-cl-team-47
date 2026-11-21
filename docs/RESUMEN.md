@@ -1,10 +1,12 @@
-# Cuentagotas explicado en simple
+# Alicanto explicado en simple
 
 Para quien tiene que explicar el proyecto a alguien que no programa: un jurado, un cliente, la familia. No hace falta saber de computación para leerlo. La versión técnica está en [project-description.md](../project-description.md) y las cifras completas, con sus límites, en [results/test/LECTURA.md](../results/test/LECTURA.md).
 
 ## En una frase
 
-Un ayudante de inteligencia artificial puede regalar tus contraseñas de a cuatro letras sin que nadie lo note. Cuentagotas cuenta cada letra que sale y cambia la cerradura antes de que el ladrón tenga la llave completa.
+Un ayudante de inteligencia artificial puede regalar tus contraseñas de a cuatro letras sin que nadie lo note. Alicanto cuenta cada letra que sale y cambia la cerradura antes de que el ladrón tenga la llave completa.
+
+**¿Por qué se llama Alicanto?** En una leyenda del desierto de Atacama, el alicanto es un ave que brilla como el oro. Quien la sigue por codicia termina perdido y con las manos vacías. Lo mismo le pasa aquí al ladrón de contraseñas.
 
 ## El problema
 
@@ -20,7 +22,7 @@ Diez mensajes después, el ladrón junta los pedazos, arma la contraseña entera
 
 ## La solución
 
-Cuentagotas es un **guardia con un cuaderno**. Se para en la única puerta por donde salen los mensajes del robot y hace tres cosas:
+Alicanto es un **guardia con un cuaderno**. Se para en la única puerta por donde salen los mensajes del robot y hace tres cosas:
 
 1. **Cuenta las gotas.** Compara cada mensaje con la contraseña y anota cuántas letras ya salieron: van 4, van 8, van 12. Reconoce también los pedazos disfrazados: al revés, en clave o separados con guiones.
 2. **Sigue el rastro.** Anota qué papel leyó el robot, qué nota lo influyó y hacia dónde salió cada mensaje. Con eso después se puede explicar qué pasó.
@@ -32,7 +34,7 @@ El guardia mira además la conducta del robot. Si el robot acaba de leer una con
 
 En la demostración se hace el mismo robo dos veces, y la cerradura cambia cuando ha salido cerca de un tercio de la contraseña.
 
-| | Sin Cuentagotas | Con Cuentagotas |
+| | Sin Alicanto | Con Alicanto |
 |---|---|---|
 | Letras útiles que junta el ladrón | 40 de 40 | 0 de la contraseña nueva |
 | Lo que responde la puerta | «Pasa» (código 200) | «No entras» (código 401) |
@@ -41,12 +43,12 @@ Se puede ver en línea, sin instalar nada: https://cuentagotas-gamma.vercel.app
 
 ## Dos trucos del ladrón, y la respuesta
 
-- **Usar cinco robots.** Si cada robot saca pocas letras y cada uno tiene su propio guardia, ninguno ve nada grave y el ladrón arma la contraseña. Cuentagotas lleva **un solo cuaderno por contraseña**, no uno por robot: suma lo que sacan todos y cambia la cerradura igual.
-- **Obligar a cambiar la cerradura sin parar.** Después de tres cambios seguidos, Cuentagotas cierra las salidas de esa contraseña y avisa a una persona.
+- **Usar cinco robots.** Si cada robot saca pocas letras y cada uno tiene su propio guardia, ninguno ve nada grave y el ladrón arma la contraseña. Alicanto lleva **un solo cuaderno por contraseña**, no uno por robot: suma lo que sacan todos y cambia la cerradura igual.
+- **Obligar a cambiar la cerradura sin parar.** Después de tres cambios seguidos, Alicanto cierra las salidas de esa contraseña y avisa a una persona.
 
 ## Por qué el guardia no es otra inteligencia artificial
 
-A un robot que entiende texto se lo puede engañar con texto, igual que al primero. El guardia de Cuentagotas no conversa ni interpreta: cuenta y aplica reglas fijas. A una calculadora no se la convence con una nota.
+A un robot que entiende texto se lo puede engañar con texto, igual que al primero. El guardia de Alicanto no conversa ni interpreta: cuenta y aplica reglas fijas. A una calculadora no se la convence con una nota.
 
 ## Qué tan bien funciona
 
@@ -72,7 +74,7 @@ Estos robos son grabaciones: el ladrón no cambia de plan a mitad de camino. Con
 
 ## Para contarlo en 30 segundos
 
-Los ayudantes de inteligencia artificial leen todo, también las contraseñas. Alguien puede esconderles una orden para que las saquen de a poco, cuatro letras por mensaje, y ningún filtro lo nota porque cada mensaje por separado se ve inocente. Cuentagotas se pone en la salida, suma cuánto de cada contraseña ya se escapó y la cambia antes de que esté completa. El ladrón termina con una llave que ya no abre.
+Los ayudantes de inteligencia artificial leen todo, también las contraseñas. Alguien puede esconderles una orden para que las saquen de a poco, cuatro letras por mensaje, y ningún filtro lo nota porque cada mensaje por separado se ve inocente. Alicanto se pone en la salida, suma cuánto de cada contraseña ya se escapó y la cambia antes de que esté completa. El ladrón termina con una llave que ya no abre.
 
 ## Del cuento a lo real
 
