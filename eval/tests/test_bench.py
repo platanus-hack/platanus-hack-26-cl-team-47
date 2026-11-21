@@ -122,3 +122,18 @@ def test_permitir_todo_no_previene_y_bloquear_todo_previene_con_falsas_alarmas(t
     assert s["prevented_rate"] == 0.0 and s["false_alarm_rate"] == 0.0
     s = _run(tmp_path, f"{MOD}:block_all_sinks", out="b")
     assert s["prevented_rate"] == 1.0 and s["false_alarm_rate"] > 0.0
+
+
+def test_no_se_cae_en_una_consola_windows_cp1252(tmp_path):
+    """En una consola cp1252 «′», «≤» o «−» no se pueden imprimir: el comando no debe caerse."""
+    import os
+    import subprocess
+    import sys
+
+    benign, rt = _dataset(tmp_path / "data")
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONPATH": str(ROOT)}
+    r = subprocess.run([sys.executable, "-m", "eval.bench", "--defense", "eval.baselines.example_defense:make_decide",
+                        "--set", "val", "--out", str(tmp_path / "out"), "--benign", str(benign), "--redteam", str(rt),
+                        "--n-boot", "20"], cwd=ROOT, env=env, capture_output=True)
+    assert r.returncode == 0, r.stderr.decode("cp1252", "replace")[-500:]
+    assert "A5′" in (tmp_path / "out" / "result.md").read_text(encoding="utf-8")   # el archivo sí va en UTF-8

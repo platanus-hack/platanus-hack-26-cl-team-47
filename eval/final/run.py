@@ -281,6 +281,16 @@ def _write_json(path: Path, obj) -> None:
 
 # --------------------------------------------------------------------------- comando
 
+def safe_console() -> None:
+    """Que imprimir no tumbe el comando en una consola que no es UTF-8 (cp1252 en Windows no tiene «≤»,
+    «−» ni «′»): esos caracteres salen reemplazados en pantalla. Los archivos se escriben siempre en UTF-8."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def run(split: str, out: str | Path, benign_dir: str = "data/benign/sessions", redteam_root: str = "redteam",
         frozen_path: str = "models/search/frozen.json", model_path: str = "models/model.json",
         systems: Iterable[str] = SYSTEMS, n_boot: int = 2000) -> dict:
@@ -310,14 +320,15 @@ def run(split: str, out: str | Path, benign_dir: str = "data/benign/sessions", r
         print(f"{name}: prevenidos {_f(rows[-1]['prevented_rate'])}, falsas alarmas "
               f"{_f(rows[-1]['false_alarm_rate'], 4)}", flush=True)
 
+    # Los archivos se escriben antes de imprimir nada: si la consola falla, los resultados ya quedaron.
+    _write_json(out / "systems.json", rows)
+    (out / "systems.md").write_text(systems_markdown(rows), encoding="utf-8", newline="\n")
+
     if {"ours", "combined", "no_rotation"} <= set(systems):
         from .__main__ import main as final_main
         final_main(["--ours", str(out / "summary_ours.json"), "--baseline", str(out / "summary_combined.json"),
                     "--no-rotation", str(out / "summary_no_rotation.json"), "--out", str(out), "--seed", str(SEED)])
         _mark_not_computed(out)
-
-    _write_json(out / "systems.json", rows)
-    (out / "systems.md").write_text(systems_markdown(rows), encoding="utf-8", newline="\n")
     meta.update({"status": "done", "n_sessions": len(sessions), "n_units": len(units),
                  "n_multi_session_units": sum(1 for _, s in units if len(s) > 1),
                  "systems": list(systems), "seconds": round(time.perf_counter() - t0, 1),
@@ -339,6 +350,7 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--model", default="models/model.json", help=argparse.SUPPRESS)
     ap.add_argument("--n-boot", type=int, default=2000, help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+    safe_console()
     try:
         return run(args.split, args.out, args.benign, args.redteam, args.frozen, args.model, n_boot=args.n_boot)
     except SystemExit as exc:

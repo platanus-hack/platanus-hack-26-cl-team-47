@@ -313,3 +313,19 @@ def test_no_evidence_es_ours_sin_modelo(frozen, monkeypatch):
     evs = R.run_system("no_evidence", R.make_units([calls], labels), secrets_for("d-1"), spy)
     assert seen and all(m is None and p == real.params and has_ledger for m, p, has_ledger in seen)
     assert sum(1 for e in evs if e.kind == "decision") == len(calls)
+
+
+def test_no_se_cae_en_una_consola_windows_cp1252(tmp_path):
+    """Lo encontró Matías: en una consola cp1252 «≤» tumbaba el comando antes de escribir systems.json."""
+    import os
+    import subprocess
+    import sys
+
+    benign, rt = _tiny_dataset(tmp_path / "data")
+    root = Path(__file__).resolve().parents[3]
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONPATH": str(root)}
+    r = subprocess.run([sys.executable, "-m", "eval.final.run", "--split", "val", "--out", str(tmp_path / "out"),
+                        "--benign", str(benign), "--redteam", str(rt), "--n-boot", "20"],
+                       cwd=root, env=env, capture_output=True)
+    assert r.returncode == 0, r.stderr.decode("cp1252", "replace")[-500:]
+    assert (tmp_path / "out" / "systems.json").is_file() and (tmp_path / "out" / "report.md").is_file()

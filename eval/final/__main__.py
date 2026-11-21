@@ -36,6 +36,8 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--out", required=True)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args(argv)
+    from .run import safe_console
+    safe_console()
 
     ours = _sessions(args.ours)
     benign = [s for s in ours if not s["is_attack"]]

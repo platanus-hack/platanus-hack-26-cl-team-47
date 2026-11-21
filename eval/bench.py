@@ -90,6 +90,7 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--redteam", default="redteam", help=argparse.SUPPRESS)
     ap.add_argument("--results", default="results", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+    R.safe_console()
 
     out = Path(args.out).resolve()
     results_root = Path(args.results).resolve()
