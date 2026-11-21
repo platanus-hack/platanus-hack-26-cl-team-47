@@ -1,13 +1,25 @@
-"""DAG de llamadas con aristas de contenido. Tarea 7b.
+"""DAG de llamadas con aristas de contenido. Tareas 7b y 7c.
 
 Arista i -> j (i anterior a j) si json.dumps(args_j, sort_keys=True) comparte
 una subcadena de k o más caracteres con alguna variante de la salida de i.
 Etiquetas heredadas: U (desciende de algo no confiable) y S (secretos leídos).
 Patrón peligroso del nivel 0: sumidero con U y S no vacío -> path.
 
-Implementación: cada variante de cada salida se indexa como arreglo ordenado
-de hashes de 64 bits de sus k-gramas. Un candidato se confirma con la
-subcadena real, así que los choques de hash no crean aristas falsas.
+U viaja por cualquier arista de contenido. Con `secret_values`, S de un secreto s
+viaja por la arista i -> j solo si el material compartido incluye k o más
+caracteres seguidos del valor vigente de s (en claro o en una de sus variantes);
+sin `secret_values`, S viaja por cualquier arista (comportamiento de 7b). Una
+llamada lee s si toca su archivo o si su salida contiene k caracteres seguidos
+del valor de s.
+
+Límite conocido: un envío en fragmentos menores que k no crea arista de
+contenido. Esos casos los cubren el motor de bits y la rotación, no el DAG.
+
+Índice: un índice global hash de k-grama -> llamadas, alimentado en set_output
+con todas las variantes de la salida. Son bloques ordenados de numpy que se
+fusionan por tamaño (como un árbol LSM): consultar cuesta O(m · log N) para
+m k-gramas de argumentos, sin recorrer las llamadas anteriores. Toda coincidencia
+de hash se confirma con la subcadena real antes de crear la arista.
 """
 
 from __future__ import annotations
@@ -24,6 +36,7 @@ import numpy as np
 from contracts import ToolCall
 
 _BASE = np.uint64(1099511628211)  # primo FNV de 64 bits
+MAX_INDEXED_CHARS = 200_000
 
 
 def default_variants(text: str) -> list[str]:
@@ -56,6 +69,38 @@ def kgram_hashes(text: str, k: int) -> np.ndarray:
     return h
 
 
+class _KGramIndex:
+    """hash de k-grama -> índices de llamada, en bloques ordenados que se fusionan por tamaño."""
+
+    def __init__(self):
+        self.levels: list[tuple[np.ndarray, np.ndarray]] = []
+
+    def add(self, owner: int, hashes: np.ndarray) -> None:
+        if len(hashes) == 0:
+            return
+        h = np.unique(hashes)
+        self.levels.append((h, np.full(len(h), owner, dtype=np.int32)))
+        while len(self.levels) >= 2 and len(self.levels[-2][0]) <= len(self.levels[-1][0]):
+            (h2, o2), (h1, o1) = self.levels.pop(), self.levels.pop()
+            hh = np.concatenate([h1, h2])
+            oo = np.concatenate([o1, o2])
+            order = np.argsort(hh, kind="stable")
+            self.levels.append((hh[order], oo[order]))
+
+    def lookup(self, q: np.ndarray) -> dict[int, list[int]]:
+        """dueño -> posiciones de q que coinciden por hash (sin confirmar)."""
+        found: dict[int, list[int]] = {}
+        if len(q) == 0:
+            return found
+        for h, o in self.levels:
+            lo = np.searchsorted(h, q, "left")
+            hi = np.searchsorted(h, q, "right")
+            for p in np.nonzero(hi > lo)[0]:
+                for owner in o[lo[p]:hi[p]]:
+                    found.setdefault(int(owner), []).append(int(p))
+        return found
+
+
 @dataclass
 class _Node:
     call: ToolCall
@@ -67,12 +112,13 @@ class _Node:
     s_witness: dict[str, str]      # secreto -> id de la lectura más antigua entre los ancestros
     parents: list[str] = field(default_factory=list)
     variants: list[str] = field(default_factory=list)
-    index: np.ndarray | None = None  # hashes ordenados y únicos de todas las variantes
+    truncated: bool = False
 
 
 class CallDAG:
     def __init__(self, secret_files: dict[str, list[str]], k: int = 8,
-                 variants: Callable[[str], list[str]] = default_variants):
+                 variants: Callable[[str], list[str]] = default_variants,
+                 secret_values: dict[str, str] | None = None):
         self.k = k
         self.variants = variants
         self.file_to_secrets: dict[str, set[str]] = {}
@@ -81,31 +127,53 @@ class CallDAG:
                 self.file_to_secrets.setdefault(f, set()).add(sid)
         self.nodes: dict[str, _Node] = {}
         self.order: list[str] = []
+        self._pos: dict[str, int] = {}
+        self._index = _KGramIndex()
+        self.secret_values: dict[str, str] | None = None
+        self._secret_grams: dict[str, set[str]] = {}
+        if secret_values is not None:
+            self.secret_values = {}
+            for sid, value in secret_values.items():
+                self.set_secret_value(sid, value)
 
-    # --- Salidas ----------------------------------------------------------
+    # --- Secretos -----------------------------------------------------------
+
+    def set_secret_value(self, secret_id: str, value: str) -> None:
+        """Valor vigente de un secreto (por ejemplo, tras una rotación). El anterior deja de propagar S."""
+        if self.secret_values is None:
+            self.secret_values = {}
+        self.secret_values[secret_id] = value
+        k = self.k
+        self._secret_grams[secret_id] = {v[i:i + k] for v in self.variants(value)
+                                         for i in range(len(v) - k + 1)}
+
+    def _secrets_in_output(self, text: str) -> set[str]:
+        if not self.secret_values:
+            return set()
+        k = self.k
+        return {sid for sid, value in self.secret_values.items()
+                if any(value[i:i + k] in text for i in range(len(value) - k + 1))}
+
+    # --- Salidas ------------------------------------------------------------
 
     def set_output(self, call_id: str, output: str) -> None:
         node = self.nodes[call_id]
-        node.variants = [v for v in self.variants(output or "") if len(v) >= self.k]
+        text = output or ""
+        node.truncated = len(text) > MAX_INDEXED_CHARS
+        text = text[:MAX_INDEXED_CHARS]
+        node.variants = [v for v in self.variants(text) if len(v) >= self.k]
         if node.variants:
-            node.index = np.unique(np.concatenate([kgram_hashes(v, self.k) for v in node.variants]))
-        else:
-            node.index = None
+            self._index.add(self._pos[call_id],
+                            np.concatenate([kgram_hashes(v, self.k) for v in node.variants]))
+        # Leer un secreto también es recibirlo en la salida, aunque no se toque su archivo.
+        for sid in self._secrets_in_output(text) - node.secrets_read:
+            node.secrets_read.add(sid)
+            node.S.add(sid)
+            node.s_witness.setdefault(sid, call_id)
+            if node.kind == "neutral":
+                node.kind = "source"
 
-    def _shares(self, node: _Node, arg_hashes: np.ndarray, arg_text: str) -> bool:
-        idx = node.index
-        if idx is None or len(arg_hashes) == 0:
-            return False
-        pos = np.searchsorted(idx, arg_hashes)
-        pos[pos == len(idx)] = 0
-        hits = np.nonzero(idx[pos] == arg_hashes)[0]
-        for p in hits:  # confirmar con la subcadena real
-            gram = arg_text[p:p + self.k]
-            if any(gram in v for v in node.variants):
-                return True
-        return False
-
-    # --- Nodos ------------------------------------------------------------
+    # --- Nodos --------------------------------------------------------------
 
     def add(self, call: ToolCall) -> dict:
         if call.id in self.nodes:
@@ -120,7 +188,22 @@ class CallDAG:
 
         arg_text = json.dumps(call.args, sort_keys=True)
         arg_hashes = kgram_hashes(arg_text, self.k)
-        parents = [pid for pid in self.order if self._shares(self.nodes[pid], arg_hashes, arg_text)]
+        k = self.k
+        parents: list[str] = []
+        for owner in sorted(self._index.lookup(arg_hashes).items()):
+            pid = self.order[owner[0]]
+            variants = self.nodes[pid].variants
+            if any(arg_text[p:p + k] in v for p in owner[1] for v in variants):
+                parents.append(pid)
+
+        # k-gramas de los argumentos que son material de cada secreto (solo con secret_values)
+        secret_material: dict[str, list[str]] = {}
+        if self.secret_values is not None:
+            grams = {arg_text[i:i + k] for i in range(len(arg_text) - k + 1)}
+            for sid, sg in self._secret_grams.items():
+                hit = [g for g in grams if g in sg]
+                if hit:
+                    secret_material[sid] = hit
 
         t = call.t
         U = call.untrusted
@@ -134,12 +217,17 @@ class CallDAG:
                 if u_w is None or self._t(p.u_witness) < self._t(u_w, t):
                     u_w = p.u_witness
             for s in p.S:
+                if self.secret_values is not None:
+                    mat = secret_material.get(s)
+                    if not mat or not any(g in v for g in mat for v in p.variants):
+                        continue  # la arista no lleva material de s
                 S.add(s)
                 if s not in s_w or self._t(p.s_witness[s]) < self._t(s_w[s], t):
                     s_w[s] = p.s_witness[s]
 
         node = _Node(call, kind, reads, U, S, u_w, s_w, parents)
         self.nodes[call.id] = node
+        self._pos[call.id] = len(self.order)
         self.order.append(call.id)
         if call.output is not None:
             self.set_output(call.id, call.output)

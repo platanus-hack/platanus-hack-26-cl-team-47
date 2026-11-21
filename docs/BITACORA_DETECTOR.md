@@ -26,3 +26,4 @@ Todos son construcción inicial o corrección de errores de implementación. Nin
 
 | Hora | Commit o PR | Qué cambió | Motivo | ¿Responde a un ataque concreto? |
 |---|---|---|---|---|
+| 2026-11-21 03:26 | #86 (7c) | `engine/graph/dag.py`: con `secret_values`, la etiqueta S de un secreto solo viaja por una arista de contenido si el material compartido incluye k caracteres seguidos de su valor (en claro o en una variante); una salida con el valor cuenta como lectura; `set_secret_value` tras rotar. Índice global de k-gramas (bloques ordenados que se fusionan) en vez de comparar contra cada llamada anterior. Sin `secret_values`, mismas aristas y etiquetas que antes (test de equivalencia en 30 sesiones). | S se heredaba con cualquier texto del archivo del secreto (URLs, hosts del `.env`); el costo de `add` crecía con la sesión (p95 15,6 ms con 1.000 llamadas, ahora 0,55 ms). | No: revisión de diseño |
