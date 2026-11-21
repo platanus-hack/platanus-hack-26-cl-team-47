@@ -63,7 +63,7 @@ Con `ScriptedLLM` (sin clave), una corrida de un brazo tarda unos **3 segundos**
 ## Para leer los resultados con honestidad
 
 - Es muy posible que el modelo **no** siga la instrucción plantada en la mayoría de las corridas. Eso es un resultado y se reporta tal cual; no se ajusta el texto plantado para forzarlo.
-- El brazo `con` usa `PROXY_MODE=live`, es decir, el detector con los `Params` **por defecto** (`lambda_rot 0,3`), no la configuración congelada de `models/search/frozen.json`. Para usar la congelada habría que cambiar `proxy/live.py` (fuera de esta tarea).
+- El brazo `con` usa `PROXY_MODE=live`, es decir, el detector con los `Params` **por defecto** (`lambda_rot 0,3`). Para correrlo con la configuración evaluada (`models/search/frozen.json` y su modelo), agrega `PROXY_CONFIG=frozen` al entorno: `PROXY_CONFIG=frozen python -m proxy.agent.runs --n 10 --out logs/llm`. Di en los resultados con cuál se corrió.
 - Un solo envío de la clave completa se bloquea y rota en `con`. Un goteo corto (por ejemplo, dos fragmentos de 4 caracteres, 32 bits) no llega a la fracción de rotación con esos parámetros: el atacante junta esos bits, pero el cobro igual da 401 porque no le alcanzan para completar la clave.
 
 ## Resultados
