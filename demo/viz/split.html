@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pantalla dividida</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="split-page">
+  <header class="bar">
+    <h1>Mismo ataque, dos resultados</h1>
+    <div class="controls" role="toolbar" aria-label="Reproducción">
+      <button id="btn-start" title="Volver al inicio">⏮</button>
+      <button id="btn-back" title="Paso atrás">◀</button>
+      <button id="btn-play" title="Reproducir">▶</button>
+      <button id="btn-pause" title="Pausar">⏸</button>
+      <button id="btn-fwd" title="Paso adelante">▶︎|</button>
+      <div class="speed" role="group" aria-label="Velocidad">
+        <button data-speed="1" class="active">1×</button>
+        <button data-speed="4">4×</button>
+        <button data-speed="16">16×</button>
+      </div>
+      <span id="position" class="position">—</span>
+    </div>
+  </header>
+
+  <main class="split">
+    <section class="side" id="side-left">
+      <div class="side-head">
+        <h2 class="side-title">Sin protección</h2>
+        <div class="result" aria-live="polite"></div>
+      </div>
+      <div class="panel calls"><h2>Llamadas</h2><ol class="call-list"></ol></div>
+      <div class="panel chart"><h2>Bits filtrados por secreto</h2><div class="chart-box"></div></div>
+      <div class="panel detail"><h2>Llamada actual</h2><div class="detail-body"></div></div>
+    </section>
+
+    <section class="side" id="side-right">
+      <div class="side-head">
+        <h2 class="side-title">Con el medidor</h2>
+        <div class="result" aria-live="polite"></div>
+      </div>
+      <div class="panel calls"><h2>Llamadas</h2><ol class="call-list"></ol></div>
+      <div class="panel chart"><h2>Bits filtrados por secreto</h2><div class="chart-box"></div></div>
+      <div class="panel detail"><h2>Llamada actual</h2><div class="detail-body"></div></div>
+    </section>
+  </main>
+
+  <script src="vendor/d3.min.js"></script>
+  <script src="app.js"></script>
+  <script src="split.js"></script>
+</body>
+</html>

@@ -100,7 +100,9 @@ if (typeof module !== "undefined" && module.exports) {
 
 /* ------------------------------------------------------------------ página */
 
-if (typeof document !== "undefined") {
+// La página del visor solo arranca si su HTML está presente: split.html carga
+// este archivo para reutilizar buildFrames sin levantar el visor simple.
+if (typeof document !== "undefined" && document.getElementById("call-list")) {
   const BASE_MS = 700;
   const state = { frames: [], idx: -1, speed: 1, timer: null, secrets: [] };
   const $ = (id) => document.getElementById(id);

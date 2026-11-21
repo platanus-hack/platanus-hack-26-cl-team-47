@@ -34,3 +34,36 @@ y las cuatro acciones. Es sintético: no son resultados del detector.
 ## Tests
 
 `python -m pytest demo/viz/tests -q`
+
+## Pantalla dividida (15b)
+
+El mismo ataque en dos paneles sincronizados: «Sin protección» y «Con el medidor».
+
+```
+python -m http.server 8200 --directory demo/viz
+```
+
+`http://127.0.0.1:8200/split.html?left=fixtures/split_left.jsonl&right=fixtures/split_right.jsonl`
+(`&t=end` salta al final).
+
+- Un solo juego de controles mueve los dos paneles al mismo `t`. Las curvas de
+  bits comparten escala para que se puedan comparar.
+- Al llegar al final, cada panel muestra el intento del atacante: el último
+  evento `source="attacker"`, `kind="received"` con `data.status` (200 en rojo,
+  401 en verde, o «Sin intento del atacante»), y la fracción filtrada final de
+  cada secreto.
+- Cada `rotation` es una línea vertical en la curva y una fila destacada en la lista.
+- `split.js` reutiliza `buildFrames` de `app.js` (carga ambos con `<script>`) y
+  expone `finalStatus(events)` → `200`, `401` o `null`.
+
+Los registros de ejemplo los genera `python demo/viz/make_split_fixture.py`
+(determinista): 60 llamadas con un fragmento de 4 caracteres cada 8 hacia
+`attacker.test`. Son sintéticos: no son resultados del detector.
+
+Para usar registros reales, pasa la misma sesión por el arnés con dos
+funciones de decisión y agrega el evento del atacante:
+
+```
+python -m eval.replay --sessions S --decide proxy.decide:allow_all --out izq.jsonl
+python -m eval.replay --sessions S --decide <medidor>:<fabrica>   --out der.jsonl
+```
