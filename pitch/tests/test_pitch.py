@@ -137,11 +137,12 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 19
+    assert len(titulos) == 20
     claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
               "instala", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
-              "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación")
+              "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación",
+              "momentos aleatorios")
     for clave, titulo in zip(claves, titulos):
         assert clave in titulo, f"falta la pregunta sobre {clave!r}"
 

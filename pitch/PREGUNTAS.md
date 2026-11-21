@@ -123,3 +123,9 @@ Fuente: `demo/viz/fixtures/swarm_left.jsonl` y `swarm_right.jsonl` (`python demo
 La evaluación final es contra ataques grabados, que después de rotar siguen enviando la clave vieja. Lo medimos aparte con un atacante simulado que relee la clave nueva antes de cada envío: en el set de prueba, 180 de 180 ataques no pasan de 96 bits de ninguna versión de la clave (máximo 64, mediana 20); sin rotación, solo 30 de 180. Cómo lo frena: llega al tope de tres rotaciones y pasa al modo escalado, que bloquea las salidas de esa clave hacia destinos no permitidos y avisa a una persona; pasó en todos los casos. Es una detención con costo, no rotación sin fin, y el costo de ese modo sobre tráfico benigno no está medido. Es una simulación con un atacante de guion, reportada aparte.
 
 Fuente: `results/adaptive/summary.md` (`python -m eval.final.adaptive`); `results/test/LECTURA.md`, «El atacante que se adapta».
+
+## 20. ¿Conviene rotar en momentos aleatorios, para que el atacante no pueda anticiparlo?
+
+Hoy la rotación periódica es de período fijo, y tiene una cota que vale aunque el atacante lo conozca: lo máximo que se puede sacar enviando justo bajo el radar entre dos rotaciones no alcanza para armar la clave. Contra el atacante que relee la clave nueva y sigue, lo que lo frena no es el momento de la rotación sino el tope: a la tercera, Cuentagotas bloquea las salidas de esa clave y avisa a una persona. La variación aleatoria ayudaría en un caso estrecho, el de un canal que no sabemos leer y que no deja rastro de comportamiento: ahí impide elegir el momento que deja más tiempo de uso a una clave robada entera. Es el siguiente paso de diseño, con una condición: la variación solo puede acortar el período, porque alargarlo rompería la cota. No está implementado ni medido.
+
+Fuente: `engine/detector/params.py` (`Params.check`); `results/adaptive/summary.md`.
