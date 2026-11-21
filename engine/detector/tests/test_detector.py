@@ -183,7 +183,7 @@ def test_goteo_leak_includes_candidates_and_sawtooth():
 
 def test_measure_only_never_acts_and_bits_never_drop():
     ds = _by_t(make_measure_only())
-    assert len(ds) == 60
+    assert len(ds) == len(GOTEO)
     assert {x.action for x in ds.values()} == {"allow"}
     series = [ds[t].leak["SECRET_1"].bits for t in sorted(ds)]
     assert all(b2 >= b1 for b1, b2 in zip(series, series[1:]))
