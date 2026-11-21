@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 09:30 (hora 10,5 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 09:55 (hora 10,9 de 34).
 
 **El proyecto.** Cuentagotas es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -19,21 +19,25 @@ Actualizado: sábado 21 de noviembre de 2026, 09:30 (hora 10,5 de 34).
 - El ataque en vivo con todos los servicios reales en local.
 - Unos 660 tests automáticos en verde, 65 tareas cerradas, sin PR abiertos.
 
-**Resultado en validación** (no es la cifra final y no va en las láminas):
+**Evaluación final, ya corrida** (una sola vez, sobre 180 ataques de seis familias que el detector no había visto; detalle y límites en `results/test/LECTURA.md`):
 
-| Sistema | Ataques prevenidos | Falsas alarmas |
+| Sistema | Ataques prevenidos | Llamadas benignas bloqueadas |
 |---|---|---|
-| Cuentagotas | 95 % | 0 |
-| Cuentagotas sin rotación | 52,5 % | 0 |
-| Lista de destinos permitidos más detect-secrets | 75 % | 0 |
-| Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 58,8 % | 0 |
-| Presupuesto de bits (réplica) | 93,8 % | 1,9 % |
+| Cuentagotas | 180 de 180 (100 %) | 0 de 5.879 |
+| Cuentagotas sin rotación | 30 de 180 (16,7 %) | 0 |
+| Lista de destinos permitidos más detect-secrets | 30 de 180 (16,7 %) | 2,2 % |
+| Presupuesto de bits (réplica) | 70 de 180 (38,9 %) | 4,8 % |
+| Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 0 de 180 | 0 |
 
-Nuestro peor número: 60 % contra una codificación inventada que el motor no sabe leer.
+Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas que hay que decir siempre junto a esa cifra:
+- **Son ataques grabados.** No miden a un atacante que se adapta a la rotación; eso se está midiendo aparte (#150).
+- **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
+- **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
 **En curso ahora:**
-- La búsqueda de umbrales que define la configuración congelada, corriendo en la máquina del orquestador.
-- Después de eso, el orquestador abre el set de prueba sellado y corre la evaluación final una sola vez. De ahí salen las cifras del pitch.
+- #150 (José Carlos): simulación de un atacante que relee la clave nueva después de cada rotación.
+- #151 (Victoria): las cifras en la lámina de resultados y una página de resultados en el sitio.
+- La configuración quedó congelada (etiqueta `congelamiento`) y el set de prueba ya se abrió: el detector no cambia más.
 
 **Dónde verlo:**
 - Demo en local: `python -m http.server 8200 --directory demo/viz` y abrir `http://127.0.0.1:8200/`.
@@ -44,8 +48,8 @@ Nuestro peor número: 60 % contra una codificación inventada que el motor no sa
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | #139: comando para correr un LLM real a través del proxy, listo para enchufar la clave de API. Es además el único que toca el detector y la evaluación |
-| Victoria (`VictoriaGuerriero`) | Activa | #138: enjambre en vivo y guía de inicio. #142: pitch para 3 minutos con corte |
+| José Carlos (`JCBasulto`) | Activo | #150: simulación del atacante adaptativo. Es además el único que toca el detector y la evaluación |
+| Victoria (`VictoriaGuerriero`) | Activa | #142: pitch para 3 minutos con corte. #151: cifras finales en el pitch y página de resultados. #138: enjambre en vivo y guía de inicio |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
 | Matías (`matix3000`) | Sin tokens | No recibe tareas |
 | Juan Pedro (`jplira2`), líder | Activo | Corre el orquestador y la sesión del equipo rojo |
@@ -57,7 +61,7 @@ Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orques
 Ningún agente puede hacer esto. Ordenado por importancia.
 
 1. **Deploy en Vercel** y poner la URL en `platanus-hack-project.jsonc`. En el tour fue requisito tener la app desplegada, y hoy ese campo está vacío. Pasos en `demo/DEPLOY.md`. En camino, lo lleva Juan Pedro.
-2. **Clave de API para correr un LLM real** a través del proxy. Hoy todas las corridas son guiones sin LLM, y las bases excluyen «ciberseguridad tradicional donde la IA no es el blanco». Es el mayor riesgo de encaje con el track. La entrega Juan Pedro.
+2. **Clave de API para correr un LLM real** a través del proxy. El comando ya está listo y probado sin clave: `python -m proxy.agent.runs --n 10 --out logs/llm` (detalle en `docs/LLM_EN_VIVO.md`). Hoy todas las corridas son guiones sin LLM, y las bases excluyen «ciberseguridad tradicional donde la IA no es el blanco». Es el mayor riesgo de encaje con el track. La entrega Juan Pedro.
 3. **Hablar con un posible comprador** (alguien de TI de una clínica o de una healthtech) y llevar su frase a la lámina final. Es lo que más sube el criterio de impacto.
 4. **Preguntar a la organización:** hora exacta de corte del repositorio, cómo se pasa a la final, y si en Santiago hay premio del público o de sponsor.
 5. **Revisar `README.md` y `project-description.md`.** Son borradores escritos por agentes; las reglas del equipo piden que una persona los reescriba o los apruebe.
@@ -76,10 +80,10 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 ## Reglas de trabajo vigentes
 
 - Las tareas llegan como issues con la etiqueta `tarea` y una mención en el board. Cada agente las toma en su sesión actual, sin reiniciar.
-- El set de prueba está sellado en la rama `11-set-sellado`. Nadie la abre: lo hace el orquestador para la evaluación final.
-- El detector (`engine/`) queda congelado desde la evaluación final. Cualquier cambio posterior lo autoriza el líder.
+- El set de prueba ya se abrió y la evaluación final se corrió una sola vez; el comando se niega a repetirla.
+- El detector (`engine/`) y `models/` están congelados. Cualquier cambio lo autoriza el líder.
 - Quien haya leído el código del detector no escribe ataques: esas tareas van en una sesión de agente nueva.
-- Las cifras de las láminas salen de la evaluación final, nunca de validación.
+- Las cifras de las láminas salen de `results/test/`, nunca de validación, y van con sus límites (`results/test/LECTURA.md`). Nunca «detiene el 100 %» a secas.
 
 ---
 
@@ -117,5 +121,10 @@ Escrito por el orquestador. Lo anterior a las 03:45 está reconstruido del histo
 - Pitch rearmado: abre con la pregunta del propio track, lámina del enjambre, tabla comparativa con competidores y trece preguntas del jurado respondidas.
 - `README.md` con una sección para quien evalúa (afirmación, archivo y comando), porque en el tour los jueces leyeron el repositorio con un modelo de lenguaje.
 - Quedó en `main` el comando único de la evaluación final, probado en validación.
+
+**09:30 a 09:55. Congelamiento y evaluación final.**
+- Se reajustó el modelo solo con la parte de entrenamiento del tráfico benigno y se repitió la búsqueda de umbrales con las rotaciones bien contadas. Esa configuración quedó congelada.
+- Se abrió el set sellado (el sello coincidió) y se corrió la evaluación final: 180 de 180 ataques prevenidos, 0 llamadas benignas bloqueadas.
+- Quedó listo el comando para correr un LLM real a través del proxy; falta la clave.
 
 **Decisiones del líder en este turno:** escenario de hospitales; nombre Cuentagotas; el enjambre es objetivo del proyecto; adelantar el congelamiento y la evaluación final; las sesiones de los agentes no se reinician salvo que él lo indique.

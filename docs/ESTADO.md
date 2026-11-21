@@ -1,6 +1,6 @@
 # Estado del proyecto (traspaso entre sesiones de agente)
 
-Actualizado: sábado 21 de noviembre de 2026, 09:50 (H10,8). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
+Actualizado: sábado 21 de noviembre de 2026, 09:55 (H10,9). Lo mantiene el orquestador. Si empiezas una sesión nueva, lee esto, `AGENTS.md` y tu issue; no necesitas el historial del board.
 
 ## En una frase
 
@@ -20,25 +20,22 @@ El producto funciona de punta a punta (proxy, medidor de bits, rotación, demo c
 
 | Issue | Quién | Qué | Vence |
 |---|---|---|---|
-| #133 | `JCBasulto` | 14b Congelamiento y comando único de la evaluación final. Dos PR: primero rotaciones exactas y ablación sin rotación; después el comando, con siete sistemas más `reassembly` | H12 y H14 |
-| #136 | `VictoriaGuerriero` | 16d Pitch: corregir afirmaciones de novedad, nombrar competidores y responder las objeciones; video en WebM | H13 |
+| #150 | `JCBasulto` | 14c Simulación de un atacante adaptativo, reportada aparte | H14 |
+| #142 | `VictoriaGuerriero` | 16e Pitch para el formato de finales (3 minutos con corte) | H14 |
+| #151 | `VictoriaGuerriero` | 16f Cifras de la evaluación final en el pitch y página de resultados | H14 |
+| #138 | `VictoriaGuerriero` | 9p Enjambre en vivo: cuenta compartida entre procesos del proxy y guía de inicio | H17 |
 
 
 `Terdmannsdorffer` no recibe tareas ni pedidos de corridas por ahora (decisión del líder).
 
 **Reparto (decisión del líder, H8,6):** `matix3000` y `Terdmannsdorffer` no reciben tareas ni pedidos de corridas. Todo lo del área Análisis (`engine/`, `eval/`: #126, congelamiento de H20 y evaluación final) es de `JCBasulto`, con traspaso en cada issue. Agentes activos: `JCBasulto`, `VictoriaGuerriero` y la sesión Rojo del líder.
 
-## Lo que viene, en orden
+## Congelamiento y evaluación final: hechos
 
-1. PR 1 de #133 en `main`. El orquestador reajusta el modelo (fondo benigno solo de entrenamiento) y repite la búsqueda: ese `frozen.json` es el congelamiento.
-2. PR 2 de #133: el comando `python -m eval.final.run`, probado en validación.
-3. El orquestador abre el set sellado (rama `11-set-sellado`, sello en `redteam/SELLO.md`), comprueba el sello y corre `--split test` **una sola vez**.
-4. Cifras reales en la lámina de resultados y en `pitch/PREGUNTAS.md`; ensayos.
-5. Entrega (lo hace una persona): revisar `README.md` y `project-description.md`, deploy en Vercel y `deploy-url`.
-
-Pendiente de decisión del líder: corridas con un LLM real a través del proxy (hoy todo es guion sin LLM; es el mayor riesgo de encaje con el track), y si la demo se regenera con la configuración congelada.
-
-Hallazgos de la auditoría de H10 que siguen abiertos: la herramienta `git` del proxy permite ejecutar comandos por alias (`proxy/tools.py`); `SharedLedger` no está conectado al proxy en vivo (solo demo y tests); los tests de `services/scenarios` exigen los puertos 8101 a 8103 libres.
+- Configuración congelada en `models/search/frozen.json` (`b 4`, `b_rot 2`, `lambda_rot 0,1`, `T 75`), etiqueta `congelamiento`. **`engine/` y `models/` no cambian más** salvo orden del líder.
+- Set sellado abierto (`redteam/test`, sello comprobado) y evaluación final corrida una vez: `results/test/`. El comando se niega a repetirla.
+- Resultado: 180 de 180 ataques prevenidos, 0 de 5.879 llamadas benignas bloqueadas. **Lee `results/test/LECTURA.md` antes de escribir cualquier cifra**: ataques grabados, costo de 34 rotaciones de más en 90 sesiones benignas difíciles, y el contador de bits solo previene 40 de 180.
+- Pendiente de decisión del líder: clave de API para `python -m proxy.agent.runs` (corridas con un LLM real).
 
 ## Decisiones vigentes
 
