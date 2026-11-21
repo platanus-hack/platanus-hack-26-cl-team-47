@@ -102,22 +102,29 @@ DECODERS: dict[str, Decoder] = {
 }
 
 
-def expand(text: str, depth: int = 2, max_variants: int = 256) -> list[str]:
-    """Texto original más todos sus derivados hasta `depth` decodificadores encadenados."""
-    seen: dict[str, None] = {text: None}
-    frontier = [text]
+def expand_oriented(text: str, depth: int = 2, max_variants: int = 256) -> list[tuple[str, bool]]:
+    """Como expand, pero cada variante dice si quedó invertida respecto del texto original
+    (número impar de decodificadores «reversed» en su cadena)."""
+    seen: dict[str, bool] = {text: False}
+    frontier = [(text, False)]
     for _ in range(depth):
-        nxt: list[str] = []
-        for t in frontier:
-            for dec in DECODERS.values():
+        nxt: list[tuple[str, bool]] = []
+        for t, flipped in frontier:
+            for name, dec in DECODERS.items():
+                f = flipped != (name == "reversed")
                 for d in dec(t):
                     if d and d not in seen and len(seen) < max_variants:
-                        seen[d] = None
-                        nxt.append(d)
+                        seen[d] = f
+                        nxt.append((d, f))
         frontier = nxt
         if not frontier:
             break
-    return list(seen)
+    return list(seen.items())
+
+
+def expand(text: str, depth: int = 2, max_variants: int = 256) -> list[str]:
+    """Texto original más todos sus derivados hasta `depth` decodificadores encadenados."""
+    return [t for t, _ in expand_oriented(text, depth, max_variants)]
 
 
 # --- Alfabeto y normalización ---------------------------------------------

