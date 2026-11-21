@@ -57,6 +57,47 @@ python demo/run_split.py --swarm --out-dir demo/out    # enjambre
 python -m pytest -q
 ```
 
+## Para quien evalúa (y para su agente)
+
+Cada afirmación del proyecto, con el archivo que la sostiene y un comando que la comprueba en menos de un minuto. Todo corre en local, sin claves ni servicios externos.
+
+| Afirmación | Dónde está | Cómo comprobarla |
+|---|---|---|
+| Cuenta cuántos bits de cada clave ya salieron, sumando fragmentos entre llamadas | `engine/bits/engine.py` | `python -m pytest engine/bits -q` (incluye pruebas por propiedades) |
+| Lee fragmentos en claro y en base64, hexadecimal, URL, ROT13, invertidos y separados | `engine/bits/decoders.py` | `python -m pytest engine/bits/tests/test_short_encoded.py -q` |
+| Rota la clave en el gestor: la vieja deja de servir (401) y la nueva sirve (200) | `proxy/live.py`, `services/vault/` | `python -m services.scenarios goteo --out logs/goteo` |
+| El mismo ataque termina en 200 sin protección y en 401 con Cuentagotas | `demo/run_split.py` | `python demo/run_split.py --out-dir demo/out` (regenera la demo desde cero) |
+| Una sola cuenta por clave para varios agentes | `engine/detector/ledger.py` | `python demo/run_split.py --swarm --out-dir demo/out` y `python -m pytest engine/detector/tests/test_ledger.py -q` |
+| Ningún LLM decide | `engine/` no importa ningún cliente de modelos | `grep -rn "anthropic\|openai" engine/` no devuelve nada |
+| Si el gestor de secretos no responde, se bloquean las salidas | `proxy/live.py` (`fail_safe`) | `python -m pytest proxy/tests -q` |
+| Los ataques de prueba se sellaron con hash antes de evaluar | `redteam/SELLO.md` | El comando de verificación está en ese archivo |
+| Quien escribió los ataques no vio el detector | `docs/PLAN.md` («Equipo morado»), `docs/BITACORA_DETECTOR.md` | Cada cambio al detector está anotado con hora y motivo |
+
+### De dónde sale cada umbral
+
+Ningún número está puesto a mano sin explicación. Los que se ajustan se eligieron en validación con una búsqueda de 750 combinaciones (`python -m eval.search`, resultados en `models/search/`), con dos restricciones: como máximo una falsa alarma por cada 1.000 llamadas expuestas y 5 rotaciones benignas por cada 1.000.
+
+| Parámetro | Valor | Qué significa y por qué |
+|---|---|---|
+| `k` | 8 caracteres | Largo desde el cual una coincidencia con la clave se da por confirmada. Con claves hexadecimales, 8 caracteres al azar coinciden con probabilidad despreciable |
+| `MIN_CANDIDATE` | 4 caracteres | Coincidencias más cortas cuentan como candidatas: suman, pero caducan |
+| `W` | 50 llamadas | Cuánto vive una candidata sin que llegue otra. Limita las coincidencias al azar en texto normal |
+| `beta_bits` | 64 bits | Lo que se supone que el atacante puede adivinar por fuerza bruta. Con una clave de 160 bits, el ataque triunfa si saca más de 96 |
+| `lambda_rot` | fracción de la clave | Fuga parcial que dispara la rotación |
+| `T` | llamadas | Rotación periódica de una clave ya leída. Debe cumplir una cota, comprobada en código (`Params.check`): lo que cabe entre dos rotaciones enviando justo bajo el radar no alcanza los 96 bits |
+| `b`, `b_rot` | umbrales | Evidencia acumulada (CUSUM) para bloquear y para rotar |
+| `max_rotations` | 3 cada 200 llamadas | Tope para que nadie pueda forzar rotaciones sin fin; después se bloquean las salidas de esa clave y se avisa a una persona |
+
+Dos configuraciones, dichas con claridad:
+- **La demo** usa los valores por defecto de `engine/detector/params.py` (rota al 30 % de la clave) y corre **sin** modelo de evidencia: ahí decide solo el contador de bits.
+- **La evaluación** usa la configuración congelada de `models/search/frozen.json` con el modelo de `models/model.json`.
+
+### Qué es real y qué es simulado
+
+- **Real:** el proxy MCP y sus herramientas, el motor que mide, el gestor de secretos con rotación, la API protegida que responde 200 o 401, y el servidor del atacante que cuenta lo que recibió. Las cifras de la demo salen de ejecutarlos.
+- **Simulado:** los servicios corren en local con nombres `.test`; las claves son sintéticas; el hospital y sus pacientes son ficticios; el tráfico benigno y los ataques son guiones generados por nuestro equipo rojo, no tráfico de producción.
+- **El agente:** en la demo y en la evaluación el agente es un guion reproducible, sin LLM. El proxy funciona con cualquier cliente MCP (`python -m proxy.server`).
+
 ## Cómo está organizado
 
 | Carpeta | Qué hay |
