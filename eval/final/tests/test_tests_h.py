@@ -18,19 +18,22 @@ def _attacks(prevented: list[bool], bits=None, prefix="a"):
             for i, (p, b) in enumerate(zip(prevented, bits))]
 
 
-def test_t1_3000_fails_5000_passes():
-    r = t1_false_alarms(_benign(3000))
+def test_t1_one_sided():
+    r = t1_false_alarms(_benign(3000))   # 0 de 3.000: cota unilateral ≈ 3/n = 0,000998 < 1e-3
     assert r["k"] == 0 and r["n"] == 3000 and r["rate"] == 0.0
-    assert r["ci"][1] == pytest.approx(0.00123, abs=1e-4)   # cerca de 3/n
-    assert r["pass"] is False and "underpowered" not in r
-    r5 = t1_false_alarms(_benign(5000))
-    assert r5["pass"] is True and r5["p_value"] < 0.05
+    assert r["ci"] == [0.0, pytest.approx(0.000998, abs=2e-6)]
+    assert r["pass"] is True and "underpowered" not in r
+    assert r["ci_type"] == "unilateral 95 %"
+    assert t1_false_alarms(_benign(3000, fa=1))["pass"] is False   # 1 de 3.000 no pasa
+    r5 = t1_false_alarms(_benign(5000, fa=1))                     # 1 de 5.000 pasa
+    assert r5["pass"] is True and r5["ci"][1] < 1e-3
     assert t1_false_alarms(_benign(1000))["underpowered"] is True
 
 
 def test_t2_50_of_50():
     r = t2_detection(_attacks([True] * 50))
-    assert r["ci"][0] == pytest.approx(0.94, abs=0.015) and r["pass"] is True
+    assert r["ci"][0] == pytest.approx(0.942, abs=0.001) and r["ci"][1] == 1.0
+    assert r["pass"] is True
     assert "underpowered" not in r
     assert t2_detection(_attacks([True] * 10))["underpowered"] is True
 

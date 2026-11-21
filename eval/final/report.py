@@ -58,6 +58,10 @@ def to_markdown(report: dict) -> str:
             continue
         ci = r.get("ci")
         ci_s = f"[{_fmt(ci[0])}, {_fmt(ci[1])}]" if ci else "—"
+        if name == "T1":
+            ci_s = f"≤ {_fmt(ci[1])} (unilateral)"
+        elif name == "T2":
+            ci_s = f"≥ {_fmt(ci[0])} (unilateral)"
         if name == "T4":
             ci_s = f"Fisher p={_fmt(r['fisher_p'])}; Mann–Whitney p={_fmt(r['mannwhitney_p'])}"
         h = report["holm"].get(name)

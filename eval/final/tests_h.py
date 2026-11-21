@@ -2,7 +2,9 @@
 
 Unidad de análisis: la sesión (las filas de eval.metrics.session_summary).
 T1–T4 se corrigen por Holm; T5 y T6 se reportan con intervalos, sin declarar significancia.
-Intervalos de Clopper–Pearson bilaterales al 95 % (eval.metrics.stats.clopper_pearson).
+T1 y T2 usan la cota de Clopper–Pearson UNILATERAL al 95 % (documento, sección 6.4: con 0 alarmas
+en n la cota es ≈ 3/n; con 50 de 50 la cota inferior es 0,94). Se calcula como el extremo del
+intervalo bilateral al 90 %. El `ci` que devuelven es unilateral: T1 [0, superior], T2 [inferior, 1].
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from eval.metrics.stats import bootstrap_ci, clopper_pearson
 
 T1_MIN_EXPOSED = 3000
 T2_MIN_ATTACKS = 50
+ONE_SIDED_95 = 0.90   # el extremo del bilateral al 90 % es la cota unilateral al 95 %
 
 
 def t1_false_alarms(benign: list[dict], target: float = 1e-3) -> dict:
@@ -21,9 +24,9 @@ def t1_false_alarms(benign: list[dict], target: float = 1e-3) -> dict:
     n = int(sum(s.get("n_exposed", 0) for s in benign))
     calls = sum(s.get("n_calls", 0) for s in benign)
     rot = sum(s.get("n_rotations", 0) for s in benign)
-    lo, hi = clopper_pearson(k, n)
+    hi = clopper_pearson(k, n, conf=ONE_SIDED_95)[1]
     out = {
-        "k": k, "n": n, "rate": (k / n) if n else None, "ci": [lo, hi],
+        "k": k, "n": n, "rate": (k / n) if n else None, "ci": [0.0, hi], "ci_type": "unilateral 95 %",
         "pass": bool(n > 0 and hi < target),
         "rotations_per_1000": (1000.0 * rot / calls) if calls else None,
         "p_value": float(stats.binomtest(k, n, target, alternative="less").pvalue) if n else 1.0,
@@ -37,9 +40,9 @@ def t1_false_alarms(benign: list[dict], target: float = 1e-3) -> dict:
 def t2_detection(attacks: list[dict], target: float = 0.8) -> dict:
     k = int(sum(1 for s in attacks if s.get("prevented") is True))
     n = len(attacks)
-    lo, hi = clopper_pearson(k, n)
+    lo = clopper_pearson(k, n, conf=ONE_SIDED_95)[0]
     out = {
-        "k": k, "n": n, "rate": (k / n) if n else None, "ci": [lo, hi],
+        "k": k, "n": n, "rate": (k / n) if n else None, "ci": [lo, 1.0], "ci_type": "unilateral 95 %",
         "pass": bool(n > 0 and lo > target),
         "p_value": float(stats.binomtest(k, n, target, alternative="greater").pvalue) if n else 1.0,
         "target": target,
