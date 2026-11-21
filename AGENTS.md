@@ -64,6 +64,8 @@ Complétalo en el arranque para que cada agente sepa qué archivos son de quién
 
 Las áreas y sus pasos están en `docs/PLAN.md`. Las carpetas son una propuesta: se confirman en el paso 1 del plan. El agente del área Rojo no abre `engine/` antes de H20 (regla del equipo morado).
 
+Las bases del track (AI Security) y la rúbrica de los jueces están en `docs/BASES.md`. Antes de proponer o cambiar el alcance de algo, comprueba que pase la prueba del track.
+
 ## 7. Orquestador y tareas
 
 El líder corre un agente orquestador (`/orquestar`) que reparte el trabajo de `docs/PLAN.md` y vigila sus puertas. Publica como `[<líder>'s Orquestador]`.
