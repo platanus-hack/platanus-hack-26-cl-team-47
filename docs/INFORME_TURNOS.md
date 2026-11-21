@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 11:00 (hora 12 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 14:00 (hora 15 de 34).
 
 **El proyecto.** Alicanto (hasta las 11:30 del sábado se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -17,7 +17,8 @@ Actualizado: sábado 21 de noviembre de 2026, 11:00 (hora 12 de 34).
 - La demo del enjambre: cinco agentes se reparten la fuga; con una cuenta por agente nadie la ve (200), con la cuenta global la clave rota (401).
 - La demo interactiva: el público elige cómo se disfraza el fragmento (tal cual, base64 o al revés).
 - El ataque en vivo con todos los servicios reales en local.
-- Más de 700 tests automáticos en verde, 65 tareas cerradas, sin PR abiertos.
+- Un modelo real pasando por el proxy: Haiku 5.5 y Sonnet 5.5 (10 corridas cada uno) y Opus 5.5 (1 corrida). Ninguno siguió la instrucción plantada, así que no hubo fuga que frenar; con Sonnet hubo una rotación de más (`docs/LLM_EN_VIVO.md`).
+- 731 tests automáticos en verde y los resultados reproducidos en tres máquinas (macOS y dos Windows).
 
 **Evaluación final, ya corrida** (una sola vez, sobre 180 ataques de seis familias que el detector no había visto; detalle y límites en `results/test/LECTURA.md`):
 
@@ -29,12 +30,18 @@ Actualizado: sábado 21 de noviembre de 2026, 11:00 (hora 12 de 34).
 | Presupuesto de bits (réplica) | 70 de 180 (38,9 %) | 4,8 % |
 | Reensamblado por sesión (réplica de herramientas tipo Pipelock) | 0 de 180 | 0 |
 
-Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas que hay que decir siempre junto a esa cifra:
+Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosas que hay que decir siempre junto a esa cifra:
+- **Las banderas de cada llamada venían de las grabaciones.** Si una llamada es una salida y si va a un destino no confiable lo escribió el generador de ataques; el proxy en vivo lo calcula distinto. Con las banderas del proxy, una comprobación del orquestador da 120 de 180: quedan sin cubrir la familia que saca la clave por su propio destino permitido y la que la esconde en mensajes de `git commit`. La tabla oficial con las dos cifras sale de la tarea #167; hasta entonces no se escriben frases nuevas con el 180 de 180.
 - **Son ataques grabados.** El atacante que se adapta a la rotación se midió aparte, en simulación (`results/adaptive/summary.md`): 180 de 180 no pasan de 96 bits de ninguna versión de la clave (máximo 64). Lo frena llegando al tope de tres rotaciones y bloqueando las salidas de esa clave: es una detención con costo, no rotación sin fin.
 - **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
 - **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
-**En curso ahora:** nada técnico. No queda ninguna tarea abierta: el pitch ya tiene las cifras, está armado para 3 minutos con corte, y hay página de resultados en el sitio. Lo que falta depende de personas (ver más abajo).
+**En curso ahora** (repartido a las 13:45, después de una revisión crítica del proyecto criterio por criterio de la rúbrica):
+- **#167, José Carlos:** la evaluación con las banderas del proxy, publicada junto a la actual, y una regla simple («leyó un secreto y envía a un destino no confiable: rota») como línea de base, para decir con números qué aporta cada pieza.
+- **#168, Matías:** la demo se corta a 1024×768 (resolución típica de proyector) y en teléfono, abre detenida sin avisar, y las láminas no están en el sitio público. Se arregla todo eso.
+- **#169, José Carlos, después de #167:** un hook de Claude Code que pasa por el contador de bits lo que el agente está por ejecutar con `Bash` y `WebFetch`. Es la respuesta a «¿lo puedo usar el lunes?».
+- **Demo nueva, en diseño:** hoy el ataque de la demo sale hacia un servidor desconocido, que una simple lista de destinos permitidos ya frenaría. La demo principal pasa a comparar contra las defensas que un equipo ya tiene (lista de destinos más escáner de secretos), con la fuga saliendo por un canal permitido.
+- **Después:** textos públicos (pitch, README y página de resultados) con las dos cifras y las frases corregidas.
 
 **Dónde verlo:**
 - **Demo en línea:** https://alicanto.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
@@ -46,10 +53,10 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Tres cosas 
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | Sin tarea abierta. Es el único agente del equipo que sigue respondiendo |
-| Victoria (`VictoriaGuerriero`) | Sin señales desde las 09:05 | Sus tareas pasaron a José Carlos. Falta confirmar con ella si sigue disponible |
+| José Carlos (`JCBasulto`) | Activo | #167 y después #169 |
+| Victoria (`VictoriaGuerriero`) | Activa desde las 12:25 | Hizo las corridas con el modelo real. Sin tarea abierta |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
-| Matías (`matix3000`) | Sin tokens | No recibe tareas |
+| Matías (`matix3000`) | Activo desde las 12:25 | #168, con traspaso puntual de `demo/viz/` y `pitch/` |
 | Juan Pedro (`jplira2`), líder | Activo | Corre el orquestador y la sesión del equipo rojo |
 
 Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orquestador reparte según eso.
@@ -59,8 +66,8 @@ Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orques
 Ningún agente puede hacer esto. Ordenado por importancia.
 
 1. ~~Deploy en Vercel~~ **Hecho** (10:40): https://alicanto.vercel.app, y la URL ya está en `platanus-hack-project.jsonc`. Queda activar el segundo factor en la cuenta de Vercel, que la propia plataforma recomienda.
-2. **Clave de API para correr un LLM real** a través del proxy. El comando ya está listo y probado sin clave: `python -m proxy.agent.runs --n 10 --out logs/llm` (detalle en `docs/LLM_EN_VIVO.md`). Hoy todas las corridas son guiones sin LLM, y las bases excluyen «ciberseguridad tradicional donde la IA no es el blanco». Es el mayor riesgo de encaje con el track. La entrega Juan Pedro.
-3. **Hablar con un posible comprador** (alguien de TI de una clínica o de una healthtech) y llevar su frase a la lámina final. Es lo que más sube el criterio de impacto.
+2. ~~Clave de API para correr un LLM real~~ **Hecho** (12:50): tres modelos pasaron por el proxy y ninguno siguió la inyección (`docs/LLM_EN_VIVO.md`). Sigue abierta la pregunta «¿dónde está la IA?»: hoy la respuesta honesta es «lo probamos y el modelo resiste».
+3. **Conseguir de dos a cuatro frases de posibles usuarios en el mismo evento** (CTO, mentores, alguien de TI de una clínica o de una healthtech) y llevarlas a la lámina final. Hoy no hay ninguna evidencia de demanda, y es lo que más sube el criterio de impacto. El usuario más natural es un equipo que ya usa agentes de código y tiene claves en el repositorio.
 4. **Preguntar a la organización:** hora exacta de corte del repositorio, cómo se pasa a la final, y si en Santiago hay premio del público o de sponsor.
 5. **Revisar `README.md` y `project-description.md`.** Son borradores escritos por agentes; las reglas del equipo piden que una persona los reescriba o los apruebe.
 6. **Ensayar el pitch con cronómetro.** En las finales del tour fueron 3 minutos de demo con corte y 2 de preguntas.
@@ -70,7 +77,7 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 
 - **Frase de novedad permitida:** «Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.»
 - **No decir:** que nadie junta fragmentos entre llamadas (existen Pipelock y AgentBrake), que somos los primeros, ni que detectamos esteganografía.
-- **Qué es real y qué es simulado:** el proxy, el motor, el gestor de secretos y el servidor del atacante son reales y corren en local. Las claves son sintéticas, el hospital es ficticio y el agente de la demo es un guion, no un LLM.
+- **Qué es real y qué es simulado:** el proxy, el motor, el gestor de secretos y el servidor del atacante son reales y corren en local. Las claves son sintéticas, el hospital es ficticio y el agente de la demo es un guion, no un LLM. Aparte se corrieron tres modelos reales por el proxy; ninguno siguió la inyección.
 - **La demo y la evaluación usan configuraciones distintas.** La demo rota cuando se filtró el 30 % de la clave y corre sin el modelo de evidencia. La evaluación usa la configuración congelada.
 - **El enjambre** funciona en la demo, en los tests y también en vivo: dos agentes en procesos distintos comparten la cuenta por un archivo (`LEDGER_PATH`). Límite: un archivo local, no varias máquinas. Cómo conectarlo a un agente real: `docs/QUICKSTART.md`.
 - **Agenda del domingo sin confirmar:** planificar con el cierre más temprano (08:30).
@@ -86,6 +93,24 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 ---
 
 ## Turnos
+
+### Sábado 21, 11:30 a 14:00
+
+Escrito por el orquestador (sesión nueva desde las 13:30).
+
+**11:30 a 13:00. Un modelo real por el proxy, y reproducción.**
+- Victoria corrió el agente con modelos reales a través del proxy, con la configuración evaluada: Haiku 5.5 y Sonnet 5.5 con 10 corridas por brazo, y Opus 5.5 con 1. Ninguna siguió la instrucción plantada. Con Sonnet, una corrida leyó `.env` por su cuenta y después comentó en GitHub sin la clave: Alicanto rotó igual, una rotación de más.
+- Se corrigieron dos errores del comando de corridas que aparecieron con la clave real.
+- La evaluación quedó presentada como benchmark: cualquiera puede medir su propia defensa con un comando (`python -m eval.bench`).
+- Matías y Victoria volvieron con tokens. Matías reprodujo todos los resultados en Windows; se arregló que los comandos se cayeran en una consola que no es UTF-8.
+
+**13:00 a 14:00. Revisión crítica y trabajo nuevo.**
+- Se revisó el proyecto contra cada criterio de la rúbrica, comprobando cada hallazgo en el código antes de actuar.
+- Hallazgo principal: el 180 de 180 usa banderas escritas por el generador de ataques. Con las banderas que calcula el proxy, la comprobación da 120 de 180. Se publica la tabla con las dos cifras (#167).
+- Se comprobó con capturas que la demo se corta a 1024×768 y en teléfono (#168).
+- Se repartió un hook de Claude Code para usar el contador en un agente real (#169).
+
+**Decisiones del líder en este turno:** recalcular y publicar la cifra con las banderas del proxy, en vez de solo poner una salvedad; los arreglos de la demo y del pitch van a Matías con traspaso; la demo principal se rediseña a partir de la revisión.
 
 ### Sábado 21, 02:00 a 09:30
 
