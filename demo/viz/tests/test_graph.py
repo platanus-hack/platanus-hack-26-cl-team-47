@@ -42,7 +42,7 @@ def test_funciones_puras_en_node():
             resolveNode(ids, "attacker.test"), resolveNode(ids, "docs/")],
     }}));
     """
-    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert ".env" not in r["t2"] and ".env" in r["t3"]
     assert set(r["t2"]) <= set(r["t3"])
     assert r["boxes"][0] == {"id": "c3", "tool": "read_file", "resource": ".env"}
