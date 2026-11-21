@@ -66,7 +66,10 @@ class Proxy:
         if tool in ("http_request", "github_issue", "github_comment"):
             return True
         if tool == "git":
-            return "push" in (args.get("args") or [])
+            # Sale tráfico hacia un remoto (#137): push, fetch y pull.
+            git_args = args.get("args") or []
+            sub = next((a for a in git_args if isinstance(a, str) and not a.startswith("-")), "")
+            return sub in ("push", "fetch", "pull")
         return False
 
     def _untrusted(self, tool: str, args: dict[str, Any]) -> bool:
