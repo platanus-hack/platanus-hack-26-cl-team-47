@@ -40,7 +40,7 @@ def test_marcas_de_la_linea_de_tiempo_en_node():
     const rep = JSON.parse(fs.readFileSync({json.dumps(str(VIZ / "fixtures" / "real_report.json"))}, "utf8"));
     console.log(JSON.stringify(timelineMarks(rep.secrets[0])));
     """
-    marks = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    marks = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     kinds = [m["kind"] for m in marks]
     assert kinds.count("exposed") == 1 and kinds.count("rotation") == 1 and kinds.count("leak") == 3
     assert all(0 <= m["x"] <= 1 for m in marks)

@@ -99,7 +99,7 @@ def test_build_frames_en_node():
       maxArgs: Math.max(...frames.map(f => summarizeArgs(f.call.args).length)),
     }}));
     """
-    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout
+    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout
     r = json.loads(out)
     assert r["n"] == 40 and r["ts"] == list(range(1, 41))
     assert r["decided"]

@@ -104,7 +104,7 @@ def test_final_status_en_node():
       fl: finalFractions(buildFrames(L)), fr: finalFractions(buildFrames(R)),
     }}));
     """
-    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert (r["left"], r["right"], r["none"], r["empty"], r["other"]) == (200, 401, None, None, None)
     assert r["fl"]["SECRET_1"] > r["fr"]["SECRET_1"]
 
@@ -128,7 +128,7 @@ def test_texto_del_resultado_en_node():
       none: resultText([]),
     }}));
     """
-    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+    r = json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert r["left"] == "El atacante reconstruyó la clave completa (160 bits) y la usa: 200"
     assert re.fullmatch(r"El atacante juntó \d+ bits de una clave que ya rotó: 401", r["right"])
     assert r["partial"] == "El atacante juntó 144 bits, no le alcanza para armar la clave: 401"
