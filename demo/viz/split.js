@@ -282,7 +282,16 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     return r.text();
   }).then(parseJsonl);
 
-  const left = params.get("left"), right = params.get("right"), graphUrl = params.get("graph");
+  // Sin ?left= ni ?right=, la demo real versionada (para el sitio estático).
+  const DEFAULTS = {
+    left: "fixtures/real_left.jsonl",
+    right: "fixtures/real_right.jsonl",
+    graph: "fixtures/real_graph.json",
+  };
+  const noParams = !params.get("left") && !params.get("right");
+  const left = params.get("left") || (noParams ? DEFAULTS.left : null);
+  const right = params.get("right") || (noParams ? DEFAULTS.right : null);
+  const graphUrl = params.get("graph") || (noParams ? DEFAULTS.graph : null);
   const fetchGraph = (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
     return r.json();

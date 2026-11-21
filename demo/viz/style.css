@@ -282,3 +282,49 @@ code { font-family: ui-monospace, Consolas, monospace; }
   .graph-strip { grid-template-columns: minmax(0, 1fr); height: auto; }
   .graph-box { height: 300px; }
 }
+
+/* ------------------------------------------------ portada (17a) */
+
+.home-page { overflow-y: auto; }
+.home {
+  max-width: 880px;
+  margin: auto;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.home-kicker { margin: 0; color: var(--muted); font-size: 13px; letter-spacing: .04em; }
+.home-title { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.15; font-weight: 700; }
+.home-points { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 14px; }
+.home-points li {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.home-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--current);
+  margin-bottom: 2px;
+}
+.home-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+.home-cta {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 10px;
+  background: var(--current);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.home-cta:hover, .home-cta:focus-visible { filter: brightness(1.1); }
+.home-secondary { color: var(--current); font-size: 15px; }
+.home-note { margin: 0; color: var(--muted); font-size: 13px; }

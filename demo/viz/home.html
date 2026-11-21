@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medidor de fugas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="home-page">
+  <main class="home">
+    <p class="home-kicker">Platanus Hack 26 · AI Security · team-47</p>
+    <h1 class="home-title">Medidor de información filtrada para agentes de IA</h1>
+
+    <ul class="home-points">
+      <li>
+        <span class="home-label">Qué mide</span>
+        En cada llamada de un agente a sus herramientas, cuántos bits de cada secreto ya salieron, aunque salgan de a poco, codificados o por canales permitidos.
+      </li>
+      <li>
+        <span class="home-label">Qué hace</span>
+        Rota la clave antes de que la fuga se complete, así lo que el atacante juntó deja de servir.
+      </li>
+      <li>
+        <span class="home-label">Qué se ve en la demo</span>
+        El mismo ataque dos veces: sin protección el atacante usa la clave y entra; con el medidor, la clave ya cambió y la API lo rechaza.
+      </li>
+    </ul>
+
+    <div class="home-actions">
+      <a class="home-cta" href="split.html">Ver la demo</a>
+      <a class="home-secondary" href="index.html">Ver un registro</a>
+    </div>
+
+    <p class="home-note">Todo lo que se muestra es sintético: secretos de prueba y servidores <code>.test</code>.</p>
+  </main>
+</body>
+</html>
