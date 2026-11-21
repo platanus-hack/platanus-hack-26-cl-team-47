@@ -246,6 +246,9 @@ def run_split(session: Path, decide_right=RIGHT_FACTORY, out_dir: Path = ROOT / 
 SWARM_SESSION = ROOT / "demo" / "sessions" / "enjambre.jsonl"
 SWARM_CALLS, SWARM_FIRST, SWARM_EVERY = 90, 16, 8
 FIXTURES = ROOT / "demo" / "viz" / "fixtures"
+# Parámetros fijos de la demo: no dependen de los valores por defecto de Params, que pueden cambiar en H20.
+SWARM_PARAMS = dict(b=9.2, b_rot=4.0, lambda_rot=0.3, alpha=0.2, T=150, beta_bits=64.0,
+                    max_rotations=3, rotation_window=200)
 
 
 def make_swarm_session(path: Path = SWARM_SESSION, n_agents: int = 5, secret_id: str = "SECRET_1",
@@ -355,7 +358,8 @@ def run_swarm_panel(calls: list[ToolCall], make_factory, secrets: dict[str, str]
 def _per_agent(rotate):
     """Cuenta por agente: un Detector independiente por agente, como hoy."""
     from engine.detector.detector import Detector
-    return lambda: Detector(rotate=rotate).decide
+    from engine.detector.params import Params
+    return lambda: Detector(rotate=rotate, params=Params(**SWARM_PARAMS)).decide
 
 
 def _shared(rotate):
@@ -365,7 +369,9 @@ def _shared(rotate):
     except ImportError:
         from engine.detector.detector import make_decide_shared
     from engine.detector.ledger import SharedLedger
-    return make_decide_shared(SharedLedger.from_manifest(str(MANIFEST)), rotate=rotate)
+    from engine.detector.params import Params
+    return make_decide_shared(SharedLedger.from_manifest(str(MANIFEST)), rotate=rotate,
+                              params=Params(**SWARM_PARAMS))
 
 
 def run_swarm(session: Path = SWARM_SESSION, out_dir: Path = ROOT / "demo" / "out",
