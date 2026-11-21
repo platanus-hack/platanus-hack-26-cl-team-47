@@ -173,3 +173,13 @@ def test_latency_200_calls():
         total += time.perf_counter() - t0
         d.set_output(call.id, out)
     assert total / 200 < 0.015, f"{total / 200 * 1000:.2f} ms"
+
+
+def test_exposed_includes_untrusted_sink():
+    d = CallDAG(SECRET_FILES)
+    r = d.add(tc("i1", 1, "http_request", {"method": "GET", "url": "http://github.test/repos/a/b/issues/42"},
+                 ["github.test"], sink=True, untrusted=True))
+    assert r["kind"] == "sink"  # kind no cambia: sink gana
+    d.add(tc("i2", 2, "http_request", {"url": "http://api.empresa.test/x"}, ["api.empresa.test"], sink=True))
+    d.add(c3())
+    assert d.exposed() == ["i1", "c3"]

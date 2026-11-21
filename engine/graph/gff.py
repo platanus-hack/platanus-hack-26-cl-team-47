@@ -129,8 +129,8 @@ def _label_node(G: nx.Graph, path: str) -> str | None:
 
 # --- Posterior --------------------------------------------------------------
 
-def posterior(Q: sp.spmatrix, labels: dict[int, float], tau: float) -> tuple[np.ndarray, np.ndarray]:
-    """μ y varianza marginal con factorización dispersa LU."""
+def posterior(Q: sp.spmatrix, labels: dict[int, float], tau: float, return_lu: bool = False):
+    """μ y varianza marginal con factorización dispersa LU (y la LU si se pide)."""
     n = Q.shape[0]
     w = tau ** -2
     pb = np.zeros(n)
@@ -148,6 +148,8 @@ def posterior(Q: sp.spmatrix, labels: dict[int, float], tau: float) -> tuple[np.
         E = np.zeros((n, stop - start))
         E[np.arange(start, stop), np.arange(stop - start)] = 1.0
         var[start:stop] = lu.solve(E)[np.arange(start, stop), np.arange(stop - start)]
+    if return_lu:
+        return mu, var, lu
     return mu, var
 
 
@@ -166,9 +168,44 @@ class FileGraph:
         self.kappa, self.tau = kappa, tau
         self.labels = {n: y for n, y in labels.items() if n in self.idx}
         self.Q = precision(G, self.nodes, kappa)
-        self.mu, self.var = posterior(self.Q, {self.idx[n]: y for n, y in self.labels.items()}, tau)
+        self.mu, self.var, self._lu = posterior(
+            self.Q, {self.idx[n]: y for n, y in self.labels.items()}, tau, return_lu=True)
         self.sd = np.sqrt(np.maximum(self.var, 0.0))
         self._recent: deque[list[str]] = deque(maxlen=WINDOW)
+        self._cols: dict[int, np.ndarray] = {}
+
+    # --- Covarianza posterior --------------------------------------------
+
+    def cov_columns(self, idx: list[int]) -> np.ndarray:
+        """Columnas de Σ = Q_post⁻¹ para los índices dados (n × len(idx)), con caché."""
+        missing = [i for i in dict.fromkeys(idx) if i not in self._cols]
+        if missing:
+            n = len(self.nodes)
+            E = np.zeros((n, len(missing)))
+            E[missing, np.arange(len(missing))] = 1.0
+            X = self._lu.solve(E)
+            for k, i in enumerate(missing):
+                self._cols[i] = X[:, k]
+        if not idx:
+            return np.zeros((len(self.nodes), 0))
+        return np.column_stack([self._cols[i] for i in idx])
+
+    def correlation(self, u: str, v: str) -> float:
+        """Correlación posterior Σ_uv / sqrt(Σ_uu Σ_vv), en [-1, 1]."""
+        i, j = self.idx[u], self.idx[v]
+        if i == j:
+            return 1.0
+        s_uv = float(self.cov_columns([j])[i, 0])
+        c = s_uv / np.sqrt(self.var[i] * self.var[j])
+        return float(np.clip(c, -1.0, 1.0))
+
+    def corr_block(self, idx: list[int]) -> np.ndarray:
+        """Matriz de correlación posterior entre los nodos `idx`."""
+        C = self.cov_columns(idx)[idx, :]
+        d = np.sqrt(self.var[idx])
+        R = C / np.outer(d, d)
+        np.fill_diagonal(R, 1.0)
+        return np.clip(R, -1.0, 1.0)
 
     @classmethod
     def from_workspace(cls, root: str, manifest_path: str, C_tree=1.0, C_import=2.0,
