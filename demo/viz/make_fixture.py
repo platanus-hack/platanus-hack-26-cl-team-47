@@ -121,11 +121,16 @@ def build() -> list[Event]:
 
 
 def main() -> None:
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT, "w", encoding="utf-8", newline="\n") as f:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", type=Path, default=OUT, help="por defecto fixtures/sample.jsonl")
+    out = ap.parse_args().out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
         for e in build():
             f.write(e.model_dump_json() + "\n")
-    print(f"{OUT} ({sum(1 for _ in open(OUT, encoding='utf-8'))} eventos)")
+    print(f"{out} ({sum(1 for _ in open(out, encoding='utf-8'))} eventos)")
 
 
 if __name__ == "__main__":

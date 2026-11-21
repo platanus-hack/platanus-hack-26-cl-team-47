@@ -128,10 +128,16 @@ def write(path: Path, evs: list[Event]) -> None:
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out-dir", type=Path, default=OUT_LEFT.parent, help="por defecto fixtures/")
+    out_dir = ap.parse_args().out_dir
     cs = calls()
-    write(OUT_LEFT, events(cs, left_decisions(cs), 200))
-    write(OUT_RIGHT, events(cs, right_decisions(cs), 401))
-    print(f"{OUT_LEFT}\n{OUT_RIGHT}")
+    left, right = out_dir / OUT_LEFT.name, out_dir / OUT_RIGHT.name
+    write(left, events(cs, left_decisions(cs), 200))
+    write(right, events(cs, right_decisions(cs), 401))
+    print(f"{left}\n{right}")
 
 
 if __name__ == "__main__":

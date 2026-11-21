@@ -63,10 +63,12 @@ def test_determinista(tmp_path):
 
 
 def test_make_session_determinista_y_sin_secreto_en_el_codigo(tmp_path):
-    before = SESSION.read_bytes()
-    for _ in range(2):
-        subprocess.run([sys.executable, str(SCRIPT), "--make-session"], cwd=ROOT, check=True, capture_output=True)
-        assert SESSION.read_bytes() == before
+    committed = SESSION.read_text(encoding="utf-8").splitlines()
+    for i in range(2):  # en una carpeta temporal: no reescribe la sesión versionada
+        out = tmp_path / f"goteo_{i}.jsonl"
+        subprocess.run([sys.executable, str(SCRIPT), "--make-session", "--session", str(out)], cwd=ROOT,
+                       check=True, capture_output=True)
+        assert out.read_text(encoding="utf-8").splitlines() == committed
 
     secret = next(s["value"] for s in json.loads(MANIFEST.read_text(encoding="utf-8"))["secrets"]
                   if s["secret_id"] == "SECRET_1")
