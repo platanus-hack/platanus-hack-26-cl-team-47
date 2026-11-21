@@ -112,7 +112,8 @@ def test_maximo_cuarenta_palabras_de_cuerpo():
         body = words(s["body"])
         quote = words(s["quote"])
         total = len(body) + len(quote)
-        assert total <= 40, f"lámina {n}: {total} palabras"
+        # Lámina 6 (usuario y cierre): los tres textos los fija la tarea 16g al pie de la letra y suman 52.
+        assert total <= (52 if n == 6 else 40), f"lámina {n}: {total} palabras"
 
 
 def test_demo_enlaza_la_pantalla_dividida():
@@ -137,9 +138,9 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 21
+    assert len(titulos) == 23
     claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
-              "instala", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
+              "instala", "lista de destinos permitidos", "ya pasó de verdad", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación",
               "momentos aleatorios", "se llama Alicanto")
@@ -328,8 +329,16 @@ def test_lamina_de_competidores():
 
 
 def test_lamina_final_con_pedido():
+    """16g: usuario real (equipos con agentes de código), por qué ahora y el pedido del piloto."""
     s = slide("Usuario y cierre")
     assert s["pendientes"] == 0 and "piloto" in s["body"]
+    body = norm(s["body"])
+    assert "Quién lo usa Equipos que ya corren agentes de código con claves en el repositorio." in body
+    assert ("Por qué ahora Los agentes ya leen issues, páginas y pull requests que escribe cualquiera. "
+            "En salud, además, hay 3 horas para avisar a la ANCI.") in body
+    assert "Buscamos dos equipos que usen agentes de código para un piloto." in body
+    assert "Buscamos dos equipos que usen agentes de código para un piloto. Gracias." in GUION
+    assert "TI de salud para un piloto" not in HTML + GUION
     assert idx("Usuario y cierre") < idx("Respaldo")   # el pedido va en el pitch, no en el respaldo
     assert "para que lo confirme una persona del equipo" in GUION
 
@@ -341,12 +350,64 @@ def test_demo_dice_que_decide_solo_el_contador():
 
 # ------------------------------------------------ pregunta del track y cifras (16d, segundo comentario)
 
-def test_guion_abre_con_el_nombre_y_la_pregunta_del_track():
-    """16e: la primera frase hablada dice «Alicanto»; la segunda es la pregunta del track."""
-    frases = re.split(r"(?<=[.»?])\s+", _texto_hablado(GUION).strip())
-    assert "Alicanto" in frases[0]
-    assert "¿cómo te darías cuenta?" in frases[1]
-    assert "Alicanto es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
+APERTURA = ("Somos Alicanto. Casi todos los guardias de agentes de IA hacen lo mismo: bloquean llamadas. Nosotros "
+            "medimos cuánta clave ya salió y la cambiamos antes de que sirva. Como en la leyenda de Atacama: quien "
+            "sigue al alicanto por codicia termina con las manos vacías.")
+
+
+def test_guion_abre_con_lo_que_nos_distingue():
+    """16g: abre con el nombre y lo que nos distingue; la pregunta de las bases queda de respaldo."""
+    hablado = norm(_texto_hablado(GUION))
+    assert hablado.startswith(APERTURA)
+    assert "¿cómo te darías cuenta?" not in hablado
+    nota = GUION.split("**La pregunta de las bases, como respaldo:**")[1].split("\n- ")[0]
+    assert "¿cómo te darías cuenta?" in nota and "Ya no abre el pitch" in nota and "docs/BASES.md" in nota
+
+
+def test_lamina_1_dice_lo_que_nos_distingue():
+    s = parse()[0]
+    assert "Otros guardias bloquean llamadas. Alicanto cambia la clave antes de que sirva." in norm(s["body"])
+    assert "¿cómo te darías cuenta?" not in s["text"]
+
+
+def test_bloque_2_usuario_y_precedente():
+    b2 = norm(GUION.split("\n## 2. ")[1].split("\n## 3. ")[0])
+    assert ("Cualquier equipo que usa agentes de código tiene claves en el repositorio. El ejemplo es un hospital "
+            "ficticio, el Hospital Regional Tres Cóndores.") in b2
+    assert ("Ninguna llamada parece un robo. No es teoría: en 2025, CamoLeak sacó secretos de repositorios "
+            "privados a través de Copilot Chat, carácter por carácter.") in b2
+
+
+CAMOLEAK = "https://legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code"
+
+
+def test_precedente_camoleak_con_fuente_y_sin_cve():
+    assert "CamoLeak" in GUION
+    sec = PREGUNTAS.split("¿Esto ya pasó de verdad?")[1].split("\n## ")[0]
+    for dato in ("Omer Mayraz", "Legit Security", "CVSS 9,6", "descripción de un pull request",
+                 "proxy de imágenes de GitHub", "14 de agosto de 2025", "no el mismo escenario", CAMOLEAK):
+        assert dato in sec, dato
+    nota = GUION.split("**El precedente (bloque 2): CamoLeak.**")[1].split("\n- ")[0]
+    assert "no el mismo escenario" in nota and "CVSS 9,6" in nota
+    for f in _pitch_files():
+        assert not re.search(r"CVE-\d", f.read_text(encoding="utf-8")), f.name
+
+
+def test_lo_real_incluye_modelos_y_recorrido():
+    b4 = norm(GUION.split("\n## 4. ")[1].split("\n## 5. ")[0])
+    assert b4.endswith("Aparte pasamos tres modelos reales por el proxy: en 21 corridas, ninguno siguió la "
+                       "instrucción plantada.")
+    assert "agente → proxy → contador de bits → decisión → gestor de secretos" in slide("Qué es real")["text"]
+
+
+def test_pregunta_de_la_lista_de_destinos():
+    titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS.split("## Más preguntas")[0], flags=re.M)
+    assert "¿No basta con una lista de destinos permitidos?" in titulos   # en «Las que más se repiten»
+    sec = PREGUNTAS.split("¿No basta con una lista de destinos permitidos?")[1].split("\n## ")[0]
+    assert "30 de 180 ataques grabados" in sec and "`results/test/systems.md`, fila `combined`" in sec
+    fila = next(l for l in (PITCH.parent / "results" / "test" / "systems.md").read_text(encoding="utf-8").splitlines()
+                if l.startswith("| combined |"))
+    assert "0.167" in fila   # 30 / 180
 
 
 def test_lamina_del_problema_situa_el_track():
@@ -419,7 +480,7 @@ def test_lamina_36_horas_nueve_sistemas():
 
 def test_orden_de_las_laminas_sigue_al_guion():
     slides = parse()
-    assert slides[0]["title"] == "Alicanto" and "¿cómo te darías cuenta?" in slides[0]["text"]
+    assert slides[0]["title"] == "Alicanto" and "Otros guardias bloquean llamadas." in slides[0]["text"]  # 16g
     assert "Demo" in slides[1]["text"]
     assert "enjambre" in slides[2]["title"].lower()
     assert slides[3]["title"] == "Qué es real y qué es simulado"
