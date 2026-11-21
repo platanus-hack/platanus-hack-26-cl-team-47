@@ -165,4 +165,6 @@ def test_una_corrida_que_termina_en_error_no_es_valida(tmp_path):
         assert r["valid"] is False
     md = (tmp_path / "out" / "summary.md").read_text(encoding="utf-8")
     assert "| sin | 1 | 0 |" in md and "| con | 1 | 0 |" in md
+    assert "Descartadas: 2 de 2." in md
+    assert "corrida 0, brazo sin: el agente terminó en «error: RuntimeError»" in md
 
