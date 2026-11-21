@@ -65,7 +65,10 @@ def _dest_host(call: ToolCall, files: set[str]) -> str | None:
 class Detector:
     def __init__(self, workspace: str = "demo/repo", manifest_path: str = "demo/secrets_manifest.json",
                  model: FeatureModel | None = None, params: Params = Params(),
-                 rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True):
+                 rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True,
+                 secrets: dict[str, str] | None = None):
+        """secrets: valores que reemplazan (o agregan) secretos del manifiesto, p. ej. el secreto propio
+        de una sesión del equipo rojo. None = los del manifiesto (comportamiento por defecto)."""
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
         self.enforce = enforce
         self.params = params
@@ -74,13 +77,19 @@ class Detector:
         self._rng = random.Random(seed)
         self.secret_files = {s["secret_id"]: list(s.get("files", [])) for s in manifest["secrets"]}
         self.allowed = {s["secret_id"]: {h.lower() for h in s.get("allowed_hosts", [])} for s in manifest["secrets"]}
+        values = {s["secret_id"]: s["value"] for s in manifest["secrets"]}
+        for sid, v in (secrets or {}).items():
+            values[sid] = v
+            self.secret_files.setdefault(sid, [])
+            self.allowed.setdefault(sid, set())
         self._file_to_secrets: dict[str, set[str]] = {}
         for sid, fs in self.secret_files.items():
             for f in fs:
                 self._file_to_secrets.setdefault(f, set()).add(sid)
         self.graph = FileGraph.from_workspace(workspace, manifest_path)
         self.dag = CallDAG(self.secret_files)
-        self.bits = BitsEngine.from_manifest(manifest_path)
+        self.bits = BitsEngine(values, allowed_hosts=self.allowed)
+        self.last_features: dict[str, float] = {}   # features de la última llamada (#57)
         self.cusum = Cusum()
         self.exposed: dict[str, bool] = {sid: False for sid in self.secret_files}
         self.e: dict[str, int] = {sid: 0 for sid in self.secret_files}
@@ -112,7 +121,8 @@ class Detector:
             bits = self.bits.state()
 
         f = extract(call, touch, dag_info, bits, self._prev_kind)
-        l = self.model.llr(f) if self.model is not None else 0.0
+        self.last_features = dict(f)
+        l =self.model.llr(f) if self.model is not None else 0.0
         S = self.cusum.update(l)
 
         for sid in self.secret_files:
