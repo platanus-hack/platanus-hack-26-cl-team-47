@@ -1,0 +1,15 @@
+# Todas las dependencias del proyecto: pip install -r requirements.txt
+-r contracts/requirements.txt
+-r demo/requirements.txt
+-r docker/requirements.txt
+-r engine/graph/requirements.txt
+-r engine/requirements.txt
+-r eval/baselines/requirements.txt
+-r eval/metrics/requirements.txt
+-r eval/replay/requirements.txt
+-r proxy/agent/requirements.txt
+-r proxy/requirements.txt
+-r redteam/requirements.txt
+-r services/github_sim/requirements.txt
+-r services/requirements.txt
+-r services/web_sim/requirements.txt

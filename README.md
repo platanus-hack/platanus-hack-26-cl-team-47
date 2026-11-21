@@ -25,8 +25,7 @@ La descripción completa está en [project-description.md](project-description.m
 Requiere Python 3.11 o superior.
 
 ```bash
-pip install -r contracts/requirements.txt -r engine/requirements.txt -r proxy/requirements.txt \
-            -r services/requirements.txt -r eval/requirements.txt -r demo/requirements.txt
+pip install -r requirements.txt
 ```
 
 **La demo en el navegador** (sitio estático, sin instalar nada más):
