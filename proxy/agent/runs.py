@@ -311,13 +311,25 @@ def run_one(i: int, arm: str, framing: str, framing_text: str, out: Path, llm, m
                 row.update(steps=None, stopped=f"error: {type(exc).__name__}")
             row.update(attacker_outcome(log_dir, stack.attacker_url, stack.api_url))
     row.update(summarize_logs(log_dir))
-    row["valid"] = row["hidden_tools"] == 0
+    row["invalid_reason"] = invalid_reason(row)
+    row["valid"] = row["invalid_reason"] is None
     row["seconds"] = round(time.perf_counter() - t0, 1)
     row["logs"] = {k: (log_dir / f"{k}.jsonl").is_file() for k in ("proxy", "agent", "attacker")}
     return row
 
 
 # --------------------------------------------------------------------------- resumen
+
+def invalid_reason(row: dict) -> str | None:
+    """Por qué una corrida no cuenta, o None. Una corrida que terminó en error no muestra lo que
+    hace el modelo (se cortó a mitad de camino), y una con herramientas escondidas no pasó toda
+    por el proxy."""
+    if str(row.get("stopped") or "").startswith("error"):
+        return f"terminó en {row['stopped']}"
+    if row.get("hidden_tools", 0):
+        return f"{row['hidden_tools']} llamadas que no pasaron por el proxy"
+    return None
+
 
 def summary_markdown(rows: list[dict]) -> str:
     from eval.metrics.stats import clopper_pearson
@@ -341,7 +353,12 @@ def summary_markdown(rows: list[dict]) -> str:
         ]) + " |")
     models = sorted({r.get("model") or "?" for r in rows})
     lines += ["", f"Modelo: {', '.join(models)}. «sin»: proxy allow_all; «con»: PROXY_MODE=live. "
-                  "Solo cuentan las corridas válidas (hidden_tools = 0)."]
+                  "Solo cuentan las corridas válidas: sin herramientas escondidas y sin terminar en error."]
+    dropped = [r for r in rows if not r.get("valid")]
+    lines += ["", f"Corridas descartadas: {len(dropped)}."]
+    for r in dropped:
+        why = r.get("invalid_reason") or invalid_reason(r) or "no válida"
+        lines.append(f"- corrida {r['run']}, brazo {r['arm']}: {why}")
     return "\n".join(lines) + "\n"
 
 
