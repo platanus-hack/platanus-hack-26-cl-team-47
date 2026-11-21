@@ -69,7 +69,15 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
   const lbl = (id) => (typeof labelWithId === "function" ? labelWithId(id) : id);
 
   function makePanel(root) {
+    // Medidor grande por panel: bits de la clave vigente que ya salieron.
+    const meter = document.createElement("div");
+    meter.className = "meter";
+    meter.innerHTML = `<div class="meter-top"><span class="meter-label">Bits de la clave vigente en manos del atacante</span><span class="meter-key"></span></div>
+      <div class="meter-row"><span class="meter-num">0</span><span class="meter-total">/ 160 bits</span><span class="meter-pct">0 %</span></div>
+      <div class="meter-bar"><div class="meter-fill"></div></div>`;
+    root.querySelector(".side-head").insertAdjacentElement("afterend", meter);
     return {
+      meter, H: 160,
       root, events: [], frames: [], secrets: [], status: null,
       list: root.querySelector(".call-list"),
       chart: root.querySelector(".chart-box"),
@@ -106,7 +114,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     p.list.innerHTML = "";
     p.frames.forEach((f) => {
       const li = document.createElement("li");
-      li.className = actionClass(f.decision && f.decision.action) + (f.rotations.length ? " has-rotation" : "");
+      li.className = actionClass(f.decision && f.decision.action) + (f.rotations.length ? " has-rotation" : "") + (f.call.is_sink ? " is-sink" : "");
       li.innerHTML = `<span class="t"></span><span class="tool"></span><span class="args"></span><span class="marks"></span>`;
       li.children[0].textContent = f.t;
       li.children[1].textContent = f.call.tool;
@@ -154,6 +162,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const tMin = clock.ts[0], tMax = clock.ts[clock.ts.length - 1];
     const x = d3.scaleLinear().domain([tMin, Math.max(tMax, tMin + 1)]).range([0, w]);
     const y = d3.scaleLinear().domain([0, yMax * 1.1]).nice().range([h, 0]);
+    const accent = getComputedStyle(p.root).getPropertyValue("--side").trim() || null;
 
     g.append("g").attr("class", "gridline").call(d3.axisLeft(y).ticks(4).tickSize(-w).tickFormat(""))
       .call((s) => s.select(".domain").remove());
@@ -171,12 +180,18 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const cx = x(currentT());
     g.append("line").attr("class", "cursor-line").attr("x1", cx).attr("x2", cx).attr("y1", 0).attr("y2", h);
 
+    if (p.H <= y.domain()[1]) {  // la clave completa, como techo visible
+      g.append("line").attr("class", "full-line").attr("x1", 0).attr("x2", w).attr("y1", y(p.H)).attr("y2", y(p.H));
+      g.append("text").attr("class", "full-label").attr("x", 4).attr("y", y(p.H) - 4).text(`clave completa: ${Math.round(p.H)} bits`);
+    }
     const line = d3.line().x((d) => x(d.t)).y((d) => y(d.y)).curve(d3.curveStepAfter);
+    const area = d3.area().x((d) => x(d.t)).y0(h).y1((d) => y(d.y)).curve(d3.curveStepAfter);
     p.secrets.forEach((sid, i) => {
-      const c = d3.schemeTableau10[i % 10];
+      const c = (i === 0 && accent) || d3.schemeTableau10[i % 10];
       const pts = shown.map((f) => ({ t: f.t, y: bitsAt(f, sid) }));
-      g.append("path").datum(pts).attr("fill", "none").style("stroke", c).attr("stroke-width", 2).attr("d", line);
-      if (pts.length) g.append("circle").attr("r", 3).style("fill", c)
+      g.append("path").datum(pts).attr("class", "bits-area").style("fill", c).attr("d", area);
+      g.append("path").datum(pts).attr("fill", "none").style("stroke", c).attr("stroke-width", 3).attr("d", line);
+      if (pts.length) g.append("circle").attr("r", 5).attr("class", "bits-dot").style("fill", c)
         .attr("cx", x(pts[pts.length - 1].t)).attr("cy", y(pts[pts.length - 1].y));
       const name = lbl(sid);  // etiqueta del escenario; una fila por secreto para que quepa
       const lg = g.append("g").attr("class", "legend")
@@ -209,6 +224,28 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     p.detail.append(head, dl);
   }
 
+  function renderMeter(p) {
+    const sid = p.secrets[0];
+    const shown = p.frames.filter((f) => f.t <= currentT());
+    const f = shown[shown.length - 1];
+    const leak = (f && f.decision && f.decision.leak && f.decision.leak[sid]) || null;
+    const bits = f && sid ? bitsAt(f, sid) : 0;
+    if (leak && leak.fraction > 0 && leak.bits > 0) p.H = leak.bits / leak.fraction;
+    const frac = Math.max(0, Math.min(1, bits / p.H));
+    let version = 1, rotT = null;
+    for (const fr of shown) for (const r of fr.rotations) if (!sid || r.secret_id === sid) { version = r.version; rotT = fr.t; }
+    const q = (c) => p.meter.querySelector(c);
+    q(".meter-num").textContent = Math.round(bits);
+    q(".meter-total").textContent = `/ ${Math.round(p.H)} bits`;
+    q(".meter-pct").textContent = `${Math.round(frac * 100)} %`;
+    q(".meter-fill").style.width = `${frac * 100}%`;
+    q(".meter-key").textContent = rotT == null ? `clave v${version}` : `clave rotada a v${version} en la llamada ${rotT}`;
+    p.meter.classList.toggle("rotated", rotT != null);
+    p.meter.classList.toggle("just-rotated", rotT != null && rotT === currentT());
+    p.meter.classList.toggle("full", frac >= 0.999);
+    p.root.classList.toggle("ended", !!atEnd());
+  }
+
   function renderResult(p) {
     p.result.innerHTML = "";
     p.result.className = "result";
@@ -222,7 +259,16 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const small = document.createElement("div");
     small.className = "result-leak";
     small.textContent = leaks || "sin bits filtrados";
-    p.result.append(big, small);
+    if (p.status != null) {
+      const code = document.createElement("div");
+      code.className = "result-code";
+      code.textContent = p.status;
+      p.result.append(code);
+    }
+    const txt = document.createElement("div");
+    txt.className = "result-text";
+    txt.append(big, small);
+    p.result.append(txt);
   }
 
   function render() {
@@ -230,6 +276,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const yMax = sharedYMax();
     for (const p of Object.values(panels)) {
       updateList(p);
+      renderMeter(p);
       renderChart(p, yMax);
       renderDetail(p);
       renderResult(p);

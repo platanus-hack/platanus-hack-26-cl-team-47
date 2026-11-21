@@ -337,3 +337,140 @@ code { font-family: ui-monospace, Consolas, monospace; }
 .tech-id { font-size: 0.75em; color: var(--muted); font-weight: normal; }
 .home-scenario { color: var(--muted); margin-top: -4px; }
 .home-scenario:has(#scenario-org:empty) { display: none; }
+
+/* ------------------------------------------------ impacto visual de la demo
+   Tema oscuro fijo para la pantalla dividida y la portada: rojo = sin protección,
+   verde = con el medidor. El visor simple (index.html) y el informe no cambian. */
+
+body.split-page, body.home-page {
+  --bg: #0b0f16;
+  --panel: #121824;
+  --text: #eef2f8;
+  --muted: #8d99ad;
+  --border: #232c3b;
+  --current: #7aa7ff;
+  --grid: #1c2431;
+  --block: #3d1a1f;
+  --block-edge: #ff6b6b;
+  --rotate: #3b2f10;
+  --rotate-edge: #ffc24b;
+  --good: #3ddc84;
+  --good-bg: #0f2a1c;
+  --bad: #ff5a5f;
+  --bad-bg: #32131a;
+  background:
+    radial-gradient(1200px 500px at 0% 0%, rgba(255, 90, 95, .10), transparent 60%),
+    radial-gradient(1200px 500px at 100% 0%, rgba(61, 220, 132, .10), transparent 60%),
+    var(--bg);
+  color: var(--text);
+}
+
+.split-page .bar { background: rgba(18, 24, 36, .85); border-bottom-color: var(--border); padding: 12px 20px; }
+.split-page h1 { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.split-page .scenario-sub { font-size: 13px; }
+.split-page button { background: #1a2231; border-color: #2c3749; color: var(--text); padding: 6px 12px; border-radius: 8px; }
+.split-page button.active { background: var(--current); border-color: var(--current); color: #08101f; font-weight: 700; }
+.split-page .position { font-size: 15px; font-weight: 600; color: var(--text); }
+.split-page .report-link { font-weight: 600; }
+
+.split-page .split { gap: 20px; padding: 14px 20px 10px; }
+#side-left { --side: var(--bad); --side-bg: var(--bad-bg); }
+#side-right { --side: var(--good); --side-bg: var(--good-bg); }
+
+.split-page .side,
+.split-page.with-graph .side { grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, 25%) auto; gap: 10px; }
+
+.split-page .side-head {
+  min-height: 60px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--side) 45%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--side) 22%, transparent), transparent 70%);
+  flex-wrap: nowrap;
+}
+.split-page .side-title {
+  font-size: 22px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--side);
+  white-space: nowrap;
+}
+
+/* medidor grande */
+.meter {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 8px 16px 12px;
+}
+.meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.meter-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.meter-key { font-size: 13px; font-weight: 700; color: var(--muted); padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); }
+.meter.rotated .meter-key { color: #1b1300; background: var(--rotate-edge); border-color: var(--rotate-edge); }
+.meter.just-rotated { animation: flash-rot 1.2s ease-out; }
+.meter-row { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 8px; }
+.meter-num { font-size: 54px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--side); letter-spacing: -.02em; }
+.meter-total { font-size: 20px; color: var(--muted); font-weight: 600; }
+.meter-pct { margin-left: auto; font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+.meter-bar { height: 16px; border-radius: 999px; background: #1c2431; overflow: hidden; }
+.meter-fill { height: 100%; width: 0; border-radius: 999px; background: var(--side); transition: width .35s ease; box-shadow: 0 0 18px color-mix(in srgb, var(--side) 70%, transparent); }
+.meter.full .meter-num { text-shadow: 0 0 24px color-mix(in srgb, var(--side) 80%, transparent); }
+@keyframes flash-rot {
+  0% { box-shadow: 0 0 0 0 rgba(255, 194, 75, .9); border-color: var(--rotate-edge); }
+  100% { box-shadow: 0 0 0 26px rgba(255, 194, 75, 0); }
+}
+
+/* resultado final: el código HTTP como sello */
+.split-page .result { display: flex; align-items: center; gap: 14px; padding: 6px 14px; border-radius: 12px; border-width: 2px; text-align: left; animation: stamp .45s cubic-bezier(.2, 1.4, .4, 1); }
+.split-page .result-code { font-size: 44px; line-height: 1; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.split-page .result-status { font-size: 15px; font-weight: 700; line-height: 1.25; }
+.split-page .result-leak { font-size: 12px; }
+.split-page .result.bad { box-shadow: 0 0 32px rgba(255, 90, 95, .45); }
+.split-page .result.good { box-shadow: 0 0 32px rgba(61, 220, 132, .45); }
+@keyframes stamp { 0% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* paneles y lista */
+.split-page .panel { border-radius: 12px; border-color: var(--border); background: var(--panel); }
+.split-page .panel > h2 { font-size: 11px; letter-spacing: .08em; }
+.split-page .call-list li { font-size: 13px; padding: 4px 8px; }
+.split-page .call-list li.is-sink { background: color-mix(in srgb, var(--side) 14%, transparent); border-left-color: var(--side); }
+.split-page .call-list li.is-sink .args { color: var(--text); }
+.split-page .call-list li.has-rotation { background: var(--rotate); border-left-color: var(--rotate-edge); }
+.split-page .call-list li.current { outline-color: var(--current); }
+.split-page .mark.sink { border-color: var(--side); color: var(--side); font-weight: 700; }
+.split-page .mark.rotation { background: var(--rotate-edge); color: #1b1300; border-color: var(--rotate-edge); }
+
+/* curva de bits */
+.split-page .bits-area { opacity: .22; }
+.split-page .bits-dot { stroke: var(--panel); stroke-width: 2; }
+.split-page .full-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; }
+.split-page .full-label { fill: var(--muted); font-size: 10px; }
+.split-page .rotation-line { stroke-width: 2.5; }
+.split-page .rotation-label { font-size: 13px; font-weight: 800; }
+.split-page .legend text { fill: var(--muted); }
+
+.split-page .graph-strip { padding: 4px 20px 16px; gap: 20px; height: 25vh; min-height: 200px; }
+.split-page .g-nodes .node-label { fill: #aab4c5; }
+
+/* portada */
+.home-page .home { max-width: 980px; padding: 56px 28px; gap: 24px; }
+.home-page .home-kicker { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--current); font-weight: 700; }
+.home-page .home-title { font-size: clamp(36px, 5.4vw, 64px); font-weight: 900; letter-spacing: -.025em; line-height: 1.04; }
+.home-page .home-scenario { font-size: 16px; margin-top: 0; }
+.home-duel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.home-duel > div { border-radius: 16px; padding: 18px 22px; border: 1px solid; }
+.home-duel .duel-bad { border-color: color-mix(in srgb, var(--bad) 55%, transparent); background: linear-gradient(135deg, var(--bad-bg), transparent); }
+.home-duel .duel-good { border-color: color-mix(in srgb, var(--good) 55%, transparent); background: linear-gradient(135deg, var(--good-bg), transparent); }
+.home-duel .duel-tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.home-duel .duel-code { font-size: clamp(56px, 9vw, 104px); line-height: 1; font-weight: 900; letter-spacing: -.03em; }
+.home-duel .duel-bad .duel-code { color: var(--bad); text-shadow: 0 0 40px rgba(255, 90, 95, .45); }
+.home-duel .duel-good .duel-code { color: var(--good); text-shadow: 0 0 40px rgba(61, 220, 132, .45); }
+.home-duel .duel-text { font-size: 16px; line-height: 1.4; margin-top: 6px; }
+.home-page .home-points { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.home-page .home-points li { background: var(--panel); border-color: var(--border); border-radius: 14px; font-size: 15px; }
+.home-page .home-cta { background: var(--current); color: #08101f; font-size: 20px; padding: 16px 40px; border-radius: 12px; box-shadow: 0 8px 30px rgba(122, 167, 255, .35); }
+@media (max-width: 800px) {
+  .home-duel, .home-page .home-points { grid-template-columns: 1fr; }
+  .meter-num { font-size: 44px; }
+}
