@@ -18,3 +18,7 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Registros y sesiones grabadas del banco de pruebas, y salidas de la demo
+logs/
+demo/out/
