@@ -40,9 +40,20 @@ class PortInUseError(RuntimeError):
     pass
 
 
+def exclusive_bind_option() -> int:
+    """Opción de socket para un bind que falle si otro ya escucha en el puerto.
+
+    En Windows, SO_REUSEADDR deja bindear un puerto que otro socket ya escucha, así
+    que no sirve para detectarlo: se usa SO_EXCLUSIVEADDRUSE. En Linux y macOS,
+    SO_REUSEADDR solo permite reutilizar puertos en TIME_WAIT, que es lo que queremos.
+    """
+    return socket.SO_EXCLUSIVEADDRUSE if sys.platform == "win32" else socket.SO_REUSEADDR
+
+
 def port_free(host: str, port: int) -> bool:
+    """False si otro socket ya escucha en (host, port), en cualquier sistema operativo."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, exclusive_bind_option(), 1)
         try:
             s.bind((host, port))
         except OSError:
