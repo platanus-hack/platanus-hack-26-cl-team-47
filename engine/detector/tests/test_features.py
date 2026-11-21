@@ -14,7 +14,7 @@ def tc(**kw):
 
 def test_params_defaults_frozen():
     p = Params()
-    assert (p.b, p.b_rot, p.lambda_rot, p.alpha, p.T, p.beta_bits) == (9.2, 4.0, 0.3, 0.2, 200, 64.0)
+    assert (p.b, p.b_rot, p.lambda_rot, p.alpha, p.T, p.beta_bits) == (9.2, 4.0, 0.3, 0.2, 150, 64.0)
     with pytest.raises(Exception):
         p.b = 1.0
 

