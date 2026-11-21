@@ -17,8 +17,13 @@ from urllib.parse import unquote_plus
 
 Decoder = Callable[[str], list[str]]
 
-# Tokens con pinta de base64 (estándar o url-safe). Mínimo 8 caracteres: 6 bytes.
-_B64_TOKEN = re.compile(r"[A-Za-z0-9+/_\-]{8,}={0,2}")
+# Tokens con pinta de base64 (estándar o url-safe). Con 8 o más caracteres de cuerpo se aceptan
+# siempre; los cortos, de 6 o 7 (#126), solo con relleno: ver decode_base64.
+_B64_TOKEN = re.compile(r"[A-Za-z0-9+/_\-]{6,}={0,2}")
+# Cuerpo mínimo de un token corto: 6 caracteres decodifican 4 bytes, MIN_CANDIDATE del motor (engine.py).
+# Así un fragmento de 4 caracteres cuenta igual en base64 que en claro (#126).
+_B64_SHORT_BODY = 6
+_B64_LONG_BODY = 8
 # Tokens hexadecimales de longitud par (bytes codificados).
 _HEX_TOKEN = re.compile(r"(?:[0-9A-Fa-f]{2}){4,}")
 # Caracteres sueltos separados por 1 a 3 separadores no alfanuméricos: "a-b-c-d", "a b c d".
@@ -35,14 +40,34 @@ def _printable(raw: bytes) -> str | None:
     return text if good / len(text) >= 0.9 else None
 
 
+def _short_b64_ok(body: str, pad: int) -> bool:
+    """Token corto (6 o 7 caracteres de cuerpo): solo con relleno explícito y largo total múltiplo de 4.
+
+    Es la forma que tiene un fragmento de 4 o 5 caracteres en base64 estándar ("YjJkZQ==",
+    "YjJkZTE="). Exigir el relleno deja fuera las palabras de 6 o 7 letras sueltas (sin "="), que son
+    la fuente obvia de coincidencias al azar; además decode_base64 exige texto imprimible."""
+    return _B64_SHORT_BODY <= len(body) < _B64_LONG_BODY and pad > 0 and (len(body) + pad) % 4 == 0
+
+
 def decode_base64(text: str) -> list[str]:
     out: list[str] = []
     for m in _B64_TOKEN.finditer(text):
         tok = m.group(0)
+        pad = len(tok) - len(tok.rstrip("="))
         # El token puede venir pegado a texto alfanumérico ("key=QUJD..."): probamos los 4 desfases.
         for start in range(4):
             body = tok[start:].rstrip("=")
-            if len(body) < 8:
+            if len(body) < _B64_LONG_BODY:
+                if _short_b64_ok(body, pad):
+                    padded = body + "=" * pad
+                    for alt in (False, True):
+                        try:
+                            raw = (base64.urlsafe_b64decode if alt else base64.b64decode)(padded)
+                        except (binascii.Error, ValueError):
+                            continue
+                        dec = _printable(raw)
+                        if dec:
+                            out.append(dec)
                 break
             body = body[: len(body) - len(body) % 4] if len(body) % 4 == 1 else body
             padded = body + "=" * (-len(body) % 4)

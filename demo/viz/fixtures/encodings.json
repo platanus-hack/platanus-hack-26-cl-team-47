@@ -7,6 +7,12 @@
     "graph": "fixtures/real_graph.json"
   },
   {
+    "id": "base64",
+    "label": "En base64",
+    "left": "fixtures/enc_base64_left.jsonl",
+    "right": "fixtures/enc_base64_right.jsonl"
+  },
+  {
     "id": "reversed",
     "label": "Al revés",
     "left": "fixtures/enc_reversed_left.jsonl",
