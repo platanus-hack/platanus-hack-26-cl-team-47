@@ -24,9 +24,9 @@ Fuente: [23]; informe, A.3; «Actualización de H10», corrección 2 (https://ar
 
 ## 4. ¿No basta con una pasarela MCP que bloquea secretos por regex, o con detect-secrets?
 
-Las pasarelas con regex y detect-secrets miran cada mensaje por separado y buscan el secreto completo. La demo lo muestra: cuatro caracteres por llamada pasan. Las herramientas que sí juntan fragmentos entre llamadas son otra categoría y van en la pregunta siguiente. La comparación medida contra allowlist más detect-secrets es una de las cifras de la evaluación final.
+Las pasarelas con regex y detect-secrets miran cada mensaje por separado y buscan el secreto completo. La demo lo muestra: cuatro caracteres por llamada pasan. Las herramientas que sí juntan fragmentos entre llamadas son otra categoría y van en la pregunta siguiente. En la evaluación final, contra la lista de destinos más detect-secrets: 150 ataques que nosotros prevenimos y ella no, 0 al revés (180 ataques grabados de seis familias nuevas).
 
-Fuente: [25], [26], [27]; informe, A.3. PENDIENTE: la cifra T3 de la evaluación final.
+Fuente: [25], [26], [27]; informe, A.3; `results/test/report.md`, prueba T3.
 
 ## 5. Pipelock ya reensambla fragmentos; ¿qué agregan ustedes?
 
@@ -48,15 +48,15 @@ Fuente: informe, E (puntos 1, 2 y 4); `docs/BASES.md`, línea de trabajo 1 (AI c
 
 ## 8. ¿Qué no detectan?
 
-Lo que medimos es una cota inferior: decimos «al menos tantos bits», no «bits exactos». Una codificación que el motor no lee no se ve por contenido. Ahí actúan la rotación periódica, que deja inútil lo que salió, y la evidencia de comportamiento. Contra cifrado arbitrario la respuesta es un broker más una lista de destinos permitidos. PENDIENTE: cifra de la familia de sustitución propia en la evaluación final.
+Lo que medimos es una cota inferior: decimos «al menos tantos bits», no «bits exactos». Una codificación que el motor no lee no se ve por contenido. Ahí actúan la rotación periódica, que deja inútil lo que salió, y la evidencia de comportamiento. Contra cifrado arbitrario la respuesta es un broker más una lista de destinos permitidos. En la evaluación final, el contador de bits solo, sin el modelo de evidencia, previene 40 de 180 ataques de familias nuevas: lo demás lo hace la evidencia de comportamiento, que rota temprano, y por eso mismo rota de más en casos benignos difíciles (34 de 90 sesiones). La familia de sustitución propia quedó en validación, no en el set de prueba: no damos su cifra como resultado final.
 
-Fuente: lámina 11; informe, A.5.
+Fuente: lámina 11; informe, A.5; `results/test/LECTURA.md`, puntos 2 y 4.
 
 ## 9. ¿Rotar no rompe producción?
 
-La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Cuentagotas deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona.
+La rotación automática ya es práctica común: existe por calendario, por TTL o tras una fuga pública completa. Lo nuevo es el disparador, no la rotación. Si el gestor falla, el proxy no deja salir nada hasta poder rotar. Y hay un límite: como máximo 3 rotaciones por secreto en 200 llamadas; después Cuentagotas deja de rotar, bloquea las salidas de esa clave a destinos no permitidos y avisa a una persona. Falsos positivos en la evaluación final: 0 llamadas benignas bloqueadas de 5.879 expuestas (cota superior al 95 %: 0,05 %); el costo es otro, rotaciones de más: 34 de las 90 sesiones benignas difíciles rotaron una clave sin necesidad (5,46 por cada 1.000 llamadas benignas; la meta era 5), y ninguna de las 30 normales. Es tráfico sintético, escrito por nosotros.
 
-Fuente: [21], [22]; informe, A.2; límite de rotaciones en `engine/detector/params.py` (#79).
+Fuente: [21], [22]; informe, A.2; límite de rotaciones en `engine/detector/params.py` (#79); `results/test/LECTURA.md`, punto 3.
 
 ## 10. ¿Son los primeros?
 
@@ -66,9 +66,9 @@ Fuente: informe, A.3 y A.5; «Actualización de H10» (https://arxiv.org/abs/260
 
 ## 11. ¿Los resultados son reales?
 
-Sí. Las cifras salen de una sola corrida de evaluación sobre un set de ataques sellado con hash, con los parámetros congelados antes de abrirlo. La demo también: los bits del atacante se cuentan con el código del servidor del atacante, que es independiente del detector, y el 200 o el 401 lo devuelve la API protegida al probar la clave que armó con lo que recibió. Si nos preguntan antes de esa corrida, la respuesta es: todavía no la corremos.
+Sí, con sus límites. Las cifras salen de una sola corrida sobre un set de ataques sellado con hash antes de evaluar, con la configuración congelada antes de abrirlo; el sello se comprobó al abrirlo. Son ataques grabados de seis familias que el detector no había visto, y todo el tráfico es sintético. La demo también es real: los bits del atacante se cuentan con el código del servidor del atacante, que es independiente del detector, y el 200 o el 401 lo devuelve la API protegida al probar la clave que armó con lo que recibió.
 
-Fuente: `docs/PLAN.md` (reglas del equipo morado). PENDIENTE: la corrida final (H20 a H23).
+Fuente: `docs/PLAN.md` (reglas del equipo morado); `results/test/LECTURA.md` (qué dice el resultado y qué no); `redteam/SELLO.md` (el sello y cómo verificarlo).
 
 ## 12. ¿Por qué un hospital?
 
@@ -81,3 +81,9 @@ Fuente: `docs/ESCENARIO.md`, filas «verificado» de la tabla de datos. El hospi
 Lo probamos con cinco agentes que sacan dos fragmentos cada uno: con un monitor por agente, ninguno ve más de 32 de los 160 bits, nada rota y el atacante arma la clave (200); con la cuenta global de Cuentagotas la clave rota en la llamada 32 y el atacante recibe 401. Hoy la cuenta compartida cubre a los agentes que pasan por el mismo proceso y se conserva entre sesiones; coordinar varias máquinas es trabajo futuro. Ya hay monitores entre agentes: Makins et al. (arXiv 2607.07368) describen el «efecto fragmentación» contra monitores por instancia, y Brown et al. (arXiv 2605.31593) también vigilan entre agentes; los dos usan un LLM o agrupamiento, no una cuenta de bits por secreto. El riesgo no es teórico: Anthropic describió una campaña en que los atacantes dividieron el ataque en tareas pequeñas de apariencia inocente y el modelo cosechó credenciales, y Google GTIG describe actores que automatizan descubrimiento y explotación con frameworks multiagente, con las intrusiones totalmente agénticas como tendencia.
 
 Fuente: `demo/viz/fixtures/swarm_left.jsonl` y `swarm_right.jsonl` (`python demo/run_split.py --swarm`); Anthropic, 13 de noviembre de 2025, <https://www.anthropic.com/news/disrupting-AI-espionage>; Google GTIG, 16 de noviembre de 2026, <https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold>. Ojo: la campaña de Anthropic no fue un «enjambre» sino un framework de orquestación sobre un agente de código; y no decir que las intrusiones totalmente autónomas ya son generalizadas.
+
+## 14. ¿Y si el atacante se adapta a la rotación?
+
+La evaluación final es contra ataques grabados, que después de rotar siguen enviando la clave vieja. Lo medimos aparte con un atacante simulado que relee la clave nueva antes de cada envío: en el set de prueba, 180 de 180 ataques no pasan de 96 bits de ninguna versión de la clave (máximo 64, mediana 20); sin rotación, solo 30 de 180. Cómo lo frena: llega al tope de tres rotaciones y pasa al modo escalado, que bloquea las salidas de esa clave hacia destinos no permitidos y avisa a una persona; pasó en todos los casos. Es una detención con costo, no rotación sin fin, y el costo de ese modo sobre tráfico benigno no está medido. Es una simulación con un atacante de guion, reportada aparte.
+
+Fuente: `results/adaptive/summary.md` (`python -m eval.final.adaptive`); `results/test/LECTURA.md`, «El atacante que se adapta».

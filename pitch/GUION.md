@@ -6,8 +6,8 @@ las secciones numeradas; las notas para el presentador van en «Si sobra tiempo 
 preguntan». Si la demo en vivo falla, usar el video de respaldo (`demo/README.md`,
 «Video de respaldo»).
 
-Tiempo total: 2 min 38 s sin la demo (397 palabras a 150 por minuto), más 60
-a 90 s de demo en vivo. Con el texto de la lámina 7 incluido son 426 palabras.
+Tiempo total: 2 min 48 s sin la demo (421 palabras a 150 por minuto), más 60
+a 90 s de demo en vivo. Con el texto de la lámina 7 incluido son 450 palabras.
 
 Preguntas del jurado y respuestas cortas: `pitch/PREGUNTAS.md`.
 
@@ -27,23 +27,21 @@ resultados se escribe hasta tenerlo medido.
 | 7 | Demo | 29 | 12 s (más la demo en vivo, 60–90 s) |
 | 8 | Y si atacan en enjambre | 46 | 18 s |
 | 9 | Qué hace cada uno | 36 | 14 s |
-| 10 | Resultados | 20 | 8 s |
-| 11 | Límites | 29 | 12 s |
+| 10 | Resultados | 45 | 18 s |
+| 11 | Límites | 28 | 11 s |
 | 12 | ¿Dónde está la IA? | 27 | 11 s |
 | 13 | 36 horas en cifras | 36 | 14 s |
 | 14 | Usuario y cierre | 39 | 16 s |
-| | **Total sin la demo** | **397** | **2 min 38 s** |
+| | **Total sin la demo** | **421** | **2 min 48 s** |
 
 ## Pendientes
 
 | Lámina | Qué falta | De dónde sale | Quién |
 |---|---|---|---|
-| 10 | T1: falsas alarmas por llamada expuesta | Evaluación final (paso 14), `eval/metrics` | Análisis (matix3000) |
-| 10 | T2: ataques prevenidos | Evaluación final sobre el set sellado (paso 14) | Análisis |
-| 10 | T3: comparación con allowlist más detect-secrets | `eval/baselines` en la evaluación final | Servicios (VictoriaGuerriero) y Análisis |
-| 10 | T4: efecto de la rotación en el goteo | Ablación del paso 14 | Análisis |
 | 12 | Corridas en vivo con un LLM siguiendo la inyección | Paso de nivel 2 (`docs/PLAN.md`) | Equipo |
 | 14 | Confirmar el borrador de qué pedimos (dos equipos de TI de salud para un piloto) | Decisión del equipo | Equipo / líder |
+
+Resueltos: T1, T2, T3 y T4 de la lámina 10, con la evaluación final (`results/test/`, leer antes `results/test/LECTURA.md`).
 
 ## 1. Título · 13 s
 
@@ -81,13 +79,13 @@ El mismo ataque dos veces. Sin protección, los bits suben y el atacante entra: 
 
 Pipelock y AgentBrake ya juntan fragmentos, pero no leen los cortos ni los codificados, y no rotan. Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial para rotarla antes de que se complete.
 
-## 10. Resultados · 8 s
+## 10. Resultados · 18 s
 
-Cuatro números, todos medidos: falsas alarmas, ataques prevenidos, comparación con la mejor alternativa práctica y el efecto de la rotación.
+180 de 180 ataques de familias que el detector nunca vio; ninguno pasó de 32 bits de 160. Sin rotación, 150 de 180 lo logran. Cuando duda, rota en vez de bloquear: rotó de más en 34 de 90 casos difíciles y no interrumpió ninguno.
 
-## 11. Límites · 12 s
+## 11. Límites · 11 s
 
-Medimos una cota inferior. Lo que los decodificadores no leen no se ve; para eso están la evidencia y la rotación. La cuenta compartida cubre hoy un solo proceso.
+Son ataques grabados; contra uno que se adapta tenemos un tope de tres rotaciones y después bloqueo. Medimos una cota inferior; la cuenta compartida cubre un solo proceso.
 
 ## 12. ¿Dónde está la IA? · 11 s
 
@@ -117,7 +115,16 @@ Lo que salió del texto hablado al recortarlo a 3 minutos. No es parte del tiemp
   21 de noviembre de 2026. Pipelock pierde los fragmentos codificados y AgentBrake
   los de menos de 20 caracteres, según declaran. No afirmar ser pioneros ni
   decir que ninguna herramienta reensambla: la única frase de novedad es la de la lámina.
-- **Lámina 10:** PENDIENTE leer las cifras reales de la evaluación final.
+- **Lámina 10, de dónde salen las cifras:** corrida única sobre el set sellado (`results/test/report.md`,
+  `systems.md`; cómo leerlas en `results/test/LECTURA.md`). La columna de la derecha es la mejor
+  línea de base por ataques prevenidos, el presupuesto de bits, una réplica nuestra. T1 a T4 pasan.
+  Sin el modelo de evidencia, solo con el contador de bits, se previenen 40 de 180: en familias
+  nuevas lo que frena el ataque es la evidencia de comportamiento. Nunca decir «detiene todo» sin
+  decir «ataques grabados de familias nuevas».
+- **Lámina 11, el atacante que se adapta:** simulación aparte (`results/adaptive/summary.md`). Un
+  atacante que relee la clave nueva antes de cada envío: 180 de 180 no pasan de 96 bits de ninguna
+  versión (máximo 64); sin rotación, 30 de 180. Lo frena el tope de tres rotaciones y el modo
+  escalado, que bloquea las salidas y avisa a una persona: detención con costo, no rotación sin fin.
 - **Lámina 11, límite del enjambre:** la cuenta compartida cubre a los agentes que pasan
   por el mismo proceso y se conserva entre sesiones; coordinar varias máquinas es
   trabajo futuro.
@@ -134,8 +141,8 @@ Lo que salió del texto hablado al recortarlo a 3 minutos. No es parte del tiemp
 - **Lámina 13, cómo se calcula cada cifra** (para defenderla si preguntan):
   - Tests automáticos: el número que imprime `python -m pytest -q` el día de la
     entrega (635 al escribir esto; actualízalo).
-  - Sistemas comparados: el nuestro, dos ablaciones y cinco líneas de base, cuando la
-    evaluación final (#133) esté en `main`. Hasta entonces la lámina dice PENDIENTE.
+  - Sistemas comparados: 9, el nuestro, tres ablaciones (sin rotación, cuenta por sesión, sin
+    modelo de evidencia) y cinco líneas de base (`results/test/systems.md`).
   - Ataques: 80 de entrenamiento y 80 de validación
     (`python -c "import json; print(len({json.loads(l)['session_id'] for l in open('redteam/train/labels.jsonl')}))"`,
     y lo mismo con `redteam/val`), y 180 sellados (seis familias de ataque de 30 en
