@@ -9,7 +9,7 @@ Pasos (iguales para val y test):
   b. Unidades: las sesiones cuyas etiquetas traen el mismo `group` forman una unidad (comparten secreto);
      el resto son unidades de una sesión. Dentro de una unidad se reproducen en orden de session_id.
   c. Ocho sistemas, cada uno escribe events_<sistema>.jsonl (no se versionan):
-     ours (congelado, un SharedLedger por unidad), no_rotation (ours sin reglas de rotación),
+     ours (congelado, un SharedLedger por unidad), no_rotation (ours con rotation_enabled=False),
      per_session (congelado sin ledger) y las líneas de base allowlist, detect_secrets, combined, budget
      y reassembly (réplica simplificada del reensamblado por sesión).
   d. Métrica por unidad: merge_units funde cada unidad en una sesión lógica antes de session_summary.
@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import dataclasses
 import datetime
 import json
 import subprocess
@@ -46,8 +45,22 @@ from eval.search.split import split_sessions
 SYSTEMS = ("ours", "no_rotation", "per_session", "allowlist", "detect_secrets", "combined", "budget", "reassembly")
 MANIFEST = "demo/secrets_manifest.json"
 SEED = 0
-# Ablación de la rotación: mismos b y modelo; las reglas de rotación de la regla 2 nunca disparan.
-NO_ROTATION = dict(b_rot=1e9, lambda_rot=2.0, T=10 ** 9)
+# Sistemas basados en nuestro detector: se reproducen con emit_rotations=True (rotaciones exactas, #133).
+DETECTOR_SYSTEMS = ("ours", "no_rotation", "per_session")
+# Una línea por sistema para systems.md.
+DESCRIPTIONS = {
+    "ours": "Cuentagotas congelado; por unidad, un SharedLedger con el manifiesto completo y los secretos de la "
+            "unidad, y un detector por sesión (la cuenta es por clave, compartida entre sesiones).",
+    "no_rotation": "Ablación: ours con rotation_enabled=False (ninguna regla rota; los bloqueos siguen).",
+    "per_session": "Ablación del enjambre: el detector congelado sin ledger, una cuenta por sesión.",
+    "allowlist": "Línea de base: egress solo a dominios aprobados.",
+    "detect_secrets": "Línea de base: regex y entropía sobre los argumentos de cada sumidero.",
+    "combined": "Línea de base: bloquea si allowlist o detect_secrets bloquea (la de T3).",
+    "budget": "Réplica simplificada de un presupuesto acumulado de bits por sesión (Nimbus), sin CUSUM ni rotación; "
+              "no es su código ni su producto.",
+    "reassembly": "Réplica simplificada del reensamblado por sesión (inspirada en Pipelock y AgentBrake), sin "
+                  "decodificar; no es su código ni su producto. Ver eval/baselines/reassembly.py.",
+}
 
 
 # --------------------------------------------------------------------------- a. sesiones
@@ -92,16 +105,19 @@ def run_system(name: str, units: list[tuple[str, list[list]]], secrets: dict[str
         raise ValueError(f"sistema desconocido: {name}")
     frozen = frozen or make_frozen()
     values, allowed = _manifest()
-    no_rot = dataclasses.replace(frozen.params, **NO_ROTATION)
+    emit = name in DETECTOR_SYSTEMS
     events: list = []
     for _, sess in units:
         if name in ("ours", "no_rotation"):
             unit_secrets: dict[str, str] = {}
             for s in sess:
                 unit_secrets.update(secrets.get(s[0].session_id, {}))
+            # Manifiesto completo (con sus allowed_hosts) y encima los secretos de la unidad: lo mismo que ve
+            # Detector(secrets=sec) sin ledger, y lo que vio la búsqueda (#133, problema C).
             ledger = SharedLedger({**values, **unit_secrets}, allowed_hosts=allowed)
-            kw: dict[str, Any] = {} if name == "ours" else {"params": no_rot, "check_params": False}
-            events += replay(sess, lambda ledger=ledger, kw=kw: frozen(ledger=ledger, seed=SEED, **kw).decide)
+            kw: dict[str, Any] = {} if name == "ours" else {"rotation_enabled": False}
+            events += replay(sess, lambda ledger=ledger, kw=kw: frozen(ledger=ledger, seed=SEED, **kw).decide,
+                             emit_rotations=True)
             continue
         for s in sess:
             sec = secrets.get(s[0].session_id)
@@ -114,7 +130,7 @@ def run_system(name: str, units: list[tuple[str, list[list]]], secrets: dict[str
             else:
                 factory = {"allowlist": allowlist.make_decide, "detect_secrets": detect_secrets_baseline.make_decide,
                            "combined": combined.make_decide}[name]
-            events += replay([s], factory)
+            events += replay([s], factory, emit_rotations=emit)
     return events
 
 
@@ -228,10 +244,8 @@ def systems_markdown(rows: list[dict]) -> str:
                  _f(r["median_max_bits_true"], 1), _f(r["median_rotations_attack"], 1),
                  *[_f(r["by_family"].get(f)) for f in fams]]
         lines.append("| " + " | ".join(cells) + " |")
-    if any(r["system"] == "reassembly" for r in rows):
-        lines += ["", "`reassembly` es una réplica simplificada, inspirada en herramientas que reensamblan "
-                  "fragmentos por sesión (Pipelock, AgentBrake); no es su código ni su producto. "
-                  "Ver `eval/baselines/reassembly.py`."]
+    lines += ["", "Qué es cada sistema:", ""]
+    lines += [f"- `{r['system']}`: {DESCRIPTIONS.get(r['system'], '')}" for r in rows]
     return "\n".join(lines) + "\n"
 
 
