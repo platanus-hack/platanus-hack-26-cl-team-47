@@ -187,7 +187,7 @@ def test_unidad_de_una_sesion_ours_igual_al_detector_sin_ledger(frozen):
     assert comparable(ours) == comparable(per)
 
 
-@pytest.mark.parametrize("name", ["allowlist", "detect_secrets", "combined", "budget"])
+@pytest.mark.parametrize("name", ["allowlist", "detect_secrets", "combined", "budget", "reassembly"])
 def test_lineas_de_base_corren(frozen, name):
     calls, labels = sender("d-1", range(3), read_env=True)
     evs = R.run_system(name, R.make_units([calls], labels), secrets_for("d-1"), frozen)
@@ -239,6 +239,7 @@ def test_dos_corridas_de_val_dan_systems_json_identicos(tmp_path):
         row = next(line for line in md.splitlines() if line.startswith(f"| {name} |"))
         assert "no calculado" in row
     assert "| T2 (cota pesimista) |" in md
+    assert "réplica simplificada" in (outs[0] / "systems.md").read_text(encoding="utf-8")
     # Dos corridas de val se pueden repetir sobre la misma carpeta.
     R.main(["--split", "val", "--out", str(outs[0]), "--benign", str(benign), "--redteam", str(rt), "--n-boot", "50"])
 

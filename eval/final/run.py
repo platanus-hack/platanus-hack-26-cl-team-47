@@ -8,9 +8,10 @@ Pasos (iguales para val y test):
      cálculo que eval.search) y todas las de redteam/<split>/sessions, con sus labels y secrets.
   b. Unidades: las sesiones cuyas etiquetas traen el mismo `group` forman una unidad (comparten secreto);
      el resto son unidades de una sesión. Dentro de una unidad se reproducen en orden de session_id.
-  c. Siete sistemas, cada uno escribe events_<sistema>.jsonl (no se versionan):
+  c. Ocho sistemas, cada uno escribe events_<sistema>.jsonl (no se versionan):
      ours (congelado, un SharedLedger por unidad), no_rotation (ours sin reglas de rotación),
-     per_session (congelado sin ledger) y las líneas de base allowlist, detect_secrets, combined, budget.
+     per_session (congelado sin ledger) y las líneas de base allowlist, detect_secrets, combined, budget
+     y reassembly (réplica simplificada del reensamblado por sesión).
   d. Métrica por unidad: merge_units funde cada unidad en una sesión lógica antes de session_summary.
   e. summary_<sistema>.json y la tabla de eval.final (T1–T4 con Holm; T5 y T6 «no calculado»).
   f. systems.md y systems.json: una fila por sistema.
@@ -35,14 +36,14 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 from engine.detector import SharedLedger, make_frozen
-from eval.baselines import allowlist, budget, combined, detect_secrets_baseline
+from eval.baselines import allowlist, budget, combined, detect_secrets_baseline, reassembly
 from eval.fit.fit import load_secrets
 from eval.metrics import aggregate, session_summary
 from eval.replay.core import load_sessions, replay, write_events
 from eval.search.__main__ import _read_jsonl, assign_families
 from eval.search.split import split_sessions
 
-SYSTEMS = ("ours", "no_rotation", "per_session", "allowlist", "detect_secrets", "combined", "budget")
+SYSTEMS = ("ours", "no_rotation", "per_session", "allowlist", "detect_secrets", "combined", "budget", "reassembly")
 MANIFEST = "demo/secrets_manifest.json"
 SEED = 0
 # Ablación de la rotación: mismos b y modelo; las reglas de rotación de la regla 2 nunca disparan.
@@ -108,6 +109,8 @@ def run_system(name: str, units: list[tuple[str, list[list]]], secrets: dict[str
                 factory = lambda sec=sec: frozen(secrets=sec, seed=SEED).decide  # noqa: E731
             elif name == "budget":
                 factory = lambda sec=sec: budget.make_decide(secrets={**values, **(sec or {})})  # noqa: E731
+            elif name == "reassembly":
+                factory = lambda sec=sec: reassembly.make_decide(secrets={**values, **(sec or {})})  # noqa: E731
             else:
                 factory = {"allowlist": allowlist.make_decide, "detect_secrets": detect_secrets_baseline.make_decide,
                            "combined": combined.make_decide}[name]
@@ -225,6 +228,10 @@ def systems_markdown(rows: list[dict]) -> str:
                  _f(r["median_max_bits_true"], 1), _f(r["median_rotations_attack"], 1),
                  *[_f(r["by_family"].get(f)) for f in fams]]
         lines.append("| " + " | ".join(cells) + " |")
+    if any(r["system"] == "reassembly" for r in rows):
+        lines += ["", "`reassembly` es una réplica simplificada, inspirada en herramientas que reensamblan "
+                  "fragmentos por sesión (Pipelock, AgentBrake); no es su código ni su producto. "
+                  "Ver `eval/baselines/reassembly.py`."]
     return "\n".join(lines) + "\n"
 
 
