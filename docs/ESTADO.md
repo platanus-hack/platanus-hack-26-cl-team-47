@@ -1,14 +1,14 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 14:35 (H15,6). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 14:55 (H15,9). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
-**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #179 (pitch con las dos cifras) y #180 (README, portada, página de resultados y resumen con las dos cifras). En revisión del líder: PR #178 (descripción pública reescrita).
+**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #185 (probar el hook de Claude Code dentro de una sesión real). En revisión del líder: PR #178 (descripción pública reescrita). El pitch, el README, la portada y la página de resultados ya dicen las dos cifras.
 
 ## Qué hay en `main`
 
-- 784 tests en verde (`python -m pytest -q`).
+- 809 tests en verde (`python -m pytest -q`).
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado con entradas simuladas, no dentro de una sesión real).
