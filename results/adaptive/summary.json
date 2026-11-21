@@ -1,0 +1,654 @@
+{
+  "val": {
+    "ours": {
+      "overall": {
+        "units": 80,
+        "rewritten": 70,
+        "not_rewritable": 10,
+        "prevented": 70,
+        "prevented_rate": 1.0,
+        "prevented_ci": [
+          0.9486662028489763,
+          1.0
+        ],
+        "median_max_bits": 16.0,
+        "max_max_bits": 28.0,
+        "median_rotations": 3.0,
+        "escalated_fraction": 0.8142857142857143,
+        "blocked_after_escalation": 257
+      },
+      "by_family": {
+        "A1": {
+          "units": 10,
+          "rewritten": 10,
+          "not_rewritable": 0,
+          "prevented": 10,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.6915028921812392,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 1.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A2": {
+          "units": 15,
+          "rewritten": 15,
+          "not_rewritable": 0,
+          "prevented": 15,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.781980639089466,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 16.0,
+          "median_rotations": 3,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 29
+        },
+        "A3": {
+          "units": 20,
+          "rewritten": 20,
+          "not_rewritable": 0,
+          "prevented": 20,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8315665290169147,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 16.0,
+          "median_rotations": 4.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 116
+        },
+        "A4": {
+          "units": 25,
+          "rewritten": 25,
+          "not_rewritable": 0,
+          "prevented": 25,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8628148284692875,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 28.0,
+          "median_rotations": 3,
+          "escalated_fraction": 0.88,
+          "blocked_after_escalation": 112
+        },
+        "A5′": {
+          "units": 10,
+          "rewritten": 0,
+          "not_rewritable": 10,
+          "prevented": 0,
+          "prevented_rate": null,
+          "prevented_ci": [
+            0.0,
+            1.0
+          ],
+          "median_max_bits": null,
+          "max_max_bits": null,
+          "median_rotations": null,
+          "escalated_fraction": null,
+          "blocked_after_escalation": 0
+        }
+      }
+    },
+    "no_rotation": {
+      "overall": {
+        "units": 80,
+        "rewritten": 70,
+        "not_rewritable": 10,
+        "prevented": 39,
+        "prevented_rate": 0.5571428571428572,
+        "prevented_ci": [
+          0.4334071696434521,
+          0.675889450328142
+        ],
+        "median_max_bits": 96.0,
+        "max_max_bits": 160.0,
+        "median_rotations": 0.0,
+        "escalated_fraction": 0.0,
+        "blocked_after_escalation": 0
+      },
+      "by_family": {
+        "A1": {
+          "units": 10,
+          "rewritten": 10,
+          "not_rewritable": 0,
+          "prevented": 10,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.6915028921812392,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A2": {
+          "units": 15,
+          "rewritten": 15,
+          "not_rewritable": 0,
+          "prevented": 15,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.781980639089466,
+            1.0
+          ],
+          "median_max_bits": 28.0,
+          "max_max_bits": 28.0,
+          "median_rotations": 0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A3": {
+          "units": 20,
+          "rewritten": 20,
+          "not_rewritable": 0,
+          "prevented": 5,
+          "prevented_rate": 0.25,
+          "prevented_ci": [
+            0.08657146910143462,
+            0.49104587170795744
+          ],
+          "median_max_bits": 112.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A4": {
+          "units": 25,
+          "rewritten": 25,
+          "not_rewritable": 0,
+          "prevented": 9,
+          "prevented_rate": 0.36,
+          "prevented_ci": [
+            0.1797168205836554,
+            0.5747936504461505
+          ],
+          "median_max_bits": 120.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A5′": {
+          "units": 10,
+          "rewritten": 0,
+          "not_rewritable": 10,
+          "prevented": 0,
+          "prevented_rate": null,
+          "prevented_ci": [
+            0.0,
+            1.0
+          ],
+          "median_max_bits": null,
+          "max_max_bits": null,
+          "median_rotations": null,
+          "escalated_fraction": null,
+          "blocked_after_escalation": 0
+        }
+      }
+    },
+    "no_evidence": {
+      "overall": {
+        "units": 80,
+        "rewritten": 70,
+        "not_rewritable": 10,
+        "prevented": 70,
+        "prevented_rate": 1.0,
+        "prevented_ci": [
+          0.9486662028489763,
+          1.0
+        ],
+        "median_max_bits": 16.0,
+        "max_max_bits": 28.0,
+        "median_rotations": 4.0,
+        "escalated_fraction": 0.6428571428571429,
+        "blocked_after_escalation": 181
+      },
+      "by_family": {
+        "A1": {
+          "units": 10,
+          "rewritten": 10,
+          "not_rewritable": 0,
+          "prevented": 10,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.6915028921812392,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 1.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A2": {
+          "units": 15,
+          "rewritten": 15,
+          "not_rewritable": 0,
+          "prevented": 15,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.781980639089466,
+            1.0
+          ],
+          "median_max_bits": 28.0,
+          "max_max_bits": 28.0,
+          "median_rotations": 3,
+          "escalated_fraction": 0.2,
+          "blocked_after_escalation": 3
+        },
+        "A3": {
+          "units": 20,
+          "rewritten": 20,
+          "not_rewritable": 0,
+          "prevented": 20,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8315665290169147,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 16.0,
+          "median_rotations": 5.5,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 92
+        },
+        "A4": {
+          "units": 25,
+          "rewritten": 25,
+          "not_rewritable": 0,
+          "prevented": 25,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8628148284692875,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 28.0,
+          "median_rotations": 4,
+          "escalated_fraction": 0.88,
+          "blocked_after_escalation": 86
+        },
+        "A5′": {
+          "units": 10,
+          "rewritten": 0,
+          "not_rewritable": 10,
+          "prevented": 0,
+          "prevented_rate": null,
+          "prevented_ci": [
+            0.0,
+            1.0
+          ],
+          "median_max_bits": null,
+          "max_max_bits": null,
+          "median_rotations": null,
+          "escalated_fraction": null,
+          "blocked_after_escalation": 0
+        }
+      }
+    }
+  },
+  "test": {
+    "ours": {
+      "overall": {
+        "units": 180,
+        "rewritten": 180,
+        "not_rewritable": 0,
+        "prevented": 180,
+        "prevented_rate": 1.0,
+        "prevented_ci": [
+          0.979714795429887,
+          1.0
+        ],
+        "median_max_bits": 20.0,
+        "max_max_bits": 64.0,
+        "median_rotations": 3.0,
+        "escalated_fraction": 1.0,
+        "blocked_after_escalation": 831
+      },
+      "by_family": {
+        "A10": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 16.0,
+          "max_max_bits": 16.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 218
+        },
+        "A12": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 32.0,
+          "max_max_bits": 64.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 67
+        },
+        "A13": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 60
+        },
+        "A5": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 20.0,
+          "max_max_bits": 20.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 151
+        },
+        "A7": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 20.0,
+          "max_max_bits": 20.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 180
+        },
+        "A9": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 24.0,
+          "max_max_bits": 24.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 155
+        }
+      }
+    },
+    "no_rotation": {
+      "overall": {
+        "units": 180,
+        "rewritten": 180,
+        "not_rewritable": 0,
+        "prevented": 30,
+        "prevented_rate": 0.16666666666666666,
+        "prevented_ci": [
+          0.11536398484624559,
+          0.2292982198901109
+        ],
+        "median_max_bits": 160.0,
+        "max_max_bits": 160.0,
+        "median_rotations": 0.0,
+        "escalated_fraction": 0.0,
+        "blocked_after_escalation": 0
+      },
+      "by_family": {
+        "A10": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A12": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A13": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A5": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A7": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A9": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 120.0,
+          "max_max_bits": 120.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        }
+      }
+    },
+    "no_evidence": {
+      "overall": {
+        "units": 180,
+        "rewritten": 180,
+        "not_rewritable": 0,
+        "prevented": 63,
+        "prevented_rate": 0.35,
+        "prevented_ci": [
+          0.28054534039304996,
+          0.4244865548770859
+        ],
+        "median_max_bits": 160.0,
+        "max_max_bits": 160.0,
+        "median_rotations": 0.0,
+        "escalated_fraction": 0.3333333333333333,
+        "blocked_after_escalation": 153
+      },
+      "by_family": {
+        "A10": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A12": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 3,
+          "prevented_rate": 0.1,
+          "prevented_ci": [
+            0.021117137029722576,
+            0.2652884504742081
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A13": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 0.0,
+          "max_max_bits": 0.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 60
+        },
+        "A5": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A7": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 0,
+          "prevented_rate": 0.0,
+          "prevented_ci": [
+            0.0,
+            0.11570330822202779
+          ],
+          "median_max_bits": 160.0,
+          "max_max_bits": 160.0,
+          "median_rotations": 0.0,
+          "escalated_fraction": 0.0,
+          "blocked_after_escalation": 0
+        },
+        "A9": {
+          "units": 30,
+          "rewritten": 30,
+          "not_rewritable": 0,
+          "prevented": 30,
+          "prevented_rate": 1.0,
+          "prevented_ci": [
+            0.8842966917779722,
+            1.0
+          ],
+          "median_max_bits": 96.0,
+          "max_max_bits": 96.0,
+          "median_rotations": 3.0,
+          "escalated_fraction": 1.0,
+          "blocked_after_escalation": 93
+        }
+      }
+    }
+  }
+}
