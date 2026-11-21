@@ -44,6 +44,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     right: makePanel(document.getElementById("side-right")),
   };
   const $ = (id) => document.getElementById(id);
+  let graphView = null;
 
   function makePanel(root) {
     return {
@@ -217,6 +218,20 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       renderDetail(p);
       renderResult(p);
     }
+    renderGraphStrip();
+  }
+
+  /* ---- franja del grafo (solo con ?graph=) */
+
+  function renderGraphStrip() {
+    if (!graphView || !clock.ts.length) return;
+    const p = panels.right;
+    const t = currentT();
+    const cur = p.frames.filter((f) => f.t <= t).pop();
+    const now = new Set((cur && cur.call.resources) || []);
+    graphView.update(now, touchedUpTo(p.frames, t));
+    const d = (cur && cur.decision) || {};
+    renderPath($("path-box"), pathBoxes(p.frames, d), d.reason, d.action);
   }
 
   /* ---- controles (un solo juego para los dos paneles) */
@@ -267,9 +282,18 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     return r.text();
   }).then(parseJsonl);
 
-  const left = params.get("left"), right = params.get("right");
+  const left = params.get("left"), right = params.get("right"), graphUrl = params.get("graph");
+  const fetchGraph = (url) => fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
+    return r.json();
+  });
   if (left && right) {
-    Promise.all([fetchLog(left), fetchLog(right)]).then(([l, r]) => {
+    Promise.all([fetchLog(left), fetchLog(right), graphUrl ? fetchGraph(graphUrl) : null]).then(([l, r, graph]) => {
+      if (graph) {
+        document.body.classList.add("with-graph");
+        $("graph-strip").hidden = false;
+        graphView = GraphView($("graph-box"), graph);  // disposición calculada una vez
+      }
       setEvents(panels.left, l);
       setEvents(panels.right, r);
       rebuildClock();
