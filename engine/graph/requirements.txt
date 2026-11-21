@@ -1,0 +1,4 @@
+-r ../../contracts/requirements.txt
+numpy>=1.26
+scipy>=1.11
+networkx>=3.2
