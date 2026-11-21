@@ -34,9 +34,9 @@ Fuente: `proxy/agent/loop.py` (el agente solo actúa por el servidor MCP del pro
 
 ## 5. ¿Cómo lo instala todo un equipo de desarrollo?
 
-Es un servidor MCP: se agrega al archivo de configuración del agente con un comando y un manifiesto de las claves a proteger. Los pasos, probados, están en `docs/QUICKSTART.md`; si varios agentes apuntan al mismo archivo de cuenta, suman en la misma cuenta por clave. Para Claude Code hay además un hook que pasa por el contador lo que el agente manda con Bash y WebFetch (`integrations/claude_code/README.md`). Su límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y no se probó dentro de una sesión real.
+Es un servidor MCP: se agrega al archivo de configuración del agente con un comando y un manifiesto de las claves a proteger. Los pasos, probados, están en `docs/QUICKSTART.md`; si varios agentes apuntan al mismo archivo de cuenta, suman en la misma cuenta por clave. Para Claude Code hay además un hook que pasa por el contador lo que el agente manda con Bash y WebFetch (`integrations/claude_code/README.md`). Lo probamos en una sesión real de Claude Code: el hook corre en cada llamada, permite sin fricción y, cuando niega, el modelo recibe el motivo. El contador de bits con un modelo real no quedó probado, porque el modelo se negó por su cuenta a enviar trozos de la clave. Sus límites: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro, y la regla directa tiene falsos positivos.
 
-Fuente: `integrations/claude_code/README.md`; `proxy/server.py` (`python -m proxy.server`); `demo/secrets_manifest.json` (formato del manifiesto).
+Fuente: `integrations/claude_code/README.md`, «Probado en una sesión real» (evidencia en `integrations/claude_code/evidencia/`); `proxy/server.py` (`python -m proxy.server`); `demo/secrets_manifest.json` (formato del manifiesto).
 
 ## 6. ¿No basta con una lista de destinos permitidos?
 

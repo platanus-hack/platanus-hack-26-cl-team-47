@@ -500,9 +500,15 @@ def test_preguntas_con_cifras_reales():
     pf = _proxy_flags()
     assert (_frenados(pf["proxy"]["taint_rule"]), _frenados(pf["grabadas"]["taint_rule"])) == (90, 180)
     assert (_frenados(pf["proxy"]["no_evidence"]), _frenados(pf["grabadas"]["no_evidence"])) == (10, 40)
-    # La pregunta 5 nombra el hook de Claude Code y su límite.
+    # La pregunta 5 nombra el hook de Claude Code, lo que se probó en una sesión real (#185) y lo que no.
     sec = PREGUNTAS.split("¿Cómo lo instala todo un equipo de desarrollo?")[1].split("\n## ")[0]
-    assert "integrations/claude_code/README.md" in sec and "no se probó dentro de una sesión real" in sec
+    assert "integrations/claude_code/README.md" in sec
+    assert "Lo probamos en una sesión real de Claude Code" in sec and "permite sin fricción" in sec
+    assert "el modelo recibe el motivo" in sec
+    assert "El contador de bits con un modelo real no quedó probado" in sec
+    assert "no se probó dentro de una sesión real" not in PREGUNTAS
+    assert "## Probado en una sesión real" in (PITCH.parent / "integrations" / "claude_code" / "README.md").read_text(
+        encoding="utf-8")
     assert "PENDIENTE: la cifra T3" not in PREGUNTAS and "PENDIENTE: la corrida final" not in PREGUNTAS
 
 
