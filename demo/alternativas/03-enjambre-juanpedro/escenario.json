@@ -185,17 +185,91 @@
     "frase": "Mide cuánta clave ya salió y la cambia antes de que sirva.",
     "pie": "En la leyenda de Atacama, quien sigue al alicanto por codicia termina con las manos vacías."
   },
-  "cierre": {
-    "cifra": "120",
-    "de_que": "de 180 ataques grabados de familias nuevas, frenados como los ve el proxy en vivo. Medido una sola vez.",
-    "lineas": [
-      "0 llamadas normales bloqueadas.",
-      "Cuando duda, rota en vez de bloquear: rotó de más en 34 de 90 casos difíciles.",
-      "Las dos familias que se escapan están publicadas, con el comando para repetir la medición.",
-      "El agente de la demo es un guion. Tres modelos reales, 21 corridas: ninguno siguió la nota plantada."
-    ],
-    "pedido": "Buscamos dos equipos con agentes de código para un piloto."
-  },
   "corrida_grabada": "Las llamadas de los asistentes son una corrida grabada del motor.",
-  "corrida_en_vivo": "Las llamadas de los asistentes son de la corrida que el motor hizo recién."
+  "corrida_en_vivo": "Las llamadas de los asistentes son de la corrida que el motor hizo recién.",
+  "prueba": {
+    "titulo": "Cómo lo probamos",
+    "equipos": {
+      "rojo": {
+        "nombre": "Equipo rojo",
+        "que": "Escribe los ataques en una sesión aparte, sin abrir el detector.",
+        "hecho": "{hora} · set sellado · sha256 {sello}"
+      },
+      "morado": {
+        "nombre": "Equipo morado",
+        "que": "Pone las reglas: el set se sella, el detector se congela y se mide una sola vez.",
+        "hecho": "{abierto} · sello comprobado · una corrida"
+      },
+      "azul": {
+        "nombre": "Equipo azul",
+        "que": "Construye el detector con otros ataques y lo congela antes de que se abra el set.",
+        "hecho": "congelado · {congelado} · commit {commit_congelado}"
+      }
+    },
+    "sello_vivo": "recalculado recién aquí: coincide",
+    "sello_falla": "recalculado recién aquí: NO coincide",
+    "precinto": "Set sellado a las {hora}",
+    "grupos": {
+      "ataques": [
+        "Ataques grabados",
+        "frenados"
+      ],
+      "normales": [
+        "Sesiones normales difíciles",
+        "rotó de más"
+      ]
+    },
+    "familias": {
+      "A5": "Por un canal de confianza",
+      "A7": "Repartido entre tres agentes",
+      "A10": "Ofuscado con XOR",
+      "A12": "Goteo lento, ráfaga al final",
+      "A9": "A su propio destino permitido",
+      "A13": "En mensajes de commits de git",
+      "B3": "SHA y UUID que parecen claves",
+      "B4": "Despliegue y rotación legítimos",
+      "B5": "Contenido ajeno lleno de claves"
+    },
+    "numeros": {
+      "a_antes": "ataques grabados, de {familias} familias que el detector no había visto",
+      "a_despues": "de {n} ataques frenados, como los ve el proxy en vivo",
+      "b_antes": "sesiones normales difíciles, para medir lo que cuesta",
+      "b_despues": "llamadas normales bloqueadas, de {llamadas}",
+      "b_limites": "llamadas normales bloqueadas, de {llamadas}. Rotó de más en {de_mas} de {dificiles} sesiones."
+    },
+    "leyendas": [
+      "El equipo rojo escribió {n} ataques de {familias} familias nuevas sin abrir el detector, y selló el set a las {hora}.",
+      "El equipo azul congeló el detector antes de que se abriera el set. La regla del morado: se mide una sola vez.",
+      "Como lo ve el proxy en vivo, frenó {frenados} de {n} ataques, y no bloqueó ninguna de las {llamadas} llamadas normales.",
+      "Rotó de más en {de_mas} de {dificiles} sesiones normales difíciles. Las dos familias que se escapan están publicadas.",
+      "El agente de la demo es un guion. Tres modelos reales, 21 intentos: ninguno siguió la nota plantada.",
+      "La misma medición con otros guardias. Las dos réplicas son versiones simplificadas hechas por nosotros."
+    ],
+    "notas": [
+      "Que el rojo no abrió el detector es una regla de trabajo: desde fuera no se comprueba. El sello y el congelamiento, sí.",
+      "Que el rojo no abrió el detector es una regla de trabajo: desde fuera no se comprueba. El sello y el congelamiento, sí.",
+      "Ataques y tráfico normal son guiones del equipo, 30 réplicas por familia: se lee «{familias_frenadas} de {familias} familias».",
+      "En commits de git, el proxy en vivo bloquea el push; el set cuenta la fuga en cada commit. Detalle en results/test/LECTURA.md.",
+      "Cifras de results/proxy_flags y results/test. Son ataques grabados: no un atacante que se adapta.",
+      "Con las marcas que traían las grabaciones son {frenados_grabadas} de {n}, y la regla simple empata. Decimos la cifra del proxy en vivo."
+    ],
+    "pedido": "Buscamos dos equipos con agentes de código para un piloto.",
+    "otros": {
+      "titulo": "La misma medición, otros guardias",
+      "unidad": "ataques frenados, de {n}",
+      "bloquea": "bloquea {pct} % de lo normal",
+      "sistemas": {
+        "ours": "Alicanto",
+        "taint_rule": "Regla simple: secreto leído + destino no confiable",
+        "budget": "Presupuesto de bits por sesión (réplica nuestra)",
+        "allowlist": "Lista de destinos permitidos",
+        "combined": "Lista de destinos + escáner de secretos",
+        "no_evidence": "Alicanto sin evidencia de comportamiento",
+        "no_rotation": "Alicanto sin rotación",
+        "detect_secrets": "Escáner de secretos (regex y entropía)",
+        "reassembly": "Reensamblado por sesión (réplica nuestra)"
+      },
+      "pie": "Con una cuenta por agente, este set da lo mismo ({por_agente}): aquí rota la evidencia de comportamiento, antes que el contador. La cuenta por clave es lo que se vio en la demo."
+    }
+  }
 }

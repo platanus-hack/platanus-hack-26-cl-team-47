@@ -98,7 +98,7 @@
     <!-- El corte entre los dos mundos. -->
     <div id="card"><p id="card-1"></p><p id="card-2"></p></div>
 
-    <!-- El pitch (solo con ?pitch=1): la apertura, sobre la que se habla, y el cierre. -->
+    <!-- El pitch (solo con ?pitch=1): la apertura, sobre la que se habla. -->
     <section id="opening" aria-label="Apertura del pitch">
       <img id="open-logo" src="../../viz/logo.png" alt="" onerror="this.remove()">
       <h2 id="open-1"></h2>
@@ -106,15 +106,37 @@
       <p id="open-3"></p>
       <p id="open-hint"></p>
     </section>
-    <section id="closing" aria-label="Cierre del pitch">
-      <div class="c-left">
-        <b id="close-1"></b>
-        <p id="close-2"></p>
+    <!-- Cómo lo probamos: es el cierre del pitch y también se abre sola (tecla E).
+         Arriba, los tres equipos. Al medio, el set de prueba entero: una fila por familia, una
+         casilla por sesión. Abajo, el pedido. Las cifras se leen de evaluacion.json. -->
+    <section id="proof" aria-label="Cómo lo probamos: equipo rojo, morado y azul, el resultado y sus límites">
+      <h2 id="pf-title"></h2>
+      <div class="pf-teams">
+        <article class="pf-team" id="pf-rojo">
+          <h3><i></i><span></span></h3>
+          <p class="pf-what"></p>
+          <p class="pf-fact"></p>
+        </article>
+        <article class="pf-team" id="pf-morado">
+          <h3><i></i><span></span></h3>
+          <p class="pf-what"></p>
+          <p class="pf-fact"></p>
+        </article>
+        <article class="pf-team" id="pf-azul">
+          <h3><i></i><span></span></h3>
+          <p class="pf-what"></p>
+          <p class="pf-fact"></p>
+        </article>
       </div>
-      <div class="c-right">
-        <ul id="close-list"></ul>
-        <p id="close-ask"></p>
+      <!-- Una sola grilla: a la izquierda las dos cifras; a la derecha, una fila por familia
+           (nombre, 30 casillas, cuenta). Las filas las escribe enjambre.js. -->
+      <div id="pf-grid">
+        <div class="pf-num" id="pf-num-a"><b id="pf-n-a"></b><p id="pf-t-a"></p></div>
+        <div class="pf-num" id="pf-num-b"><b id="pf-n-b"></b><p id="pf-t-b"></p></div>
+        <div id="pf-seal"><b id="pf-seal-1"></b><code id="pf-seal-2"></code></div>
+        <div id="pf-vs"></div>
       </div>
+      <p id="pf-ask"></p>
     </section>
 
     <!-- El público elige el ataque y el motor del repositorio corre en vivo. -->
@@ -157,6 +179,7 @@
         <button id="play" type="button" title="Reproducir o pausar (espacio)">Reproducir</button>
         <button class="world" type="button" data-world="a" title="Tecla 1">Sin Alicanto</button>
         <button class="world" type="button" data-world="b" title="Tecla 2">Con Alicanto</button>
+        <button id="proof-open" type="button" title="Tecla E">Cómo lo probamos</button>
         <span id="clock"></span>
         <span id="timer" hidden title="Tiempo que queda del pitch"></span>
       </div>

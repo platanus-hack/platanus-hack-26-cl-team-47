@@ -1,7 +1,7 @@
 # 03. 20 agentes, una clave
 
 - **Quién la hizo:** Juan Pedro y su Claude.
-- **Estado:** funciona con una corrida real de 20 agentes, grabada con el arnés del enjambre del repositorio, y con corridas hechas en el momento, con lo que elige el público.
+- **Estado:** funciona con una corrida real de 20 agentes, grabada con el arnés del enjambre del repositorio, y con corridas hechas en el momento, con lo que elige el público. Termina con «Cómo lo probamos»: el equipo rojo, el morado y el azul, el set de prueba sellado y las cifras de la evaluación, leídas de `results/`.
 - **Cómo abrirla:** `python -m http.server 8300 --directory demo` y luego `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html`. Pulsa espacio para reproducir: corre entera, del mundo sin Alicanto al mundo con Alicanto, sin tocar nada más.
 - **El pitch de 3 minutos, con la parte en vivo:** `python demo/alternativas/03-enjambre-juanpedro/servidor.py` (en vez del servidor de arriba) y luego `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html?pitch=1`. El guion está en [GUION_3_MIN.md](GUION_3_MIN.md).
 
@@ -28,7 +28,7 @@ Tres recursos ayudan a seguirla:
 - **En los momentos clave, lo demás se atenúa.** En la rotación quedan a la vista Alicanto y el gestor de secretos; en el cobro, el atacante y la API.
 - **El resultado en grande se puede deshacer.** Flecha izquierda vuelve un cuadro y muestra el grafo completo, con el resultado chico.
 
-Con todo a la vista, un clic en cualquier pantalla acerca la cámara a ese asistente y muestra sus llamadas; Escape vuelve. Teclas: espacio (reproducir o pausar), flechas (un paso), 1 y 2 (sin y con Alicanto), R (inicio).
+Con todo a la vista, un clic en cualquier pantalla acerca la cámara a ese asistente y muestra sus llamadas; Escape vuelve. Teclas: espacio (reproducir o pausar), flechas (un paso), 1 y 2 (sin y con Alicanto), E (cómo lo probamos), R (inicio).
 
 Dura 64 segundos sin Alicanto (27 de ellos son el origen y el prólogo) y 46 con Alicanto: 1 minuto 50 en total. `?speed=1.3` lo deja en 1 minuto 25; las flechas permiten saltar cuadros. `?w=b` parte directo en el mundo con Alicanto.
 
@@ -41,7 +41,7 @@ Con `?pitch=1` la misma página lleva los 3 minutos completos, con un reloj que 
 3. **El público es el atacante.** La página pregunta entre cuántos asistentes reparten la clave (1, 2, 5 o 10), cómo esconden cada pedazo (tal cual, en base64 o al revés) y pide un número cualquiera.
 4. **El motor corre en ese momento.** `servidor.py` arma la sesión con esos valores y la pasa por el motor del repositorio. La página muestra el comando y lo que imprimió, tal cual, y la terminal del servidor imprime lo mismo.
 5. **Con Alicanto, con ese ataque.** Lo que se ve después sale de esa corrida, no de la grabada. En la rotación aparece la decisión real del motor: la acción, los bits y cuánto tardó.
-6. **Cierre.** Una tarjeta con la cifra de la evaluación, sus límites y el pedido.
+6. **Cierre: cómo lo probamos.** El equipo rojo, el morado y el azul, el set de prueba sellado, la corrida única (120 de 180), sus límites y el pedido. Corre sola en 28 segundos. Está descrita más abajo.
 
 Qué cambia según lo que elija el público, comprobado corriendo las 12 combinaciones con dos números distintos:
 
@@ -54,9 +54,57 @@ Qué cambia según lo que elija el público, comprobado corriendo las 12 combina
 
 El disfraz no cambia ninguna fila, y el número solo cambia qué asistentes filtran y en qué orden. En las 24 corridas, 0 llamadas bloqueadas.
 
-En un ensayo a velocidad real, con el texto del guion dicho a 150 palabras por minuto, el pitch completo terminó en 2 minutos 52.
+En un ensayo a velocidad real, con el texto del guion dicho a 150 palabras por minuto, el pitch completo terminó en 2 minutos 53.
 
 Sin `servidor.py` la página igual funciona: el panel avisa que no hay servidor en vivo y sigue la corrida grabada. Fuera del pitch, la tecla `V` abre el panel del público en cualquier momento.
+
+## Cómo lo probamos: equipo rojo, morado y azul
+
+Es la respuesta a «¿y esto funciona de verdad?». Se abre sola al final del pitch, con la tecla `E` en cualquier momento, o directo con `enjambre.html?escena=prueba` (y `&paso=0` a `5` para partir en un paso).
+
+Arriba van los tres equipos, de izquierda a derecha como el resto de la demo: quien ataca a la izquierda, quien defiende a la derecha y, entre los dos, las reglas.
+
+- **Equipo rojo:** escribe los ataques en una sesión aparte, sin abrir el detector, y sella el set (sábado, 07:10).
+- **Equipo morado:** pone las reglas. El set se sella, el detector se congela y se mide una sola vez (09:40).
+- **Equipo azul:** construye el detector con otros ataques y lo congela antes de que se abra el set.
+
+Al medio está el set de prueba entero, como una grilla: una fila por familia y una casilla por ataque o por sesión normal. Son las nueve familias del sello, de 30 casos cada una: seis de ataque y tres de sesiones normales difíciles. En la familia repartida (A7), cada ataque es un grupo de tres sesiones. A la izquierda, las dos cifras que importan.
+
+Son seis pasos:
+
+| Paso | Qué se ve | Qué dice |
+|---|---|---|
+| 0 | El rojo encendido. Las 270 casillas vacías, bajo un precinto con la hora y el sha256 | El rojo escribió 180 ataques de 6 familias nuevas y selló el set |
+| 1 | Se encienden el azul y el morado | El azul congeló el detector antes de abrir. Se mide una sola vez |
+| 2 | Se va el precinto y las casillas se llenan, de izquierda a derecha; la cifra sube hasta 120 | Frenó 120 de 180, y no bloqueó ninguna de 5.879 llamadas normales |
+| 3 | Las dos familias que se escapan, en oro; 34 casillas normales en gris | Rotó de más en 34 de 90 sesiones difíciles. Las dos familias que se escapan están publicadas |
+| 4 | El pedido, en grande; lo demás se atenúa | Buscamos dos equipos para un piloto |
+| 5 | En vez de la grilla, una barra por sistema | La misma medición con otros guardias |
+
+Sola llega hasta el paso 4. El paso 5 es para las preguntas y se abre con la flecha derecha.
+
+Qué significa cada casilla:
+
+- **Clara:** ataque frenado.
+- **Oro:** ataque no frenado. Es el mismo oro del resto de la demo: la clave sigue viva.
+- **Gris ceniza:** sesión normal en que Alicanto cambió una clave sin necesidad. Es el mismo gris de la clave muerta.
+- **Solo el contorno:** no pasó nada. Antes de correr, todas están así.
+
+En las filas de sesiones normales, cada casilla es una sesión real del set, en su lugar: 3 de las 34 están en la primera familia, 1 en la segunda y 30 en la tercera, que son las sesiones que leen contenido ajeno lleno de claves de ejemplo. En las filas de ataque, cada familia sale entera o no sale: son 30 réplicas de una misma plantilla.
+
+De dónde salen las cifras, y qué se comprueba en el momento:
+
+- **La página no calcula ni trae escrita ninguna cifra.** Las lee de `evaluacion.json`. Ese archivo lo escribe `hacer_evaluacion.py`, que copia los números de `results/proxy_flags/` (120 de 180, la comparación), `results/test/` (las llamadas normales y las rotaciones de más, sesión por sesión) y `redteam/SELLO.md` (el sello y las horas). Un test lo regenera y lo compara con el guardado, y otro revisa que ni los textos ni el código de la escena traigan esas cifras escritas a mano.
+- **El sello se recalcula en vivo.** Con `servidor.py`, al abrir la escena el servidor vuelve a sacar el sha256 de los 335 archivos del set, con la receta de `redteam/SELLO.md`, y la página lo compara con el publicado. Tarda unas decenas de milisegundos. Aparece bajo el equipo rojo («recalculado recién aquí: coincide») y en la línea de abajo a la derecha. Sin `servidor.py` se muestra solo el sello publicado y no se afirma nada más. A mano: `python demo/alternativas/03-enjambre-juanpedro/hacer_evaluacion.py --sello`.
+- **La medición se puede repetir, pero no en 3 minutos de pitch.** `python -m eval.final.proxy_flags --out /tmp/pf` tarda unos 2 minutos 40. La repetimos el sábado 21 a las 19:20 y dio las mismas cifras. El comando queda escrito en la línea de abajo a la derecha.
+
+Lo que la escena no dice, y por qué:
+
+- **Que el rojo sea otro grupo de personas.** Fue una sesión de agente aparte que tenía prohibido abrir el detector. Es una regla de trabajo del equipo y desde fuera no se puede comprobar; la nota de abajo a la derecha lo dice en los dos primeros pasos.
+- **«180 de 180».** Esa es la cifra con las marcas que traían las grabaciones. Solo aparece en la nota del paso 5, junto a su explicación, y la cifra grande es siempre la del proxy en vivo.
+- **Que en los commits de git la clave se escape.** En esa familia el proxy en vivo bloquea el push; el set cuenta la fuga en cada commit y la métrica da 0 de 30. La nota del paso 3 lo dice. Por eso la fila dice «0 de 30 frenados» y no «robada».
+- **Que las réplicas sean los productos.** El presupuesto de bits y el reensamblado por sesión son versiones simplificadas hechas por nosotros; el paso 5 lo dice en cada fila.
+- **Que la cuenta por clave sea lo que frena estos 180.** Con una cuenta por agente, este set da lo mismo (120): aquí rota la evidencia de comportamiento antes que el contador. El pie del paso 5 lo dice. La cuenta por clave es lo que se ve en la demo, con el contador solo.
 
 ## Cómo se ve y por qué
 
@@ -96,7 +144,8 @@ Frase sugerida para quien presenta: «Una clínica trabaja con veinte asistentes
   - **Las fichas que viajan** («clave», el pedazo, «cambia la clave») dibujan llamadas grabadas: la lectura de `.env`, el envío a `attacker.test` y la rotación.
   - **La ficha clínica del resultado** (nombre, diagnósticos, medicamentos, alergias): es inventada entera, y lo dice la propia ficha. La API del banco de pruebas responde solo `{"ok": true}`.
   - **El emblema del atacante y el corte a negro:** son gráfica y texto nuestros. El avance de la llave sí sale de los caracteres recibidos en la grabación.
-  - **Las tarjetas del pitch:** la apertura es texto nuestro. Las cifras del cierre son las del guion oficial (`pitch/GUION.md`, bloque 5) y salen de `results/proxy_flags/systems.md` (120 de 180) y `results/test/LECTURA.md` (34 de 90).
+  - **La apertura del pitch** es texto nuestro.
+  - **En «Cómo lo probamos»,** las cifras, el sello y las horas son reales (ver su sección). Los nombres de las familias, lo que hace cada equipo y las leyendas son texto nuestro, y están en `escenario.json`. Que los tres equipos aparezcan como tres columnas es una forma de contarlo: fueron tres roles con reglas, no tres grupos de personas.
 - **El agente es un guion reproducible, no un modelo.** En las corridas con modelos reales del equipo, ninguno siguió la instrucción plantada.
 - **Dos cosas que la página deriva:**
   - Los bits «en manos del atacante» son los caracteres recibidos por 4 bits (clave hexadecimal), que calza con los 160 bits del cobro grabado.
@@ -111,6 +160,12 @@ Frase sugerida para quien presenta: «Una clínica trabaja con veinte asistentes
 | Llamada 48, 48 bits («sumaba la cuenta global cuando rotó») | el evento `rotation` y su decisión en `global.jsonl` |
 | 0 bloqueadas, cobro 401 | las decisiones y el evento del atacante en `global.jsonl` |
 | Agentes 15, 04 y 13 | los pedazos que salieron hasta la llamada 48 en `global.jsonl` |
+| 120 de 180, y cuántos por familia | `results/proxy_flags/systems.json`, columna de las marcas del proxy |
+| La comparación con otros guardias | el mismo archivo, una fila por sistema |
+| 0 de 5.879 llamadas normales bloqueadas | `results/test/report.json`, prueba T1 |
+| 34 de 90, y cuáles sesiones | `results/test/summary_ours.json`, sesión por sesión |
+| El sello, las 07:10 y las 09:40 | `redteam/SELLO.md` |
+| El hash del detector congelado y sus parámetros | `results/proxy_flags/RUN.json` |
 
 ## Por qué son 10 los que filtran y no los 20
 
@@ -119,7 +174,9 @@ La clave tiene 40 caracteres y el motor cuenta pedazos de 4, así que hay 10 ped
 ## Límites que hay que decir
 
 - **Los 20 agentes corren en una misma máquina.** La cuenta compartida cubre eso; coordinar varias máquinas es trabajo futuro.
-- **El enjambre no está en la evaluación final.** No se le pueden pegar las cifras del set sellado.
+- **El enjambre de 20 no está en la evaluación final.** No se le pueden pegar las cifras del set sellado. La familia repartida del set (A7) son tres agentes.
+- **Las cifras de «Cómo lo probamos» son de ataques grabados y tráfico sintético**, escritos por el equipo. No hay un atacante que se adapta ni tráfico de producción. Cada familia son 30 réplicas de una plantilla: se lee «cuatro de seis familias».
+- **Las 34 de 90 se midieron en la corrida única, con las marcas de las grabaciones.** Con las marcas del proxy no hay un detalle por sesión guardado; lo que hay es el mismo total de rotaciones por cada 1.000 llamadas normales (5,46) y cero bloqueos.
 - **Usa la configuración de la demo:** decide solo el contador de bits y rota al 30 % de la clave.
 - **Con pedazos de menos de 4 caracteres el contador no los ve.** Por eso la demo usa pedazos de 4.
 
@@ -142,6 +199,7 @@ Antes de poner cualquiera de estos datos en una lámina, una persona debe abrir 
 
 - **Elegirla y publicarla:** hoy se abre solo en local. Llevarla a `demo/viz/` y redesplegar, media hora.
 - **Que una persona reescriba el guion y lo ensaye:** `GUION_3_MIN.md` es un borrador. Reemplazaría al guion oficial de `pitch/GUION.md`, que es de otra área: lo decide el líder. Una hora, con dos o tres pasadas con reloj en el proyector de verdad.
+- **Decidir si «Cómo lo probamos» reemplaza a la lámina de cifras del pitch oficial** (`pitch/`, de otra área). Se puede mostrar sola, con `?escena=prueba`.
 - **Que la API devuelva una ficha sintética de verdad**, para que la tarjeta deje de ser maqueta: 1 hora, en `services/api`.
 - **Mostrar que la clínica sigue funcionando después de rotar** (una llamada legítima con la clave nueva): 1 a 2 horas, en `demo/run_split.py` o `services/`.
 
@@ -155,7 +213,9 @@ Antes de poner cualquiera de estos datos en una lámina, una persona debe abrir 
 - **Red:** no usa internet; necesita el servidor local.
 - **La parte en vivo depende de `servidor.py`.** Si no está corriendo, la página lo dice en pantalla y sigue con la corrida grabada; quien presenta tiene que decirlo igual. El servidor escucha solo en este computador (127.0.0.1) y no acepta más valores que los que ofrece la página.
 - **El público puede elegir 1 o 2 asistentes.** Ahí hasta un monitor por agente frena el ataque, y hay que tener lista la frase para ese caso (está en el guion).
-- **El pitch va justo.** El ensayo dejó 8 segundos de margen. La tecla `S` salta las llamadas normales si el reloj aprieta.
+- **El pitch va justo.** El ensayo dejó 7 segundos de margen. La tecla `S` salta las llamadas normales si el reloj aprieta, y `E` abre «Cómo lo probamos» de inmediato.
+- **Si `results/` cambia,** `test_las_cifras_de_la_prueba_son_las_de_results` falla y dice que hay que correr `hacer_evaluacion.py`. La escena nunca muestra una cifra que no esté en `results/`.
+- **Si alguien toca el set de prueba,** el sello deja de coincidir: la página lo muestra en oro («NO coincide») y el test del sello falla.
 - **Si el motor cambia** y la corrida deja de dar lo mismo, `test_la_corrida_se_reproduce_con_el_arnes_del_repositorio` falla y lo dice. Para regenerar: `python demo/alternativas/03-enjambre-juanpedro/hacer_corrida.py`.
 - **Respaldo:** la demo oficial y sus videos.
 

@@ -12,17 +12,22 @@
  *   Corte     al terminar el mundo a, una tarjeta («¿Qué pasa con Alicanto?») y sigue sola.
  *   Mundo b   Alicanto en la salida, con una sola cuenta. Al tercer pedazo pide cambiar la
  *             clave en el gestor de secretos, y lo que el atacante juntó deja de servir.
+ *   Prueba    «Cómo lo probamos»: equipo rojo, morado y azul, el set sellado, la corrida única,
+ *             lo que frena, lo que se escapa y el pedido. Es el cierre del pitch (tecla E).
  *
  * No calcula decisiones: lee dos grabaciones de una corrida real (grabaciones/, hechas con
  * hacer_corrida.py y el arnés del enjambre de la demo oficial). Lo único que deriva son los bits
  * en manos del atacante (caracteres recibidos × bits por carácter, del cobro grabado). La
  * pantalla de la clínica, la tarea que se escribe, los textos de la columna de la clínica y la
  * ficha son maquetas. La rotación es un solo evento grabado; aquí se cuenta en tres tiempos.
+ * Las cifras de la prueba se leen de evaluacion.json, que hacer_evaluacion.py copia de results/
+ * y de redteam/SELLO.md; con servidor.py, el sello del set se vuelve a calcular en el momento.
  *
  * Parámetros: ?w=a|b, ?t=<llamada>|end (abre con todo a la vista), ?speed=<n> (1.3 acorta todo
  * un 30 %), ?autoplay=1,
- * ?a=<jsonl>&b=<jsonl>, ?pitch=1 (el pitch completo de 3 minutos). Teclas: espacio, flechas,
- * 1 y 2 (mundo), S (salta a lo próximo que importa), V (el público elige), R, Escape.
+ * ?a=<jsonl>&b=<jsonl>, ?pitch=1 (el pitch completo de 3 minutos), ?escena=prueba (abre en
+ * «Cómo lo probamos»; con &paso=0..5). Teclas: espacio, flechas, 1 y 2 (mundo), S (salta a lo
+ * próximo que importa), V (el público elige), E (cómo lo probamos), R, Escape.
  * Con todo a la vista, un clic en una pantalla acerca la cámara a ese asistente.
  */
 "use strict";
@@ -33,6 +38,8 @@ const SOURCES = {
   b: Q.get("b") || "grabaciones/global.jsonl",
 };
 const SCENARIO_URL = "escenario.json";
+const PROOF_URL = "evaluacion.json"; // las cifras de la evaluación, copiadas de results/
+const SEAL_API = "/api/sello"; // servidor.py recalcula el sello del set de prueba
 const SECRET = "SECRET_1";
 const ATTACKER_HOST = "attacker.test";
 const API_HOST = "api.empresa.test";
@@ -231,7 +238,13 @@ if (typeof document !== "undefined") (function () {
   const API = "/api/correr"; // lo sirve servidor.py; sin él, sigue la corrida grabada
   const ENC = Q.get("enc") || "auto";
   let speed = Number(Q.get("speed")) || (PITCH ? 1.5 : 1); // el pitch corre más rápido: son 3 minutos
-  let card = PITCH ? "opening" : ""; // tarjeta del pitch a la vista: apertura, cierre o ninguna
+  let card = PITCH ? "opening" : ""; // capa a la vista: "opening", "proof" (cómo lo probamos) o ninguna
+  let evalData = null; // evaluacion.json
+  let proofStep = 0; // paso de «Cómo lo probamos»
+  let proofTimer = null; // corre sola
+  let proofAutoOn = false;
+  let sealAsked = false;
+  let sealLive = null; // el sello recalculado recién por servidor.py, si está
   let clockT0 = 0; // cuándo partió el reloj del pitch
   let liveRun = null; // la corrida que eligió el público, tal como la devolvió el servidor
   let liveOpen = false; // el panel del público está abierto
@@ -269,13 +282,15 @@ if (typeof document !== "undefined") (function () {
     }
     try {
       const get = (u) => fetch(u).then((x) => { if (!x.ok) throw new Error(u); return x.text(); });
-      const [a, b, s] = await Promise.all([
+      const [a, b, s, e] = await Promise.all([
         get(SOURCES.a), get(SOURCES.b),
         fetch(SCENARIO_URL).then((x) => (x.ok ? x.json() : {})).catch(() => ({})),
+        fetch(PROOF_URL).then((x) => (x.ok ? x.json() : null)).catch(() => null),
       ]);
       recs.a = parseRecording(a, SECRET, ENC);
       recs.b = parseRecording(b, SECRET, ENC);
       sc = s || {};
+      evalData = e && e.ataques && e.normales && e.sello ? e : null;
     } catch (err) {
       fail("No se pudo leer la grabación: " + err.message);
       return;
@@ -294,7 +309,12 @@ if (typeof document !== "undefined") (function () {
     }
     layout();
     render(false);
-    if (Q.get("autoplay") === "1") play();
+    if (Q.get("escena") === "prueba" && evalData) {
+      card = "";
+      openProof(Q.get("autoplay") === "1");
+      const paso = Number(Q.get("paso")) || 0;
+      if (paso > 0) proofGo(paso);
+    } else if (Q.get("autoplay") === "1") play();
   }
 
   // ---------- construcción ----------
@@ -426,9 +446,11 @@ if (typeof document !== "undefined") (function () {
     document.addEventListener("keydown", (ev) => {
       if (liveOpen) { liveKey(ev); return; }
       if (ev.target.tagName === "BUTTON" && ev.code === "Space") return;
+      if (card === "proof") { proofKey(ev); return; }
       if (ev.code === "Space") { ev.preventDefault(); toggle(); }
       else if (card) return; // con una tarjeta del pitch a la vista solo vale el espacio
       else if (ev.key === "v" || ev.key === "V") openLive();
+      else if (ev.key === "e" || ev.key === "E") openProof(PITCH);
       else if (ev.key === "s" || ev.key === "S") skip();
       else if (ev.code === "ArrowRight") { pause(); go(F + 1, true); }
       else if (ev.code === "ArrowLeft") { pause(); go(F - 1, false); }
@@ -512,9 +534,14 @@ if (typeof document !== "undefined") (function () {
     gate.hidden = false;
     place("clinic", rx0, top, rw, ch, Math.min(rw / 16.5, ch / 36));
     $("verdict").style.fontSize = Math.min(H / 34, W / 54).toFixed(2) + "px";
-    for (const id of ["card", "opening", "closing", "live"]) {
+    for (const id of ["card", "opening", "live"]) {
       $(id).style.fontSize = Math.min(H / 22, W / 36).toFixed(2) + "px";
     }
+    // «Cómo lo probamos» lleva más cosas: 23 líneas de alto y 42 de ancho, lo que quepa.
+    const pfBase = Math.min(H / 23, (W * 0.92) / 42);
+    $("proof").style.fontSize = pfBase.toFixed(2) + "px";
+    // En pantallas más altas que anchas sobra alto: las filas de la grilla lo aprovechan.
+    $("proof").style.setProperty("--rh", Math.min(1.35, H / 23 / pfBase).toFixed(3));
 
     // Puntos de anclaje, medidos sobre lo ya colocado.
     const w0 = worldEl.getBoundingClientRect();
@@ -678,7 +705,7 @@ if (typeof document !== "undefined") (function () {
     if (timer) return;
     if (F >= last()) {
       if (world === "a") { setWorld("b", true); return; }
-      if (PITCH) { card = "closing"; render(false); return; } // el cierre del pitch
+      if (PITCH) { openProof(true); return; } // el cierre del pitch: cómo lo probamos
       restart();
     }
     const fresh = !started;
@@ -705,7 +732,13 @@ if (typeof document !== "undefined") (function () {
     paintControls();
   }
   function toggle() {
-    if (liveOpen || card === "closing") return;
+    if (liveOpen) return;
+    if (card === "proof") {
+      // Con la prueba a la vista, el botón la deja correr sola o la detiene.
+      if (proofTimer) { proofAutoOn = false; proofWait(); }
+      else { proofAutoOn = true; proofGo(proofStep >= PROOF_ASK ? 0 : proofStep + 1); }
+      return;
+    }
     if (card === "opening") {
       // Primer espacio: parte el reloj y se dice el pitch. Segundo espacio: parte la demo.
       if (!clockT0) { startClock(); return; }
@@ -719,12 +752,15 @@ if (typeof document !== "undefined") (function () {
   function restart() {
     pause();
     world = "a"; F = 0; started = false; zoomAgent = 0;
-    if (PITCH) { card = "opening"; clockT0 = 0; liveAsked = false; }
+    clearTimeout(proofTimer); proofTimer = null; proofAutoOn = false;
+    card = PITCH ? "opening" : "";
+    if (PITCH) { clockT0 = 0; liveAsked = false; }
     if (liveRun) { location.reload(); return; } // vuelven las grabaciones del archivo
     render(false, false, true);
   }
   function setWorld(w, andPlay) {
     pause();
+    if (card === "proof") { clearTimeout(proofTimer); proofTimer = null; proofAutoOn = false; card = ""; }
     world = w === "b" ? "b" : "a";
     zoomAgent = 0;
     started = true;
@@ -1127,9 +1163,11 @@ if (typeof document !== "undefined") (function () {
 
   function paintControls() {
     const f = frame();
-    $("play").textContent = timer ? "Pausa" : "Reproducir";
-    $("clock").textContent = `llamada ${Math.min(f.T, total)} de ${total}`;
-    for (const b of document.querySelectorAll(".world")) b.classList.toggle("active", b.dataset.world === world);
+    const proof = card === "proof";
+    $("play").textContent = (proof ? proofTimer : timer) ? "Pausa" : "Reproducir";
+    $("clock").textContent = proof ? `paso ${proofStep + 1} de ${PROOF_LAST + 1}` : `llamada ${Math.min(f.T, total)} de ${total}`;
+    for (const b of document.querySelectorAll(".world")) b.classList.toggle("active", !proof && b.dataset.world === world);
+    $("proof-open").classList.toggle("active", proof);
     document.body.classList.toggle("idle", !started);
   }
 
@@ -1166,20 +1204,21 @@ if (typeof document !== "undefined") (function () {
       : liveRun
         ? `Con Alicanto, en vivo: ${cuantos(liveRun.params.reparten, "asistente")}, ${DISFRAZ[liveRun.params.disfraz] || liveRun.params.disfraz}, número ${liveRun.params.semilla}`
         : "Con Alicanto: una sola cuenta por clave, en la salida";
-    $("engine").textContent = engineLine(st, f, stage);
-    $("note").textContent = `${sc.ficticio || "Todo es ficticio."} ${sc.maqueta || ""} ` +
+    const proof = card === "proof";
+    $("engine").textContent = proof ? proofEngine() : engineLine(st, f, stage);
+    $("note").textContent = proof ? proofNote() : `${sc.ficticio || "Todo es ficticio."} ${sc.maqueta || ""} ` +
       (liveRun ? (sc.corrida_en_vivo || "") : (sc.corrida_grabada || ""));
     paintPitch();
     const cap = $("caption");
-    const text = card || liveOpen ? "" : caption(st, f, stage);
+    const text = proof ? proofCaption() : card || liveOpen ? "" : caption(st, f, stage);
     if (cap.textContent !== text) {
       cap.textContent = text;
-      if (live && !calm) { cap.classList.remove("fresh"); void cap.offsetWidth; cap.classList.add("fresh"); }
+      if ((live || proof) && !calm) { cap.classList.remove("fresh"); void cap.offsetWidth; cap.classList.add("fresh"); }
     }
     paintControls();
   }
 
-  // ---------- el pitch: apertura, el público elige, el motor corre en vivo, cierre ----------
+  // ---------- el pitch: apertura, el público elige, el motor corre en vivo, la prueba ----------
 
   const DISFRAZ = { none: "tal cual", base64: "en base64", reversed: "al revés" };
   const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
@@ -1205,12 +1244,7 @@ if (typeof document !== "undefined") (function () {
     $("open-1").textContent = ap.titulo || "Alicanto";
     $("open-2").textContent = ap.frase || "";
     $("open-3").textContent = ap.pie || "";
-    const ci = sc.cierre || {};
-    $("close-1").textContent = ci.cifra || "";
-    $("close-2").textContent = ci.de_que || "";
-    const ul = $("close-list");
-    for (const l of ci.lineas || []) ul.appendChild(el("li", null, l));
-    $("close-ask").textContent = ci.pedido || "";
+    buildProof();
     for (const b of document.querySelectorAll("#q-reparten button")) {
       b.addEventListener("click", () => { pick.reparten = Number(b.dataset.v); pick.chosen[0] = true; pick.step = Math.max(pick.step, 1); paintLive(); });
     }
@@ -1237,10 +1271,239 @@ if (typeof document !== "undefined") (function () {
   }
   function paintPitch() {
     $("opening").classList.toggle("on", card === "opening");
-    $("closing").classList.toggle("on", card === "closing");
+    $("proof").classList.toggle("on", card === "proof");
     document.body.classList.toggle("carded", card !== "" || (!!frame() && frame().beat === "card") || liveOpen);
     $("open-hint").textContent = clockT0 ? "Espacio: empieza la demo" : "Espacio: parte el reloj";
     paintClock();
+  }
+
+  // ---------- cómo lo probamos: rojo, morado y azul; la corrida, sus límites y el pedido ----------
+  //
+  // Seis pasos. 0: el rojo escribe los ataques y sella el set. 1: el azul congela el detector, y
+  // las reglas del morado. 2: la corrida única. 3: lo que cuesta y lo que se escapa. 4: el pedido.
+  // 5: la misma medición con otros guardias (para las preguntas; sola no llega hasta ahí).
+  // Aquí no hay ninguna cifra escrita: salen de evaluacion.json, y los textos, de escenario.json.
+
+  const PROOF_LAST = 5;
+  const PROOF_ASK = 4;
+  const PROOF_MS = [9000, 5500, 6000, 7000]; // lo que dura cada paso cuando corre sola, en el pitch
+  const miles = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const coma = (n) => String(n).replace(".", ",");
+  const corto = (h) => `${String(h).slice(0, 8)}…`;
+  const fill = (t, v) => String(t || "").replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
+  let pv = {}; // los números que entran en los textos
+
+  function buildProof() {
+    if (!evalData) { $("proof-open").hidden = true; return; }
+    const P = sc.prueba || {};
+    const A = evalData.ataques;
+    const N = evalData.normales;
+    const S = evalData.sello;
+    const per = evalData.sistemas.find((s) => s.id === "per_session");
+    pv = {
+      n: A.n, frenados: A.frenados, familias: A.familias, familias_frenadas: A.familias_frenadas,
+      frenados_grabadas: A.frenados_grabadas, llamadas: miles(N.llamadas), bloqueadas: N.bloqueadas,
+      dificiles: N.sesiones_dificiles, de_mas: N.con_rotacion_de_mas,
+      hora: S.hora, abierto: S.abierto, sello: corto(S.sha256), commit: S.commit,
+      commit_congelado: S.commit_congelado, commit_corrida: S.commit_corrida,
+      congelado: corto(evalData.congelado.hash), por_agente: per ? per.frenados : "",
+    };
+    $("pf-title").textContent = P.titulo || "";
+    for (const k of ["rojo", "morado", "azul"]) {
+      const t = (P.equipos || {})[k] || {};
+      const box = $("pf-" + k);
+      box.querySelector("h3 span").textContent = t.nombre || "";
+      box.querySelector(".pf-what").textContent = t.que || "";
+      box.querySelector(".pf-fact").textContent = fill(t.hecho, pv);
+    }
+    $("pf-seal-1").textContent = fill(P.precinto, pv);
+    $("pf-seal-2").textContent = `sha256 ${S.sha256.slice(0, 12)}…${S.sha256.slice(-6)}`;
+    $("pf-ask").textContent = P.pedido || "";
+
+    // La grilla: una fila por familia, una casilla por sesión.
+    const grid = $("pf-grid");
+    const seal = $("pf-seal");
+    const names = P.familias || {};
+    const put = (node, row) => { node.style.gridRow = String(row); grid.insertBefore(node, seal); return node; };
+    const head = (texts, row, cls) => {
+      put(el("span", `pf-label pf-head ${cls}`, (texts || [])[0] || ""), row);
+      put(el("span", `pf-count pf-head ${cls}`, (texts || [])[1] || ""), row);
+    };
+    const line = (id, states, countText, row, r, cls, what) => {
+      const label = put(el("span", `pf-label ${cls}`), row);
+      label.appendChild(el("i", "pf-id", id));
+      label.appendChild(document.createTextNode(names[id] || ""));
+      const cells = put(el("span", `pf-cells ${cls}`), row);
+      cells.dataset.fam = id;
+      cells.setAttribute("role", "img"); // las casillas son un dibujo: esto es lo que dice
+      cells.setAttribute("aria-label", `${id}, ${names[id] || ""}: ${countText} ${what}`);
+      states.forEach((s, i) => {
+        const c = cells.appendChild(el("i", `pf-c ${s}`));
+        c.style.setProperty("--i", i);
+        c.style.setProperty("--r", r);
+      });
+      put(el("span", `pf-count ${cls}`, countText), row).style.setProperty("--r", r);
+    };
+    const G = P.grupos || {};
+    const nA = evalData.familias.length;
+    const nB = N.familias.length;
+    head(G.ataques, 1, "atk");
+    evalData.familias.forEach((f, r) => {
+      const states = Array.from({ length: f.n }, (_, i) => (i < f.frenados ? "stop" : "out"));
+      line(f.id, states, `${f.frenados} de ${f.n}`, 2 + r, r, f.frenados === f.n ? "atk" : "atk esc", (G.ataques || [])[1] || "");
+    });
+    head(G.normales, 2 + nA, "ben");
+    N.familias.forEach((f, r) => {
+      const states = f.tira.split("").map((c) => (c === "1" ? "rot" : "calm"));
+      line(f.id, states, `${f.con_rotacion_de_mas} de ${f.n}`, 3 + nA + r, nA + r, "ben", (G.normales || [])[1] || "");
+    });
+    const end = 3 + nA + nB;
+    grid.style.gridTemplateRows = `0.9em repeat(${nA}, calc(1em * var(--rh, 1))) 1.5em repeat(${nB}, calc(1em * var(--rh, 1)))`;
+    $("pf-num-a").style.gridRow = `2 / ${2 + nA}`;
+    $("pf-num-b").style.gridRow = `${3 + nA} / ${end}`;
+    seal.style.gridRow = `2 / ${end}`;
+
+    // La misma medición con otros guardias: una barra por sistema.
+    const O = P.otros || {};
+    const vs = $("pf-vs");
+    vs.style.gridRow = `1 / ${end}`;
+    vs.appendChild(el("p", "vs-head", O.titulo || "")).appendChild(el("span", null, fill(O.unidad, pv)));
+    const rows = vs.appendChild(el("div", "vs-rows"));
+    evalData.sistemas.filter((s) => (O.sistemas || {})[s.id]).forEach((s, k) => {
+      const us = s.id === "ours" ? " us" : "";
+      rows.appendChild(el("span", "l" + us, O.sistemas[s.id]));
+      const bar = rows.appendChild(el("span", "bar")).appendChild(el("i", us.trim()));
+      bar.style.setProperty("--w", `${((100 * s.frenados) / A.n).toFixed(2)}%`);
+      bar.style.setProperty("--k", k);
+      rows.appendChild(el("span", "n" + us, String(s.frenados))).dataset.sys = s.id;
+      rows.appendChild(el("span", "x", s.normales_bloqueadas_pct > 0
+        ? fill(O.bloquea, { pct: coma(s.normales_bloqueadas_pct) }) : ""));
+    });
+    vs.appendChild(el("p", "vs-foot", fill(O.pie, pv)));
+
+    $("proof").addEventListener("click", () => { if (card === "proof") proofNext(); });
+    $("proof-open").addEventListener("click", () => (card === "proof" ? closeProof() : openProof(PITCH)));
+  }
+
+  function openProof(auto) {
+    if (!evalData || liveOpen || card === "opening") return;
+    pause();
+    card = "proof";
+    proofStep = 0;
+    proofAutoOn = !!auto;
+    paintProof(false);
+    render(false);
+    checkSeal();
+    proofWait();
+  }
+  function closeProof() {
+    clearTimeout(proofTimer);
+    proofTimer = null;
+    proofAutoOn = false;
+    card = "";
+    render(false);
+  }
+  /** Va a un paso. Si la escena venía corriendo sola, sigue sola desde ahí. */
+  function proofGo(step) {
+    const to = Math.max(0, Math.min(PROOF_LAST, step));
+    const forward = to === proofStep + 1;
+    proofStep = to;
+    paintProof(forward);
+    render(false);
+    proofWait();
+  }
+  function proofWait() {
+    clearTimeout(proofTimer);
+    proofTimer = null;
+    if (proofStep >= PROOF_ASK) proofAutoOn = false; // el pedido se queda; el paso 5 es a mano
+    if (proofAutoOn) {
+      const k = speed / (PITCH ? 1.5 : 1);
+      proofTimer = setTimeout(() => proofGo(proofStep + 1), Math.max(400, PROOF_MS[proofStep] / k));
+    }
+    paintControls();
+  }
+  function proofNext() { if (proofStep < PROOF_LAST) proofGo(proofStep + 1); }
+  function proofKey(ev) {
+    const k = ev.key;
+    if (ev.code === "Space" || k === "Enter") {
+      ev.preventDefault();
+      if (proofStep < PROOF_ASK) proofGo(proofStep + 1); // el espacio no pasa del pedido
+    } else if (ev.code === "ArrowRight") proofNext();
+    else if (ev.code === "ArrowLeft") { proofAutoOn = false; proofGo(proofStep - 1); }
+    else if (k === "Escape" || k === "e" || k === "E") closeProof();
+    else if (k === "r" || k === "R") restart();
+  }
+
+  function paintProof(forward) {
+    const p = $("proof");
+    for (let i = 1; i <= PROOF_LAST; i++) p.classList.toggle("s" + i, proofStep >= i);
+    p.dataset.step = String(proofStep);
+    const T = (sc.prueba || {}).numeros || {};
+    const A = evalData.ataques;
+    const N = evalData.normales;
+    const ran = proofStep >= 2; // ya se corrió
+    const na = $("pf-n-a");
+    cancelAnimationFrame(counting.get(na) || 0);
+    if (forward && proofStep === 2 && !calm) climb(na, A.frenados);
+    else na.textContent = String(ran ? A.frenados : A.n);
+    $("pf-t-a").textContent = fill(ran ? T.a_despues : T.a_antes, pv);
+    $("pf-n-b").textContent = String(ran ? N.bloqueadas : N.sesiones_dificiles);
+    $("pf-t-b").textContent = fill(proofStep >= 3 ? T.b_limites : ran ? T.b_despues : T.b_antes, pv);
+    paintSeal();
+  }
+  /** La cifra sube junto con el barrido de las casillas. */
+  function climb(node, to) {
+    const t0 = performance.now() + 400;
+    node.textContent = "0";
+    const step = (now) => {
+      const u = Math.max(0, Math.min(1, (now - t0) / 1050));
+      node.textContent = String(Math.round(to * u));
+      if (u < 1) counting.set(node, requestAnimationFrame(step));
+    };
+    counting.set(node, requestAnimationFrame(step));
+  }
+
+  /** El sello del set: el publicado y, si servidor.py está, el que se recalculó recién. */
+  function paintSeal() {
+    const P = sc.prueba || {};
+    const fact = $("pf-rojo").querySelector(".pf-fact");
+    fact.textContent = fill(((P.equipos || {}).rojo || {}).hecho, pv);
+    if (sealLive) fact.appendChild(el("b", sealLive.coincide ? null : "bad", sealLive.coincide ? P.sello_vivo : P.sello_falla));
+  }
+  async function checkSeal() {
+    if (sealAsked) return;
+    sealAsked = true;
+    try {
+      const ctl = new AbortController();
+      const cut = setTimeout(() => ctl.abort(), 4000);
+      const r = await fetch(SEAL_API, { signal: ctl.signal, cache: "no-store" });
+      clearTimeout(cut);
+      if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      // La página compara por su cuenta con el sello publicado: no le cree al servidor.
+      if (j && /^[0-9a-f]{64}$/.test(j.sha256 || "")) sealLive = { ...j, coincide: j.sha256 === evalData.sello.sha256 };
+    } catch (_) {
+      sealLive = null;
+    }
+    document.body.dataset.sello = sealLive ? (sealLive.coincide ? "coincide" : "distinto") : "publicado";
+    if (card === "proof") { paintSeal(); render(false); }
+  }
+
+  const proofCaption = () => fill(((sc.prueba || {}).leyendas || [])[proofStep], pv);
+  const proofNote = () => fill(((sc.prueba || {}).notas || [])[proofStep], pv);
+  /** De dónde sale lo que se ve: el sello, la configuración congelada o el comando que lo mide. */
+  function proofEngine() {
+    const S = evalData.sello;
+    if (proofStep === 0) {
+      return sealLive
+        ? `sello › recalculado ahora: ${corto(sealLive.sha256)} ${sealLive.coincide ? "coincide" : "NO coincide"} · ${sealLive.archivos} archivos · ${coma(sealLive.ms)} ms`
+        : `sello › sha256 ${corto(S.sha256)} · commit ${S.commit} · redteam/SELLO.md`;
+    }
+    if (proofStep === 1) {
+      const q = evalData.congelado.params;
+      return `congelado › ${corto(evalData.congelado.hash)} · T ${q.T} · b ${q.b} · b_rot ${q.b_rot} · lambda_rot ${coma(q.lambda_rot)}`;
+    }
+    return `$ ${evalData.medicion.comando} · commit ${evalData.medicion.commit}`;
   }
 
   // --- el público elige el ataque ---

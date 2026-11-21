@@ -6,13 +6,16 @@ y después, en el navegador:
 
     http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html?pitch=1
 
-Hace dos cosas, las dos solo en este computador (escucha en 127.0.0.1):
+Hace tres cosas, las tres solo en este computador (escucha en 127.0.0.1):
 
 - sirve la carpeta `demo/` igual que `python -m http.server --directory demo`;
 - responde `GET /api/correr?reparten=10&disfraz=base64&semilla=37` corriendo `hacer_corrida.py`
   con esos valores: arma la sesión, la pasa por el motor del repositorio con un monitor por
   agente y con la cuenta global, y devuelve los eventos y un resumen. Cada corrida queda
-  impresa en esta terminal.
+  impresa en esta terminal;
+- responde `GET /api/sello` recalculando el sha256 del set de prueba tal como está ahora en el
+  repositorio, con la receta de `redteam/SELLO.md` (`hacer_evaluacion.py`). La escena «Cómo lo
+  probamos» lo compara con el sello publicado.
 
 No escribe archivos y no acepta más valores que los que la página ofrece.
 """
@@ -33,16 +36,21 @@ DEMO = HERE.parents[1]
 PAGE = f"alternativas/{HERE.name}/enjambre.html"
 
 
-def load_runner():
-    """Importa hacer_corrida.py desde su archivo (el nombre de la carpeta lleva guiones)."""
-    spec = importlib.util.spec_from_file_location("alt03_hacer_corrida", HERE / "hacer_corrida.py")
+def _load(name: str):
+    """Importa un módulo de esta carpeta desde su archivo (el nombre de la carpeta lleva guiones)."""
+    spec = importlib.util.spec_from_file_location(f"alt03_{name}", HERE / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
+def load_runner():
+    return _load("hacer_corrida")
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     runner = None
+    evaluacion = None
     lock = threading.Lock()
     quiet = False
 
@@ -50,9 +58,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/api/correr":
             return self._correr(parse_qs(url.query))
+        if url.path == "/api/sello":
+            return self._sello()
         if url.path == "/api/salud":
             return self._json(200, {"ok": True})
         return super().do_GET()
+
+    def _sello(self) -> None:
+        try:
+            out = self.evaluacion.sello_actual()
+        except Exception as exc:  # falta el set o SELLO.md: la página muestra solo el sello publicado
+            return self._json(500, {"error": f"{type(exc).__name__}: {exc}"})
+        if not self.quiet:
+            print(f"sello del set de prueba, recalculado: {out['sha256']} "
+                  f"({'coincide con' if out['coincide'] else 'NO coincide con'} el publicado; "
+                  f"{out['archivos']} archivos, {out['ms']} ms)", flush=True)
+        return self._json(200, out)
 
     def _correr(self, q: dict) -> None:
         r = self.runner
@@ -93,6 +114,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 def make_server(port: int = 8300, quiet: bool = False) -> http.server.ThreadingHTTPServer:
     Handler.runner = load_runner()
+    Handler.evaluacion = _load("hacer_evaluacion")
     Handler.quiet = quiet
     Handler.runner.correr()  # calienta el motor: la primera corrida es la que carga los módulos
     handler = functools.partial(Handler, directory=str(DEMO))
