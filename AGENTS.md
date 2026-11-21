@@ -58,9 +58,11 @@ Complétalo en el arranque para que cada agente sepa qué archivos son de quién
 | Líder y orquestador | `jplira2` | `docs/PLAN.md`, `AGENTS.md`, `tools/board.conf`, `contracts/` |
 | Proxy: contratos, proxy MCP, herramientas, GFF, DAG | `jcbasulto` | `proxy/` (salvo `proxy/agent/`), `engine/graph/` |
 | Análisis: motor de bits, features, CUSUM, evaluación | `matix3000` | `engine/` (salvo `engine/graph/`), `eval/` (salvo `eval/replay/` y `eval/baselines/`) |
-| Servicios: gestor de secretos, API protegida, atacante, rotación, líneas de base | `VictoriaGuerriero` | `services/`, `eval/baselines/` |
+| Servicios: gestor de secretos, API protegida, atacante, rotación, líneas de base | `terdmannsdorffer` | `services/`, `eval/baselines/` |
 | Rojo: plantillas de ataque, trazas, GitHub y web simulados, set sellado | `jplira2` | `redteam/`, `services/github_sim/`, `services/web_sim/` |
-| Demo: repositorio de demo, agente mínimo, arnés de reproducción, visualización, pitch | `terdmannsdorffer` | `demo/`, `pitch/`, `proxy/agent/`, `eval/replay/` |
+| Demo: repositorio de demo, agente mínimo, arnés de reproducción, visualización, pitch | `VictoriaGuerriero` | `demo/`, `pitch/`, `proxy/agent/`, `eval/replay/` |
+
+El 21 de noviembre (H4) el líder intercambió las áreas Servicios y Demo entre `VictoriaGuerriero` y `terdmannsdorffer`; las tareas que ya estaban abiertas las termina quien las tenía.
 
 Las áreas y sus pasos están en `docs/PLAN.md`. Las carpetas son una propuesta: se confirman en el paso 1a del plan. El agente del área Rojo no abre `engine/` antes de H20 (regla del equipo morado).
 
