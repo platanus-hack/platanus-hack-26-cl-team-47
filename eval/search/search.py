@@ -51,7 +51,8 @@ def evaluate(params: Params, model, sessions: list[list[ToolCall]], labels: list
         if not s:
             continue
         sec = secrets.get(s[0].session_id)
-        events += replay([s], lambda sec=sec: Detector(params=params, model=model, secrets=sec, seed=seed).decide)
+        events += replay([s], lambda sec=sec: Detector(params=params, model=model, secrets=sec, seed=seed).decide,
+                         emit_rotations=True)   # #133: la métrica ve todas las rotaciones
     agg = aggregate(session_summary(events, labels), n_boot=50, seed=seed)
     row = {k: getattr(params, k) for k in ("b", "b_rot", "lambda_rot", "T")}
     for k in ("false_alarm_rate", "benign_rotations_per_1000", "prevented_rate", "median_max_bits_true"):

@@ -39,11 +39,14 @@ def load_sessions(folder: str | Path) -> list[list[ToolCall]]:
     return [load_session(p) for p in files]
 
 
-def replay(sessions: Iterable[list[ToolCall]], make_decide: MakeDecide) -> list[Event]:
+def replay(sessions: Iterable[list[ToolCall]], make_decide: MakeDecide, emit_rotations: bool = False) -> list[Event]:
     """Por cada llamada, un evento tool_call y uno decision (source="proxy").
 
     make_decide() se llama una vez por sesión: cada sesión parte con estado limpio.
     latency_ms se mide aquí (lo que tarda decide); ts es la hora de reproducción.
+    emit_rotations (#133): después de cada decisión, un evento rotation {"secret_id": sid} por cada secreto
+    de `last_rotations` del detector dueño de decide. Así la métrica ve todas las rotaciones, también las
+    que ocurren con leak en 0 (periódicas o por evidencia). Por defecto False: la demo escribe los suyos.
     """
     events: list[Event] = []
     for session in sessions:
@@ -59,6 +62,10 @@ def replay(sessions: Iterable[list[ToolCall]], make_decide: MakeDecide) -> list[
             decision = decision.model_copy(update={"latency_ms": latency})
             events.append(Event(ts=time.time(), session_id=call.session_id, source="proxy",
                                 kind="decision", call_id=call.id, data=decision.model_dump(mode="json")))
+            if emit_rotations:
+                for sid in getattr(getattr(decide, "__self__", None), "last_rotations", None) or []:
+                    events.append(Event(ts=time.time(), session_id=call.session_id, source="proxy",
+                                        kind="rotation", call_id=call.id, data={"secret_id": sid}))
     return events
 
 

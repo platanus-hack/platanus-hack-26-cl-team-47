@@ -66,7 +66,8 @@ def family_detail(params, model, sessions, labels, secrets, seed=0) -> dict:
     for s in sessions:
         if s:
             sec = secrets.get(s[0].session_id)
-            events += replay([s], lambda sec=sec: Detector(params=params, model=model, secrets=sec, seed=seed).decide)
+            events += replay([s], lambda sec=sec: Detector(params=params, model=model, secrets=sec, seed=seed).decide,
+                             emit_rotations=True)   # #133: igual que evaluate
     return aggregate(session_summary(events, labels), n_boot=50, seed=seed)["by_family"]
 
 

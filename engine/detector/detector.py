@@ -99,14 +99,22 @@ class Detector:
                  model: FeatureModel | None = None, params: Params = Params(),
                  rotate: Callable[[str], str] | None = None, seed: int = 0, enforce: bool = True,
                  secrets: dict[str, str] | None = None, check_params: bool = True,
-                 ledger: "SharedLedger | None" = None):
+                 ledger: "SharedLedger | None" = None, rotation_enabled: bool = True):
         """secrets: valores que reemplazan (o agregan) secretos del manifiesto, p. ej. el secreto propio
         de una sesión del equipo rojo. None = los del manifiesto (comportamiento por defecto).
         check_params: comprueba la invariante de Params (#79). Solo se desactiva en el test que
         documenta por qué existe.
         ledger: cuenta compartida del enjambre (#114). Con ledger, los secretos y sus valores vigentes
-        salen del ledger (se ignora `secrets`) y el motor de bits es el del ledger."""
+        salen del ledger (se ignora `secrets`) y el motor de bits es el del ledger.
+        rotation_enabled: con False ninguna regla rota (ablación de #133): no se llama a _do_rotate, no se
+        reinicia estado y la acción baja de rotate+block a block y de rotate+allow a allow. Los bloqueos
+        siguen igual. Con True (por defecto), el comportamiento de siempre.
+
+        last_rotations: secretos que rotó la ÚLTIMA decisión (solo los que pidió este detector, no los
+        sincronizados desde el ledger). eval.replay(emit_rotations=True) los escribe como eventos."""
         manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        self.rotation_enabled = rotation_enabled
+        self.last_rotations: list[str] = []
         self.enforce = enforce
         self.params = params
         self.model = model
@@ -179,6 +187,7 @@ class Detector:
     def decide(self, call: ToolCall) -> Decision:
         t0 = time.perf_counter()
         p = self.params
+        self.last_rotations = []
         if self.ledger is not None:
             self.ledger.tick()
             self._sync_rotations()
@@ -282,6 +291,8 @@ class Detector:
                 self.escalated[sid] = True
             else:
                 rotate_now.append(sid)
+        if not self.rotation_enabled:   # ablación (#133): ninguna regla rota; nunca se anota una rotación
+            rotate_now = []
         # Modo escalado: todo sumidero hacia un destino fuera de allowed_hosts del secreto se bloquea.
         if call.is_sink:
             for sid in self.secret_files:
@@ -357,6 +368,7 @@ class Detector:
             self.bits.rotate(sid, new)
             self.exposed[sid] = False
         self._reset_local(sid, new)
+        self.last_rotations.append(sid)
 
 
 def make_decide() -> Callable[[ToolCall], Decision]:
