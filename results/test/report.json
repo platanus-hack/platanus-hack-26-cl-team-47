@@ -1,0 +1,86 @@
+{
+  "tests": {
+    "T1": {
+      "k": 0,
+      "n": 5879,
+      "rate": 0.0,
+      "ci": [
+        0.0,
+        0.0005094351323550097
+      ],
+      "ci_type": "unilateral 95 %",
+      "pass": true,
+      "rotations_per_1000": 5.456071628427532,
+      "p_value": 0.00278936457178247,
+      "target": 0.001
+    },
+    "T2": {
+      "k": 180,
+      "n": 180,
+      "rate": 1.0,
+      "ci": [
+        0.9834947718043373,
+        1.0
+      ],
+      "ci_type": "unilateral 95 %",
+      "pass": true,
+      "p_value": 3.5991310356346e-18,
+      "target": 0.8
+    },
+    "T3": {
+      "b": 150,
+      "c": 0,
+      "n_pairs": 180,
+      "p_value": 1.401298464324817e-45,
+      "pass": true
+    },
+    "T4": {
+      "fisher_p": 4.024347305521656e-71,
+      "mannwhitney_p": 4.764985867491081e-32,
+      "p_value": 4.024347305521656e-71,
+      "attack_success_with": 0,
+      "attack_success_without": 150,
+      "n_with": 180,
+      "n_without": 180,
+      "median_bits_with": 20.0,
+      "median_bits_without": 160.0
+    },
+    "T5": null,
+    "T6": null
+  },
+  "holm": {
+    "T4": {
+      "p_value": 4.024347305521656e-71,
+      "p_adjusted": 1.6097389222086624e-70,
+      "reject": true
+    },
+    "T3": {
+      "p_value": 1.401298464324817e-45,
+      "p_adjusted": 4.203895392974451e-45,
+      "reject": true
+    },
+    "T2": {
+      "p_value": 3.5991310356346e-18,
+      "p_adjusted": 7.1982620712692e-18,
+      "reject": true
+    },
+    "T1": {
+      "p_value": 0.00278936457178247,
+      "p_adjusted": 0.00278936457178247,
+      "reject": true
+    }
+  },
+  "info": {
+    "T2_reread": {
+      "k": 180,
+      "n": 180,
+      "rate": 1.0,
+      "ci": [
+        0.9834947718043373,
+        1.0
+      ],
+      "ci_type": "unilateral 95 %",
+      "informative": true
+    }
+  }
+}

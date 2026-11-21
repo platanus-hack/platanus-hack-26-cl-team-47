@@ -36,3 +36,7 @@ El hash resultante debe coincidir con el sello de arriba. (El sello es el sha256
 concatenación, en orden alfabético de ruta, de las líneas `<sha256>  <ruta relativa>` de todos
 los archivos bajo `redteam/test/` más `redteam/sealed.py`.) Regenerar con
 `python -m redteam.sealed --seed 2 --out redteam/test` produce los mismos archivos byte a byte.
+
+## Apertura
+
+Abierto el sábado 21 de noviembre de 2026 a las 09:40, por decisión del líder de adelantar el congelamiento. La configuración quedó congelada antes (commit `3f26307`, etiqueta `congelamiento`). El sello se recalculó sobre `main` después de traer la rama y coincide con el de arriba. La evaluación final se corrió una sola vez, en el commit `cd14e9e`; resultados en `results/test/`.
