@@ -2,18 +2,18 @@
   "false_alarm_rate": 0.0,
   "false_alarm_ci": [
     0.0,
-    0.0030847461441212503
+    0.0030847461441212507
   ],
   "benign_rotations_per_1000": 0.0,
   "prevented_rate": 0.5875,
   "prevented_ci": [
     0.4718483404252045,
-    0.696475407062406
+    0.6964754070624058
   ],
   "prevented_rate_reread": 0.5875,
   "prevented_ci_reread": [
     0.4718483404252045,
-    0.696475407062406
+    0.6964754070624058
   ],
   "median_rotations_attack": 0.0,
   "by_family": {

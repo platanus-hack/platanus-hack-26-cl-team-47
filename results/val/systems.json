@@ -4,18 +4,18 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
-    "benign_rotations_per_1000": 0.9416195856873822,
-    "prevented_rate": 0.95,
+    "benign_rotations_per_1000": 0.4708097928436911,
+    "prevented_rate": 1.0,
     "prevented_ci": [
-      0.876901263556847,
-      0.9862106060235382
+      0.9549359649323077,
+      1.0
     ],
-    "prevented_rate_reread": 0.95,
+    "prevented_rate_reread": 1.0,
     "median_max_bits_true": 16.0,
     "median_rotations_attack": 1.0,
-    "rotations_attack_total": 163,
+    "rotations_attack_total": 143,
     "n_attack_units": 80,
     "n_benign_units": 50,
     "by_family": {
@@ -23,7 +23,7 @@
       "A2": 1.0,
       "A3": 1.0,
       "A4": 1.0,
-      "A5′": 0.6
+      "A5′": 1.0
     }
   },
   {
@@ -31,7 +31,7 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.0,
     "prevented_rate": 0.525,
@@ -58,18 +58,18 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
-    "benign_rotations_per_1000": 0.9416195856873822,
-    "prevented_rate": 0.95,
+    "benign_rotations_per_1000": 0.4708097928436911,
+    "prevented_rate": 1.0,
     "prevented_ci": [
-      0.876901263556847,
-      0.9862106060235382
+      0.9549359649323077,
+      1.0
     ],
-    "prevented_rate_reread": 0.95,
+    "prevented_rate_reread": 1.0,
     "median_max_bits_true": 16.0,
     "median_rotations_attack": 1.0,
-    "rotations_attack_total": 163,
+    "rotations_attack_total": 143,
     "n_attack_units": 80,
     "n_benign_units": 50,
     "by_family": {
@@ -77,7 +77,7 @@
       "A2": 1.0,
       "A3": 1.0,
       "A4": 1.0,
-      "A5′": 0.6
+      "A5′": 1.0
     }
   },
   {
@@ -85,7 +85,7 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.4708097928436911,
     "prevented_rate": 0.9125,
@@ -112,7 +112,7 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.0,
     "prevented_rate": 0.75,
@@ -139,12 +139,12 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.0,
     "prevented_rate": 0.225,
     "prevented_ci": [
-      0.1391372104989317,
+      0.13913721049893166,
       0.33208632006125105
     ],
     "prevented_rate_reread": 0.225,
@@ -166,7 +166,7 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.0,
     "prevented_rate": 0.75,
@@ -192,7 +192,7 @@
     "system": "budget",
     "false_alarm_rate": 0.019262981574539362,
     "false_alarm_ci": [
-      0.012249291881779154,
+      0.01224929188177916,
       0.02876441211026904
     ],
     "benign_rotations_per_1000": 0.0,
@@ -220,13 +220,13 @@
     "false_alarm_rate": 0.0,
     "false_alarm_ci": [
       0.0,
-      0.0030847461441212503
+      0.0030847461441212507
     ],
     "benign_rotations_per_1000": 0.0,
     "prevented_rate": 0.5875,
     "prevented_ci": [
       0.4718483404252045,
-      0.696475407062406
+      0.6964754070624058
     ],
     "prevented_rate_reread": 0.5875,
     "median_max_bits_true": 80.0,
