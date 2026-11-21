@@ -51,8 +51,38 @@ function finalFractions(frames) {
   return out;
 }
 
+/** Agente de una llamada del enjambre a partir del prefijo de su id ("a3-0032" -> "a3"), o null. */
+function agentOf(id) {
+  const m = /^(a\d+)-/.exec(String(id || ""));
+  return m ? m[1] : null;
+}
+
+/**
+ * Función pura: por cada frame, el máximo de bits de sid que ve un solo agente
+ * (la última medida de cada agente hasta ese frame, y el máximo entre ellos).
+ */
+function maxAgentBits(frames, sid) {
+  const last = {};
+  return (frames || []).map((f) => {
+    const a = agentOf(f.call && f.call.id) || "?";
+    last[a] = bitsAt(f, sid);
+    return Math.max(0, ...Object.values(last));
+  });
+}
+
+/** Configuración de la página según ?demo= (por ahora solo "enjambre"). */
+const DEMOS = {
+  enjambre: {
+    left: "fixtures/swarm_left.jsonl",
+    right: "fixtures/swarm_right.jsonl",
+    titles: { left: "Cuenta por agente", right: "Cuenta global" },
+    chartLeft: "Lo máximo que ve un monitor por agente",
+    sub: (n) => `${n} agentes se reparten la fuga`,
+  },
+};
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { finalStatus, finalFractions, resultText };
+  module.exports = { finalStatus, finalFractions, resultText, agentOf, maxAgentBits, DEMOS };
 }
 
 /* ------------------------------------------------------------------ página */
@@ -86,11 +116,19 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     };
   }
 
+  // Bits que muestra el medidor del panel: los de la llamada o, con maxAgent, el máximo por agente.
+  const bitsOf = (p, f, sid) => (p.maxBits ? (p.maxBits[sid] || [])[p.frames.indexOf(f)] || 0 : bitsAt(f, sid));
+
   function setEvents(p, events) {
     p.events = events;
     p.frames = buildFrames(events);
+    p.maxBits = null;
+    if (p.maxAgent) {
+      p.maxBits = {};
+      for (const sid of secretIds(p.frames)) p.maxBits[sid] = maxAgentBits(p.frames, sid);
+    }
     // Solo los secretos que alguna vez tienen bits (el detector reporta todos, casi siempre en 0).
-    p.secrets = secretIds(p.frames).filter((sid) => p.frames.some((f) => bitsAt(f, sid) > 0));
+    p.secrets = secretIds(p.frames).filter((sid) => p.frames.some((f) => bitsOf(p, f, sid) > 0));
     p.status = finalStatus(events);
     renderList(p);
   }
@@ -117,6 +155,13 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       li.className = actionClass(f.decision && f.decision.action) + (f.rotations.length ? " has-rotation" : "") + (f.call.is_sink ? " is-sink" : "");
       li.innerHTML = `<span class="t"></span><span class="tool"></span><span class="args"></span><span class="marks"></span>`;
       li.children[0].textContent = f.t;
+      const agent = agentOf(f.call.id);
+      if (agent) {
+        const pill = document.createElement("span");
+        pill.className = `agent agent-${agent}`;
+        pill.textContent = agent;
+        li.children[1].prepend(pill);
+      }
       li.children[1].textContent = f.call.tool;
       li.children[2].textContent = li.children[2].title = summarizeArgs(f.call.args);
       if (f.call.is_sink) li.children[3].insertAdjacentHTML("beforeend", `<span class="mark sink">sumidero</span>`);
@@ -152,7 +197,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
   function sharedYMax() {
     let max = 1;
     for (const p of Object.values(panels))
-      for (const f of p.frames) for (const sid of p.secrets) max = Math.max(max, bitsAt(f, sid));
+      for (const f of p.frames) for (const sid of p.secrets) max = Math.max(max, bitsOf(p, f, sid));
     return max;
   }
 
@@ -194,7 +239,7 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     const area = d3.area().x((d) => x(d.t)).y0(h).y1((d) => y(d.y)).curve(d3.curveStepAfter);
     p.secrets.forEach((sid, i) => {
       const c = (i === 0 && accent) || d3.schemeTableau10[i % 10];
-      const pts = shown.map((f) => ({ t: f.t, y: bitsAt(f, sid) }));
+      const pts = shown.map((f) => ({ t: f.t, y: bitsOf(p, f, sid) }));
       g.append("path").datum(pts).attr("class", "bits-area").style("fill", c).attr("d", area);
       g.append("path").datum(pts).attr("fill", "none").style("stroke", c).attr("stroke-width", 3).attr("d", line);
       if (pts.length) g.append("circle").attr("r", 5).attr("class", "bits-dot").style("fill", c)
@@ -357,10 +402,17 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
     right: "fixtures/real_right.jsonl",
     graph: "fixtures/real_graph.json",
   };
+  const demo = DEMOS[params.get("demo")] || null;
   const noParams = !params.get("left") && !params.get("right");
-  const left = params.get("left") || (noParams ? DEFAULTS.left : null);
-  const right = params.get("right") || (noParams ? DEFAULTS.right : null);
-  const graphUrl = params.get("graph") || (noParams ? DEFAULTS.graph : null);
+  const left = params.get("left") || (demo ? demo.left : noParams ? DEFAULTS.left : null);
+  const right = params.get("right") || (demo ? demo.right : noParams ? DEFAULTS.right : null);
+  const graphUrl = params.get("graph") || (noParams && !demo ? DEFAULTS.graph : null);
+  if (demo) {
+    document.body.classList.add("demo-swarm");
+    for (const side of ["left", "right"]) $(`side-${side}`).querySelector(".side-title").textContent = demo.titles[side];
+    $("side-left").querySelector(".panel.chart h2").textContent = demo.chartLeft;
+    panels.left.maxAgent = true;
+  }
   const fetchGraph = (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
     return r.json();
@@ -376,6 +428,12 @@ if (typeof document !== "undefined" && document.getElementById("side-left")) {
       }
       setEvents(panels.left, l);
       setEvents(panels.right, r);
+      if (demo) {
+        const agents = new Set(l.filter((e) => e.kind === "tool_call").map((e) => agentOf(e.call_id)).filter(Boolean));
+        const sub = $("swarm-sub");
+        sub.textContent = demo.sub(agents.size);
+        sub.hidden = false;
+      }
       rebuildClock();
       if (params.get("t")) {
         const target = params.get("t") === "end" ? Infinity : Number(params.get("t"));

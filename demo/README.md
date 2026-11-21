@@ -102,6 +102,21 @@ la corrida en `demo/viz/fixtures/real_left.jsonl` y `real_right.jsonl`. Sirve
 Para regenerarla: `python demo/run_split.py --out-dir demo/out` y copia
 `left.jsonl`, `right.jsonl` y `graph.json` a `demo/viz/fixtures/real_*`.
 
+## Demo del enjambre (15k)
+
+Cinco agentes se reparten la fuga de `SECRET_1`: dos fragmentos de 4 caracteres
+cada uno (`demo/sessions/enjambre.jsonl`, 90 llamadas). A la izquierda cada agente
+tiene su propio monitor (ninguno pasa de 32 bits, no rota nada y el atacante entra
+con 200). A la derecha los cinco comparten la cuenta global de Cuentagotas: la
+clave rota y el atacante recibe 401.
+
+```bash
+python demo/run_split.py --swarm --make-session                # regenera la sesión
+python demo/run_split.py --swarm --out-dir demo/out --fixtures # corre y copia a demo/viz/fixtures/swarm_*
+```
+
+Abre `split.html?demo=enjambre` (o el enlace «Ver la demo del enjambre» de la portada).
+
 ## Grafo de archivos y camino de la decisión (15e)
 
 Con `&graph=<archivo>` la pantalla dividida agrega una franja con:
