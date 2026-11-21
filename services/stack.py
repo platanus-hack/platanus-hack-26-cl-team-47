@@ -61,6 +61,52 @@ def port_free(host: str, port: int) -> bool:
     return True
 
 
+def how_to_free(port: int) -> str:
+    """Cómo ver y cerrar el proceso que escucha en `port`, según el sistema operativo."""
+    if sys.platform == "win32":
+        return (f"Para ver quién lo usa: netstat -ano | findstr :{port} "
+                f"(la última columna es el PID); para cerrarlo: taskkill /PID <PID> /F.")
+    return f"Para ver quién lo usa: lsof -i :{port}; para cerrarlo: kill <PID>."
+
+
+def _busy_host(busy: list[str]) -> str:
+    """Host del primer servicio ocupado ("attacker.test (127.0.0.1:8103)" -> "attacker.test")."""
+    return busy[0].split(" ", 1)[0]
+
+
+# Señales de término que main() convierte en una salida ordenada (pasa por Stack.__exit__).
+# SIGHUP: se cerró la terminal (macOS y Linux). SIGBREAK: Ctrl+Break o se cerró la consola (Windows).
+TERM_SIGNALS = ("SIGTERM", "SIGHUP", "SIGBREAK")
+
+
+class Terminated(SystemExit):
+    """Salida pedida por una señal de término; el código es 128 + número de señal, como en un shell."""
+
+
+def install_term_handlers() -> list[int]:
+    """Instala, donde existan, los manejadores de TERM_SIGNALS. Devuelve las señales instaladas."""
+    installed = []
+
+    def handler(signum, frame):
+        for sig in installed:  # una segunda señal no debe cortar la limpieza a medias
+            try:
+                signal.signal(sig, signal.SIG_IGN)
+            except (ValueError, OSError):
+                pass
+        raise Terminated(128 + signum)
+
+    for name in TERM_SIGNALS:
+        sig = getattr(signal, name, None)
+        if sig is None:
+            continue
+        try:
+            signal.signal(sig, handler)
+            installed.append(sig)
+        except (ValueError, OSError):  # fuera del hilo principal, o la plataforma no la deja tomar
+            pass
+    return installed
+
+
 class Stack:
     def __init__(self, log_dir: str = "logs", manifest: str = "demo/secrets_manifest.json"):
         self.log_dir = Path(log_dir).resolve()
@@ -100,7 +146,8 @@ class Stack:
             if not port_free(u.hostname, u.port):
                 busy.append(f"{host} ({u.hostname}:{u.port})")
         if busy:
-            raise PortInUseError("Puerto ocupado: " + ", ".join(busy) + ". Detén lo que lo usa y reintenta.")
+            raise PortInUseError("Puerto ocupado: " + ", ".join(busy) + ". Detén lo que lo usa y reintenta. "
+                                 + how_to_free(urlsplit(self.urls[_busy_host(busy)]).port))
         try:
             env = self._env()
             for name, host, app, _ in SERVICES:
@@ -148,22 +195,35 @@ class Stack:
         self._procs.clear()
 
 
-def main() -> None:
+def main(argv=None) -> int:
     import argparse
 
     ap = argparse.ArgumentParser(description="Levanta gestor, API protegida y atacante hasta Ctrl+C.")
     ap.add_argument("--log-dir", default="logs")
     ap.add_argument("--manifest", default="demo/secrets_manifest.json")
-    a = ap.parse_args()
-    with Stack(a.log_dir, a.manifest) as s:
-        for _, host, _, _ in SERVICES:
-            print(f"{host:18} {s.urls[host]}")
-        print(f"Registros en {s.log_dir}. Ctrl+C para detener.")
-        try:
-            signal.pause() if hasattr(signal, "pause") else time.sleep(10**9)
-        except KeyboardInterrupt:
-            pass
+    a = ap.parse_args(argv)
+    # Antes de arrancar: una señal de término durante el arranque también limpia (Stack.__enter__).
+    install_term_handlers()
+    code = 0
+    try:
+        with Stack(a.log_dir, a.manifest) as s:
+            for _, host, _, _ in SERVICES:
+                print(f"{host:18} {s.urls[host]}")
+            print(f"Registros en {s.log_dir}. Ctrl+C para detener.", flush=True)
+            try:
+                # Esperas cortas: en Windows time.sleep solo lo interrumpe Ctrl+C, no SIGBREAK.
+                while True:
+                    time.sleep(0.5)
+            except KeyboardInterrupt:
+                pass
+            except Terminated as t:
+                code = t.code
+    except PortInUseError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    print("Servicios detenidos.", flush=True)
+    return code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
