@@ -26,6 +26,11 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente (mediana 20)
 5. **La cuenta compartida del enjambre no se distingue aquí.** En la familia que reparte el ataque entre varias sesiones, la versión con cuenta por sesión también previene todo, porque la evidencia rota antes. El valor de la cuenta global se ve en la demo del enjambre, con el contador de bits solo, no en esta tabla.
 6. **Todo es sintético.** Tráfico benigno y ataques son guiones de nuestro equipo; el fondo benigno del set de prueba sale de las mismas 120 sesiones base que el resto.
 7. **Las réplicas no son los productos.** «Presupuesto de bits» y «reensamblado por sesión» son réplicas simplificadas hechas por nosotros a partir de la documentación pública; sus cifras no son las de Pipelock, AgentBrake ni ningún artículo.
+8. **La cota de la rotación periódica no cubre los pedazos de menos de 4 caracteres.** `Params.check` la demuestra para un envío de 7 caracteres cada 51 llamadas: el contador lo ve como candidata y la candidata caduca antes del siguiente. Los pedazos de 1 a 3 caracteres el contador no los cuenta. Medición aparte con sesiones sintéticas propias (`results/short_fragments/`, `python -m eval.final.short_fragments`), con quien envía releyendo la clave en cuanto rota:
+   - **Pedazos de 4 y 7 caracteres:** ninguna de las 36 combinaciones (12 por configuración) pasó de 96 bits de una versión. El máximo fue 84 bits, con la configuración de la demo, en el caso exacto de `Params.check`.
+   - **Pedazos de 1 a 3 caracteres, con la configuración congelada:** máximo 12 bits. La evidencia rota al primer envío y, tras tres rotaciones, el modo escalado bloquea las salidas de esa clave.
+   - **Pedazos de 1 a 3 caracteres, sin el modelo de evidencia:** pasan de 96 bits en 8 de 18 combinaciones con los parámetros congelados (T = 75) y en 10 de 18 con los de la demo y del hook (T = 150). Enviando un carácter por llamada sale la clave entera (160 bits) antes de la rotación periódica.
+   - **Qué no garantiza:** esta evaluación no muestra que la cota valga para envíos de cualquier tamaño. Contra pedazos muy cortos, lo que protege es la evidencia de comportamiento, no la cota.
 
 ## El atacante que se adapta (medido aparte, después)
 

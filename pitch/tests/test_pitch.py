@@ -87,18 +87,41 @@ def test_sin_internet():
         assert not ref.startswith("/")
 
 
-def test_resultados_con_las_cifras_de_la_evaluacion_final_y_sus_limites():
-    """16f: la lámina 10 lleva las cifras reales del set sellado y sus dos límites, en la misma lámina."""
-    s10 = slide("180 ataques")
-    assert s10["pendientes"] == 0
-    assert norm(s10["title"]) == "180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits"
-    for cifra in ("180", "32", "150", "34 de 90", "5.879", "16,7 % (30)", "38,9 % (70)"):
-        assert cifra in s10["text"], cifra
-    assert "Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna." in norm(s10["body"])
-    assert ("Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas "
-            "tras tres rotaciones.") in norm(s10["body"])
-    for col in ("Alicanto", "Sin rotación", "Presupuesto de bits (réplica)"):
-        assert col in s10["text"], col
+
+def _proxy_flags():
+    """Cifras de results/proxy_flags/systems.json: {variante: {sistema: fila}}."""
+    import json
+    data = json.loads((PITCH.parent / "results" / "proxy_flags" / "systems.json").read_text(encoding="utf-8"))
+    return {v: {r["system"]: r for r in rows} for v, rows in data.items()}
+
+
+def _frenados(row):
+    return round(row["prevented_rate"] * row["n_attack_units"])
+
+
+def test_resultados_con_las_dos_cifras():
+    """16h: la lámina 5 dice las dos cifras (proxy en vivo y marcas de las grabaciones), leídas del archivo."""
+    s5 = slide("180 ataques")
+    assert s5["pendientes"] == 0
+    assert norm(s5["title"]) == "180 ataques grabados de seis familias nuevas: Alicanto frenó 120, cuatro de las seis"
+    pf = _proxy_flags()
+    sistemas = ("ours", "no_rotation", "combined", "budget")
+    filas = re.findall(r"<tr>(.*?)</tr>", HTML.split('class="results resultados"')[1].split("</table>")[0], flags=re.S)
+    celdas = [[norm(re.sub(r"<[^>]+>", "", c)) for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", f)] for f in filas]
+    assert celdas[0][1:] == ["Alicanto", "Sin rotación", "Lista de destinos + escáner", "Presupuesto de bits (réplica)"]
+    assert celdas[1][0] == "Frenados, como lo calcula el proxy en vivo"
+    assert celdas[1][1:] == [str(_frenados(pf["proxy"][k])) for k in sistemas]
+    assert celdas[2][0] == "Frenados, con las marcas de las grabaciones"
+    assert celdas[2][1:] == [str(_frenados(pf["grabadas"][k])) for k in sistemas]
+    assert celdas[3][0] == "Llamadas normales bloqueadas, de 5.879"
+    pct = lambda x: "0" if x == 0 else f"{x * 100:.1f} %".replace(".", ",")
+    assert celdas[3][1:] == [pct(pf["proxy"][k]["false_alarm_rate"]) for k in sistemas]
+    assert all(pf["proxy"][k]["false_alarm_rate"] == pf["grabadas"][k]["false_alarm_rate"] for k in sistemas)
+    body = norm(s5["body"])
+    assert ("Ataques grabados. Sin cubrir: la clave enviada a su propio destino permitido y la escondida en commits "
+            "de git. Fuente: results/proxy_flags.") in body
+    assert "Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna." in body
+    assert "se adapta" not in s5["text"]   # pasó a PREGUNTAS.md, con su salvedad
 
 
 def test_citas_literales():
@@ -137,9 +160,10 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 21
+    assert len(titulos) == 25
     claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
-              "instala", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
+              "instala", "lista de destinos permitidos", "ya pasó de verdad", "bajó de 180 a 120",
+              "regla simple", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación",
               "momentos aleatorios", "se llama Alicanto")
@@ -327,9 +351,17 @@ def test_lamina_de_competidores():
     assert "Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026" in norm(s["text"])
 
 
+
 def test_lamina_final_con_pedido():
+    """16h: usuario, por qué ahora y pedido, dentro de las 40 palabras."""
     s = slide("Usuario y cierre")
     assert s["pendientes"] == 0 and "piloto" in s["body"]
+    body = norm(s["body"])
+    assert "Quién lo usa Equipos con agentes de código y claves en el repositorio." in body
+    assert "Por qué ahora Los agentes ya leen texto que escribe cualquiera. En salud hay 3 horas para avisar." in body
+    assert "Buscamos dos equipos para un piloto." in body
+    assert "Buscamos dos equipos para un piloto. Gracias." in GUION
+    assert "TI de salud para un piloto" not in HTML + GUION
     assert idx("Usuario y cierre") < idx("Respaldo")   # el pedido va en el pitch, no en el respaldo
     assert "para que lo confirme una persona del equipo" in GUION
 
@@ -341,12 +373,64 @@ def test_demo_dice_que_decide_solo_el_contador():
 
 # ------------------------------------------------ pregunta del track y cifras (16d, segundo comentario)
 
-def test_guion_abre_con_el_nombre_y_la_pregunta_del_track():
-    """16e: la primera frase hablada dice «Alicanto»; la segunda es la pregunta del track."""
-    frases = re.split(r"(?<=[.»?])\s+", _texto_hablado(GUION).strip())
-    assert "Alicanto" in frases[0]
-    assert "¿cómo te darías cuenta?" in frases[1]
-    assert "Alicanto es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
+APERTURA = ("Somos Alicanto. Casi todos los guardias de agentes de IA hacen lo mismo: bloquean llamadas. Nosotros "
+            "medimos cuánta clave ya salió y la cambiamos antes de que sirva. Como en la leyenda de Atacama: quien "
+            "sigue al alicanto por codicia termina con las manos vacías.")
+
+
+def test_guion_abre_con_lo_que_nos_distingue():
+    """16g: abre con el nombre y lo que nos distingue; la pregunta de las bases queda de respaldo."""
+    hablado = norm(_texto_hablado(GUION))
+    assert hablado.startswith(APERTURA)
+    assert "¿cómo te darías cuenta?" not in hablado
+    nota = GUION.split("**La pregunta de las bases, como respaldo:**")[1].split("\n- ")[0]
+    assert "¿cómo te darías cuenta?" in nota and "Ya no abre el pitch" in nota and "docs/BASES.md" in nota
+
+
+def test_lamina_1_dice_lo_que_nos_distingue():
+    s = parse()[0]
+    assert "Otros guardias bloquean llamadas. Alicanto cambia la clave antes de que sirva." in norm(s["body"])
+    assert "¿cómo te darías cuenta?" not in s["text"]
+
+
+def test_bloque_2_usuario_y_precedente():
+    b2 = norm(GUION.split("\n## 2. ")[1].split("\n## 3. ")[0])
+    assert ("Cualquier equipo que usa agentes de código tiene claves en el repositorio. El ejemplo es un hospital "
+            "ficticio, el Hospital Regional Tres Cóndores.") in b2
+    assert ("Ninguna llamada parece un robo. No es teoría: en 2025, CamoLeak sacó secretos de repositorios "
+            "privados a través de Copilot Chat, carácter por carácter.") in b2
+
+
+CAMOLEAK = "https://legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code"
+
+
+def test_precedente_camoleak_con_fuente_y_sin_cve():
+    assert "CamoLeak" in GUION
+    sec = PREGUNTAS.split("¿Esto ya pasó de verdad?")[1].split("\n## ")[0]
+    for dato in ("Omer Mayraz", "Legit Security", "CVSS 9,6", "descripción de un pull request",
+                 "proxy de imágenes de GitHub", "14 de agosto de 2025", "no el mismo escenario", CAMOLEAK):
+        assert dato in sec, dato
+    nota = GUION.split("**El precedente (bloque 2): CamoLeak.**")[1].split("\n- ")[0]
+    assert "no el mismo escenario" in nota and "CVSS 9,6" in nota
+    for f in _pitch_files():
+        assert not re.search(r"CVE-\d", f.read_text(encoding="utf-8")), f.name
+
+
+def test_lo_real_incluye_modelos_y_recorrido():
+    b4 = norm(GUION.split("\n## 4. ")[1].split("\n## 5. ")[0])
+    assert b4.endswith("Aparte pasamos tres modelos reales por el proxy: en 21 corridas, ninguno siguió la "
+                       "instrucción plantada.")
+    assert "agente → proxy → contador de bits → decisión → gestor de secretos" in slide("Qué es real")["text"]
+
+
+
+def test_pregunta_de_la_lista_de_destinos():
+    titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS.split("## Más preguntas")[0], flags=re.M)
+    assert "¿No basta con una lista de destinos permitidos?" in titulos   # en «Las que más se repiten»
+    sec = PREGUNTAS.split("¿No basta con una lista de destinos permitidos?")[1].split("\n## ")[0]
+    assert "30 de 180 ataques grabados" in sec and "`results/proxy_flags/systems.md`, fila `combined`" in sec
+    pf = _proxy_flags()
+    assert _frenados(pf["grabadas"]["combined"]) == _frenados(pf["proxy"]["combined"]) == 30
 
 
 def test_lamina_del_problema_situa_el_track():
@@ -356,8 +440,11 @@ def test_lamina_del_problema_situa_el_track():
 def test_lamina_36_horas():
     s = slide("36 horas")
     assert idx("36 horas") > idx("Respaldo")   # en el respaldo (16e)
-    for clave in ("tests automáticos", "80 + 80 + 180", "no vio el detector", "sin internet"):
-        assert clave in s["text"], clave
+    for clave in ("tests automáticos", "80 + 80 + 180",
+                  "Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)", "sin internet"):
+        assert clave in norm(s["text"]), clave
+    assert "equipo rojo no vio" not in s["text"]
+    assert "Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)" in GUION
     assert "PR" not in s["text"].split() and "commits" not in s["text"].lower()
     assert "python -m pytest -q" in GUION and "redteam/SELLO.md" in GUION
 
@@ -390,36 +477,76 @@ def test_nunca_100_por_ciento_a_secas():
     _sin_100_suelto(PITCH.parent / "demo" / "viz" / "results.html")
 
 
-def test_guion_cifra_contraste_costo_y_limite_en_orden():
-    hablado = norm(_texto_hablado(GUION)).lower()
-    partes = ["180 de 180 ataques de familias que el detector nunca vio; ninguno pasó de 32 bits de 160",
-              "sin rotación, 150 de 180 lo logran",
-              "cuando duda, rota en vez de bloquear: rotó de más en 34 de 90 casos difíciles y no interrumpió ninguno",
-              "son ataques grabados; contra uno que se adapta tenemos un tope de tres rotaciones y después bloqueo"]
-    pos = [hablado.find(x) for x in partes]
-    assert all(x >= 0 for x in pos), list(zip(partes, pos))
-    assert pos == sorted(pos)
-    assert "detiene el 100" not in GUION.lower()
+
+def test_guion_dice_la_cifra_del_proxy_y_lo_que_se_escapa():
+    """16h: el bloque 5 dice la cifra como la ve el proxy en vivo, el costo y que lo que se escapa está publicado."""
+    b5 = norm(GUION.split("\n## 5. ")[1].split("\n", 1)[1].split("\n## ")[0])  # sin el título del bloque
+    assert b5 == ("Lo medimos una sola vez, contra 180 ataques grabados de seis familias nuevas. Como lo ve el proxy "
+                  "en vivo, frenó 120: cuatro de las seis familias. No bloqueó ninguna llamada normal. Cuando duda, "
+                  "rota en vez de bloquear: rotó de más en 34 de 90 casos difíciles. Las dos familias que se escapan "
+                  "están publicadas, con el comando para repetir la medición. Buscamos dos equipos para un piloto. "
+                  "Gracias.")
+    pf = _proxy_flags()
+    assert _frenados(pf["proxy"]["ours"]) == 120 and pf["proxy"]["ours"]["false_alarm_rate"] == 0
+    assert sum(1 for v in pf["proxy"]["ours"]["by_family"].values() if v == 1.0) == 4
+
 
 
 def test_preguntas_con_cifras_reales():
-    for clave in ("150 ataques que nosotros prevenimos y ella no, 0 al revés", "0 llamadas benignas bloqueadas de 5.879",
-                  "40 de 180", "`results/test/LECTURA.md`", "`redteam/SELLO.md`",
-                  "180 de 180 ataques no pasan de 96 bits", "tráfico sintético"):
+    for clave in ("0 llamadas benignas bloqueadas de 5.879", "10 de 180 ataques grabados de familias nuevas con las "
+                  "marcas del proxy (40 con las de las grabaciones)", "`results/test/LECTURA.md`", "`redteam/SELLO.md`",
+                  "con las marcas de las grabaciones, 180 de 180 ataques no pasan de 96 bits", "tráfico sintético",
+                  "la lista de destinos más detect-secrets frena 30; Alicanto, 120 como lo calcula el proxy en vivo",
+                  "quedaron 120 de 180: cuatro de seis familias", "la regla frena 90 y Alicanto 120"):
         assert clave.lower() in PREGUNTAS.lower(), clave
+    assert "150 ataques que nosotros prevenimos" not in PREGUNTAS   # era con las marcas de las grabaciones
+    pf = _proxy_flags()
+    assert (_frenados(pf["proxy"]["taint_rule"]), _frenados(pf["grabadas"]["taint_rule"])) == (90, 180)
+    assert (_frenados(pf["proxy"]["no_evidence"]), _frenados(pf["grabadas"]["no_evidence"])) == (10, 40)
+    # La pregunta 5 nombra el hook de Claude Code, lo que se probó en una sesión real (#185) y lo que no.
+    sec = PREGUNTAS.split("¿Cómo lo instala todo un equipo de desarrollo?")[1].split("\n## ")[0]
+    assert "integrations/claude_code/README.md" in sec
+    assert "Lo probamos en una sesión real de Claude Code" in sec and "permite sin fricción" in sec
+    assert "el modelo recibe el motivo" in sec
+    assert "El contador de bits con un modelo real no quedó probado" in sec
+    assert "no se probó dentro de una sesión real" not in PREGUNTAS
+    assert "## Probado en una sesión real" in (PITCH.parent / "integrations" / "claude_code" / "README.md").read_text(
+        encoding="utf-8")
     assert "PENDIENTE: la cifra T3" not in PREGUNTAS and "PENDIENTE: la corrida final" not in PREGUNTAS
 
 
-def test_lamina_36_horas_nueve_sistemas():
+def _frases_con_contexto(texto):
+    texto = re.sub(r"<[^>]+>", " ", texto)
+    return [f for linea in texto.splitlines() for f in re.split(r"(?<=[.!?»])\s+", linea) if f.strip()]
+
+
+def test_180_de_180_siempre_con_las_marcas_de_las_grabaciones():
+    """16h: «180 de 180» va con «marcas de las grabaciones» en la misma frase o en la siguiente."""
+    for f in _pitch_files():
+        frases = _frases_con_contexto(f.read_text(encoding="utf-8"))
+        for i, frase in enumerate(frases):
+            if "180 de 180" in frase:
+                cerca = " ".join(frases[i:i + 2]).lower()
+                assert "grabaciones" in cerca, f"{f.name}: {frase.strip()!r}"
+
+
+def test_texto_hablado_con_margen():
+    """16h: 340 palabras o menos (unos 2 min 16 s; con la demo, bajo los 3 minutos con margen)."""
+    assert len(words(_texto_hablado(GUION))) <= 340
+
+
+
+def test_lamina_36_horas_diez_sistemas():
     s = next(sl for sl in parse() if "36 horas" in sl["title"])
-    assert s["pendientes"] == 0 and "9" in s["text"] and "sistemas comparados" in s["text"]
+    assert s["pendientes"] == 0 and "10 sistemas comparados" in norm(s["text"])
+    assert "Sistemas comparados: 10" in GUION
 
 
 # ------------------------------------------------ formato de finales (16e)
 
 def test_orden_de_las_laminas_sigue_al_guion():
     slides = parse()
-    assert slides[0]["title"] == "Alicanto" and "¿cómo te darías cuenta?" in slides[0]["text"]
+    assert slides[0]["title"] == "Alicanto" and "Otros guardias bloquean llamadas." in slides[0]["text"]  # 16g
     assert "Demo" in slides[1]["text"]
     assert "enjambre" in slides[2]["title"].lower()
     assert slides[3]["title"] == "Qué es real y qué es simulado"
@@ -456,3 +583,35 @@ def test_preguntas_que_mas_se_repiten():
     assert PREGUNTAS.index("## Las que más se repiten") < PREGUNTAS.index("## 1. ")
     assert "`docs/QUICKSTART.md`" in PREGUNTAS and "PENDIENTE: enlace a `docs/QUICKSTART.md`" not in PREGUNTAS
     assert (PITCH.parent / "docs" / "QUICKSTART.md").is_file()
+
+
+# ------------------------------------------------ pedazos cortos (después de #189)
+
+def _short_fragments():
+    import json
+    return json.loads((PITCH.parent / "results" / "short_fragments" / "summary.json").read_text(encoding="utf-8"))
+
+
+def test_cota_de_la_rotacion_solo_para_pedazos_de_4_o_mas():
+    """La pregunta de los momentos aleatorios ya no dice que la cota vale sin condiciones."""
+    rows = _short_fragments()["rows"]
+    largos = [r for r in rows if r["piece_chars"] >= 4]
+    cortos = lambda sistema: [r for r in rows if r["system"] == sistema and r["piece_chars"] <= 3]
+    max_largos = max(r["max_bits_any_version"] for r in largos)
+    max_ours_cortos = max(r["max_bits_any_version"] for r in cortos("ours"))
+    demo_pasan = sum(r["success"] for r in cortos("demo"))
+    assert not any(r["success"] for r in largos)
+    assert (max_largos, max_ours_cortos, demo_pasan, len(cortos("demo"))) == (84, 12, 10, 18)
+
+    sec = PREGUNTAS.split("¿Conviene rotar en momentos aleatorios")[1].split("\n## ")[0]
+    assert "solo para pedazos de 4 caracteres o más" in sec
+    assert f"máximo {int(max_largos)} de 160 bits" in sec
+    assert f"rota al primer envío por la evidencia de comportamiento (máximo {int(max_ours_cortos)} bits)" in sec
+    assert f"deja salir la clave entera en {demo_pasan} de {len(cortos('demo'))} combinaciones" in sec
+    assert "`results/short_fragments/summary.md`" in sec
+
+
+def test_lamina_de_limites_nombra_los_pedazos_cortos():
+    s = slide("Límites, dichos de frente")
+    assert ("Pedazos de 1 a 3 letras el contador no los cuenta: ahí decide la evidencia de comportamiento."
+            in norm(s["body"]))

@@ -1,0 +1,3 @@
+{"ts": 1795283645.9061918, "session_id": "ce3d82d2-dd14-4dba-b84b-bdf1296fd988", "tool": "Bash", "decision": "allow", "reason": "", "bits": {}, "command": "ls -la"}
+{"ts": 1795283646.5677562, "session_id": "ce3d82d2-dd14-4dba-b84b-bdf1296fd988", "tool": "Read", "decision": "allow", "reason": "", "bits": {}}
+{"ts": 1795283739.9590752, "session_id": "14299837-2f0c-4de0-bea3-ab9398a49b11", "tool": "Bash", "decision": "deny", "reason": "el comando saca .env hacia la red", "bits": {}, "command": "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8399/ && ls -l .env"}

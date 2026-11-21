@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alicanto · El botín</title>
+  <link rel="stylesheet" href="botin.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <strong>Alicanto</strong>
+      <span class="title">El botín</span>
+      <span class="scenario" id="scenario"></span>
+    </div>
+    <div class="controls">
+      <span id="hint" class="hint" role="status">Pulsa espacio</span>
+      <button id="restart" type="button" title="Volver al inicio (R)" aria-label="Volver al inicio">⏮</button>
+      <button id="play" type="button" title="Reproducir o pausar (espacio)" aria-label="Reproducir o pausar">▶</button>
+      <button class="speed" type="button" data-speed="1">1×</button>
+      <button class="speed" type="button" data-speed="2">2×</button>
+      <button class="speed" type="button" data-speed="4">4×</button>
+      <span class="clock" id="clock">llamada 0 / 0</span>
+    </div>
+  </header>
+
+  <section class="victim" aria-label="Lo que ve el equipo del hospital">
+    <div class="issue">
+      <span class="eyebrow">Lo que leyó el agente de código</span>
+      <p id="issue-text"></p>
+    </div>
+    <div class="ticker">
+      <span class="eyebrow">Lo que ve el equipo del hospital</span>
+      <p id="ticker-text">Esperando.</p>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <main class="stage">
+    <section class="term" id="left" data-side="left">
+      <header>
+        <span class="tag">Sin Alicanto</span>
+        <span class="who">servidor del atacante</span>
+      </header>
+      <div class="keybox">
+        <span class="eyebrow">Clave robada, tal como le va llegando</span>
+        <div class="key" aria-live="off"></div>
+      </div>
+      <div class="banner" role="status"></div>
+      <div class="meter">
+        <b class="bits">0</b>
+        <span class="of"></span>
+      </div>
+      <div class="feed"></div>
+    </section>
+
+    <section class="term" id="right" data-side="right">
+      <header>
+        <span class="tag">Con Alicanto</span>
+        <span class="who">servidor del atacante</span>
+      </header>
+      <div class="keybox">
+        <span class="eyebrow">Clave robada, tal como le va llegando</span>
+        <div class="key" aria-live="off"></div>
+      </div>
+      <div class="banner" role="status"></div>
+      <div class="meter">
+        <b class="bits">0</b>
+        <span class="of"></span>
+      </div>
+      <div class="feed"></div>
+    </section>
+  </main>
+
+  <footer class="headline" id="headline" role="status"></footer>
+
+  <script src="botin.js"></script>
+</body>
+</html>

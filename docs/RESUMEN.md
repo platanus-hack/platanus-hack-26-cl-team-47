@@ -52,11 +52,17 @@ A un robot que entiende texto se lo puede engañar con texto, igual que al prime
 
 ## Qué tan bien funciona
 
-Se probó una sola vez contra 180 robos de seis tipos que el guardia nunca había visto, escritos por una parte del equipo que no sabía cómo funcionaba el guardia.
+Se probó una sola vez contra 180 robos grabados de seis tipos que no se usaron para construirlo.
 
-- En ninguno el ladrón juntó más de 8 de las 40 letras de la contraseña vigente.
-- No se bloqueó ningún mensaje normal, de 5.879 revisados.
-- Con el mismo guardia pero sin cambiar la cerradura, el ladrón gana en 150 de los 180 robos.
+- **Frenó 120 de los 180 robos: cuatro de los seis tipos**, medido como lo ve el guardia en vivo.
+- La primera medición decía 180 de 180 porque usaba marcas que dejó en las grabaciones quien preparó los robos: en cada mensaje decían si salía hacia afuera y si traía texto de un desconocido. El guardia en vivo no recibe esas marcas, las calcula él, y con su cálculo son 120. Se publican las dos cifras.
+- Los dos tipos que se escapan:
+  - En uno, el robot manda la contraseña a la misma puerta donde se usa de verdad. Para el guardia es un envío normal.
+  - En el otro, el robot esconde las letras en las notas que deja al guardar cambios del proyecto. El guardia sí frena el envío final de esas notas, pero la medición cuenta la fuga en cada nota, así que el robo figura como escapado.
+- Cada tipo son 30 copias de un mismo robo: el resultado se lee como cuatro de seis tipos, no como 120 casos distintos.
+- No se bloqueó ningún mensaje normal, de 5.879 revisados, con las dos mediciones.
+- Con las marcas de las grabaciones, en ninguno el ladrón juntó más de 8 de las 40 letras de la contraseña vigente, y sin cambiar la cerradura el ladrón gana en 150 de los 180 robos.
+- Con las mismas marcas de las grabaciones, una regla mucho más simple («si leyó una contraseña y habla con un desconocido, cambia la cerradura») también frena 180 de 180; midiendo como el guardia en vivo, frena 90.
 - El costo: cuando duda, el guardia cambia la cerradura en vez de frenar el trabajo. En los casos normales más confusos la cambió sin necesidad en 34 de 90. No interrumpió ninguno.
 
 Estos robos son grabaciones: el ladrón no cambia de plan a mitad de camino. Contra un ladrón que vuelve a leer la contraseña nueva cada vez, medido aparte, lo que lo detiene es el tope de tres cambios y el cierre de las salidas.

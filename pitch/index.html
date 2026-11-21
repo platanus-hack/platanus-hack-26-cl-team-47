@@ -11,7 +11,7 @@
 
     <section class="slide slide-title" data-n="1">
       <h1>Alicanto</h1>
-      <p class="sub pregunta">«Si el agente que corre en tu máquina quisiera hacer daño, ¿cómo te darías cuenta?»</p>
+      <p class="sub distingue">Otros guardias bloquean llamadas. Alicanto cambia la clave antes de que sirva.</p>
       <p class="sub">Alicanto mide cuánta clave ya salió y la cambia: quien la sigue termina sin nada.</p>
       <p class="sub">Team-47 · track AI Security</p>
     </section>
@@ -36,28 +36,28 @@
     <section class="slide slide-real" data-n="4">
       <h2>Qué es real y qué es simulado</h2>
       <div class="two">
-        <div class="box"><span class="k">Real, corre aquí</span>El proxy, el motor, el gestor de secretos y el servidor del atacante.</div>
-        <div class="box"><span class="k">Simulado</span>Claves sintéticas, servidores locales, hospital ficticio. El agente de la demo es un guion reproducible.</div>
+        <div class="box"><span class="k">Real, corre aquí</span>El proxy, el motor, el gestor de secretos y el servidor del atacante.<span class="flujo" style="display:block;margin-top:16px;font-size:26px;color:var(--muted)">agente → proxy → contador de bits → decisión → gestor de secretos</span></div>
+        <div class="box"><span class="k">Simulado</span>Claves sintéticas, servidores locales, hospital ficticio. El agente de la demo: un guion reproducible.</div>
       </div>
     </section>
 
     <section class="slide slide-resultados" data-n="5">
-      <h2>180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h2>
+      <h2>180 ataques grabados de seis familias nuevas: Alicanto frenó 120, cuatro de las seis</h2>
       <table class="results resultados">
-        <tr><th></th><th>Alicanto</th><th>Sin rotación</th><th>Presupuesto de bits (réplica)</th></tr>
-        <tr><th>Ataques de familias nuevas prevenidos, de 180</th><td class="good">100 % (180)</td><td>16,7 % (30)</td><td>38,9 % (70)</td></tr>
-        <tr><th>El ataque triunfa, de 180</th><td class="good">0 % (0)</td><td class="bad">83,3 % (150)</td><td>61,1 % (110)</td></tr>
-        <tr><th>Llamadas benignas bloqueadas, de 5.879</th><td class="good">0 % (0)</td><td>0 % (0)</td><td>4,8 % (283)</td></tr>
+        <tr><th></th><th>Alicanto</th><th>Sin rotación</th><th>Lista de destinos + escáner</th><th>Presupuesto de bits (réplica)</th></tr>
+        <tr><th>Frenados, como lo calcula el proxy en vivo</th><td class="good">120</td><td class="bad">0</td><td>30</td><td>40</td></tr>
+        <tr><th>Frenados, con las marcas de las grabaciones</th><td class="good">180</td><td>30</td><td>30</td><td>70</td></tr>
+        <tr><th>Llamadas normales bloqueadas, de 5.879</th><td class="good">0</td><td>0</td><td>2,2 %</td><td>4,8 %</td></tr>
       </table>
       <p class="limite">Costo: rotó de más en 34 de 90 sesiones benignas difíciles; no bloqueó ninguna llamada benigna.</p>
-      <p class="limite">Ataques grabados. Contra un atacante simulado que se adapta: 180 de 180, deteniendo las salidas tras tres rotaciones.</p>
+      <p class="limite">Ataques grabados. Sin cubrir: la clave enviada a su propio destino permitido y la escondida en commits de git. Fuente: results/proxy_flags.</p>
     </section>
 
     <section class="slide" data-n="6">
       <h2>Usuario y cierre</h2>
-      <p><span class="k">Quién compra</span> Seguridad y plataforma en salud y sus proveedores de software.</p>
-      <p><span class="k">Por qué ahora</span> Alerta a la ANCI en 3 horas; el informe dice qué salió y cuándo rotó.</p>
-      <p class="strong">Pedimos dos equipos de TI de salud para un piloto.</p>
+      <p><span class="k">Quién lo usa</span> Equipos con agentes de código y claves en el repositorio.</p>
+      <p><span class="k">Por qué ahora</span> Los agentes ya leen texto que escribe cualquiera. En salud hay 3 horas para avisar.</p>
+      <p class="strong">Buscamos dos equipos para un piloto.</p>
     </section>
 
     <section class="slide slide-respaldo" data-n="7">
@@ -115,7 +115,8 @@
     <section class="slide" data-n="14">
       <h2>Límites, dichos de frente</h2>
       <p>Es una cota inferior: decimos «al menos X bits», no «bits exactos».</p>
-      <p>Una transformación que los decodificadores no conocen no se ve: por eso existen la evidencia y la rotación.</p>
+      <p>Lo que los decodificadores no leen no se ve.</p>
+      <p>Pedazos de 1 a 3 letras el contador no los cuenta: ahí decide la evidencia de comportamiento.</p>
     </section>
 
     <section class="slide" data-n="15">
@@ -128,11 +129,11 @@
     <section class="slide slide-cifras" data-n="16">
       <h2>36 horas en cifras</h2>
       <ul class="cifras">
-        <li><span class="num">700+</span> tests automáticos</li>
-        <li><span class="num">9</span> sistemas comparados</li>
-        <li><span class="num">80 + 80 + 180</span> ataques del equipo rojo; los 180, sellados con hash antes de evaluar</li>
-        <li>El equipo rojo no vio el detector</li>
-        <li>Red sin internet: gestor de secretos, API, atacante, GitHub y web simulados</li>
+        <li><span class="num">786</span> tests automáticos</li>
+        <li><span class="num">10</span> sistemas comparados</li>
+        <li><span class="num">80 + 80 + 180</span> ataques; los 180, sellados antes de evaluar</li>
+        <li>Ataques escritos en una sesión aparte, sin abrir el detector (regla del equipo)</li>
+        <li>Red sin internet: gestor, API, atacante, GitHub y web simulados</li>
       </ul>
     </section>
 

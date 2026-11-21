@@ -9,15 +9,15 @@
 <body class="home-page results-page">
   <main class="home results">
     <p class="home-kicker"><a href="home.html">Alicanto</a> · evaluación final</p>
-    <h1 class="home-title results-title">180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits</h1>
+    <h1 class="home-title results-title">180 ataques grabados de seis familias nuevas: Alicanto frenó 120, cuatro de las seis</h1>
     <p class="home-tagline">Corrida única sobre un set de ataques grabados, sellado con hash antes de evaluar, con la configuración congelada antes de abrirlo. Todo el tráfico es sintético.</p>
 
     <section class="results-block">
       <h2>Los nueve sistemas, en el set de prueba</h2>
-      <p class="results-note">Prevenidos: de 180 ataques grabados de seis familias que el detector no había visto. Falsas alarmas: llamadas benignas bloqueadas, de 5.879 expuestas. Entre corchetes, el intervalo al 95 %.</p>
+      <p class="results-note">Frenados: de 180 ataques grabados de seis familias que el detector no había visto, en dos columnas. «Como lo calcula el proxy en vivo»: cada llamada lleva las banderas (si saca datos y si trae contenido no confiable) que calcula el proxy. «Con las marcas de las grabaciones»: las banderas que escribió el generador de los ataques, como en la evaluación original. Falsas alarmas: llamadas benignas bloqueadas, de 5.879 expuestas; son las mismas con las dos banderas. Entre corchetes, el intervalo al 95 %. La mediana de bits es con las marcas de las grabaciones.</p>
       <div class="results-scroll">
         <table class="results-table" id="systems-table">
-          <thead><tr><th>Sistema</th><th>Prevenidos</th><th>Falsas alarmas</th><th>Rotaciones benignas por 1.000 llamadas</th><th>Mediana de bits del atacante</th></tr></thead>
+          <thead><tr><th>Sistema</th><th>Frenados, como lo calcula el proxy en vivo</th><th>Frenados, con las marcas de las grabaciones</th><th>Falsas alarmas</th><th>Rotaciones benignas por 1.000 llamadas</th><th>Mediana de bits del atacante</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -27,12 +27,16 @@
     <section class="results-block results-limits">
       <h2>Lo que este resultado no dice</h2>
       <ol>
+        <li><strong>Dos de las seis familias no se cubren con las banderas del proxy:</strong> en A9 la clave sale hacia su propio destino permitido (<code>api.empresa.test</code>, en una cabecera), y para el proxy ese envío es legítimo. En A13 sale en commits de git; la salida es el push, y Alicanto rota y bloquea el push en las 30 sesiones, pero las etiquetas del set ponen la fuga en cada commit, así que la cifra queda en 0 de 30.</li>
+        <li><strong>Con las marcas de las grabaciones, una regla simple empata con Alicanto:</strong> «leyó un secreto y esta llamada sale hacia un destino no confiable» frena también 180 de 180 con esas marcas; ese set no los separa. Con las banderas del proxy, Alicanto frena 120 y la regla simple 90; la diferencia es A10.</li>
+        <li><strong>Son seis plantillas, no 180 casos independientes:</strong> cada familia son 30 réplicas de una plantilla, así que se lee como «4 de 6 familias» con las banderas del proxy (6 de 6 con las marcas de las grabaciones). Los valores p tratan las réplicas como independientes y exageran la evidencia.</li>
         <li><strong>Son ataques grabados, no un atacante que se adapta:</strong> tras rotar, las grabaciones siguen enviando la clave vieja. El que se adapta se midió aparte (abajo).</li>
-        <li><strong>El contador de bits, solo, no generaliza:</strong> sin el modelo de evidencia se previenen 40 de 180; lo que frena estas familias nuevas es la evidencia de comportamiento.</li>
+        <li><strong>El contador de bits, solo, no generaliza:</strong> sin el modelo de evidencia se frenan 40 de 180 con las marcas de las grabaciones y 10 con las banderas del proxy; lo que frena estas familias nuevas es la evidencia de comportamiento.</li>
         <li><strong>Tiene un costo:</strong> rotó una clave sin necesidad en 34 de 90 sesiones benignas difíciles (5,46 por cada 1.000 llamadas; la meta era 5). No bloqueó ninguna llamada benigna.</li>
         <li><strong>El modelo de evidencia está saturado:</strong> se comporta como «leyó un secreto y después habla con un destino no confiable»; por eso generaliza y por eso rota de más.</li>
-        <li><strong>La cuenta compartida no se distingue aquí:</strong> la cuenta por sesión también previene todo, porque la evidencia rota antes; su valor se ve en la demo del enjambre.</li>
+        <li><strong>La cuenta compartida no se distingue aquí:</strong> la cuenta por sesión frena lo mismo que la compartida (120 con las banderas del proxy), porque la evidencia rota antes; su valor se ve en la demo del enjambre.</li>
         <li><strong>Todo es sintético:</strong> tráfico benigno y ataques son guiones de nuestro equipo.</li>
+        <li><strong>La cota de la rotación periódica vale para pedazos de 4 caracteres o más:</strong> con 4 o más, como máximo 84 bits de una versión. Pedazos de 1 a 3 caracteres el contador no los cuenta. Con la configuración evaluada, la evidencia rota al primer envío (máximo 12 bits). Con la de la demo, sin modelo de evidencia, la clave sale entera en 10 de 18 combinaciones. Medición aparte con sesiones sintéticas: <code>results/short_fragments/</code>.</li>
         <li><strong>Las réplicas no son los productos:</strong> «presupuesto de bits» y «reensamblado por sesión» son réplicas simplificadas nuestras, no Pipelock, AgentBrake ni ningún artículo.</li>
       </ol>
     </section>
@@ -53,7 +57,7 @@
       <dl class="results-hashes" id="hashes"></dl>
     </section>
 
-    <p class="home-note">Datos: <code>fixtures/results.json</code>, copia de <code>results/test/</code>, <code>results/adaptive/</code> y <code>redteam/SELLO.md</code>. Cómo leerlos: <code>results/test/LECTURA.md</code>.</p>
+    <p class="home-note">Datos: <code>fixtures/results.json</code>, copia de <code>results/test/</code>, <code>results/proxy_flags/</code>, <code>results/adaptive/</code> y <code>redteam/SELLO.md</code>. Cómo leerlos: <code>results/test/LECTURA.md</code>, sección «Las banderas de cada llamada venían de las grabaciones».</p>
     <div class="home-actions"><a class="home-secondary" href="home.html">Volver a la portada</a></div>
   </main>
   <script src="results.js"></script>

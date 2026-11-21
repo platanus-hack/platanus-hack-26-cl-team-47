@@ -18,6 +18,8 @@ En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el 
 
 **Demo en línea:** https://alicanto.vercel.app · [resultados y sus límites](https://alicanto.vercel.app/results.html)
 
+**Evaluación:** con las banderas que calcula el proxy en vivo, 120 de 180 ataques grabados: cuatro de las seis familias; las dos que no se cubren son la clave enviada a su propio destino permitido y la fuga por commits de git. Cero llamadas benignas bloqueadas en 5.879, con las banderas del generador y con las del proxy. Cómo leer las cifras: [results/test/LECTURA.md](results/test/LECTURA.md).
+
 ## Qué es
 
 Un proxy entre un agente de IA y sus herramientas. En cada llamada mide cuántos bits de cada clave ya salieron hacia afuera, aunque salgan de a pocos caracteres o codificados, y rota la clave en el gestor de secretos antes de que la fuga se complete. No modifica el agente y no usa un LLM para decidir.
@@ -63,6 +65,8 @@ python -m pytest -q
 
 **Conectarlo a tu agente de código** (servidor MCP, con la cuenta compartida entre agentes): [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
+**Como hook de Claude Code** (cuenta los bits que salen por `Bash`, `WebFetch` y `Read`, sin cambiar las herramientas del agente): [integrations/claude_code/README.md](integrations/claude_code/README.md). Límite: ve lo que el modelo escribe en los comandos, no lo que un comando hace por dentro. Probado en una sesión real de Claude Code: corre en cada llamada, permite sin fricción y niega con el motivo; el contador de bits con un modelo real no quedó probado, porque el modelo se negó por su cuenta a enviar los trozos de la clave.
+
 ## Para quien evalúa (y para su agente)
 
 Cada afirmación del proyecto, con el archivo que la sostiene y un comando que la comprueba en menos de un minuto. Todo corre en local, sin claves ni servicios externos.
@@ -76,8 +80,9 @@ Cada afirmación del proyecto, con el archivo que la sostiene y un comando que l
 | Una sola cuenta por clave para varios agentes | `engine/detector/ledger.py` | `python demo/run_split.py --swarm --out-dir demo/out` y `python -m pytest engine/detector/tests/test_ledger.py -q` |
 | Ningún LLM decide | `engine/` no importa ningún cliente de modelos | `grep -rn "anthropic\|openai" engine/` no devuelve nada |
 | Si el gestor de secretos no responde, se bloquean las salidas | `proxy/live.py` (`fail_safe`) | `python -m pytest proxy/tests -q` |
+| La cifra con las banderas que calcula el proxy | `results/proxy_flags/systems.md`, `results/test/LECTURA.md` | `python -m eval.final.proxy_flags --out /tmp/pf` |
 | Los ataques de prueba se sellaron con hash antes de evaluar | `redteam/SELLO.md` | El comando de verificación está en ese archivo |
-| Quien escribió los ataques no vio el detector | `docs/PLAN.md` («Equipo morado»), `docs/BITACORA_DETECTOR.md` | Cada cambio al detector está anotado con hora y motivo |
+| Los ataques los escribió una sesión de agente aparte, que tenía prohibido abrir el código del detector. Es una regla de trabajo del equipo, anotada en `docs/PLAN.md`; desde fuera no se puede comprobar. | `docs/PLAN.md` («Equipo morado»), `docs/BITACORA_DETECTOR.md` | Cada cambio al detector está anotado con hora y motivo |
 | Los ataques son un benchmark que cualquiera puede correr contra su propia defensa | [`redteam/README.md`](redteam/README.md), `eval/bench.py` | `python -m eval.bench --defense eval.baselines.example_defense:make_decide --set val --out /tmp/x` |
 
 ### De dónde sale cada umbral
@@ -91,7 +96,7 @@ Ningún número está puesto a mano sin explicación. Los que se ajustan se elig
 | `W` | 50 llamadas | Cuánto vive una candidata sin que llegue otra. Limita las coincidencias al azar en texto normal |
 | `beta_bits` | 64 bits | Lo que se supone que el atacante puede adivinar por fuerza bruta. Con una clave de 160 bits, el ataque triunfa si saca más de 96 |
 | `lambda_rot` | 0,3 en la demo; 0,1 en la evaluación | Fracción de la clave filtrada que dispara la rotación |
-| `T` | llamadas | Rotación periódica de una clave ya leída. Debe cumplir una cota, comprobada en código (`Params.check`): lo que cabe entre dos rotaciones enviando justo bajo el radar no alcanza los 96 bits |
+| `T` | llamadas | Rotación periódica de una clave ya leída. Debe cumplir una cota, comprobada en código (`Params.check`), **solo para pedazos de 4 caracteres o más**, los que el contador cuenta: un envío de 7 caracteres cada 51 llamadas, justo bajo el radar, no alcanza los 96 bits entre dos rotaciones (medido: 84 bits con la demo, `results/short_fragments/`). Pedazos de 1 a 3 caracteres el contador no los cuenta y la cota no los cubre: sin el modelo de evidencia, enviados seguido, sacan la clave entera antes de la rotación periódica. Las cifras, en [results/short_fragments/summary.md](results/short_fragments/summary.md) |
 | `b`, `b_rot` | umbrales | Evidencia acumulada (CUSUM) para bloquear y para rotar |
 | `max_rotations` | 3 cada 200 llamadas | Tope para que nadie pueda forzar rotaciones sin fin; después se bloquean las salidas de esa clave y se avisa a una persona |
 
@@ -126,5 +131,10 @@ Solo secretos sintéticos y servidores simulados con nombres `.test`. Las herram
 ## Límites
 
 - Se mide una cota inferior: lo que pasa por el proxy, en las codificaciones que el motor sabe leer.
+- **El contador no cuenta pedazos de menos de 4 caracteres.**
+  - La cota de la rotación periódica vale solo para pedazos de 4 o más.
+  - Con 1 a 3 caracteres por envío, la configuración de la demo y del hook (sin modelo de evidencia) deja salir la clave entera en 10 de 18 combinaciones medidas.
+  - La configuración evaluada, con el modelo de evidencia, rota al primer envío y no deja pasar más de 12 bits.
+  - Cifras: [results/short_fragments/summary.md](results/short_fragments/summary.md).
 - Rotar limita el daño; no impide que el agente lo intente.
 - La cuenta compartida cubre a varios agentes en una misma máquina, cada uno con su propio proceso, a través de un archivo común, y se conserva entre sesiones; coordinar varias máquinas queda como trabajo futuro.
