@@ -8,7 +8,7 @@ Para quien entra a un turno y necesita saber en cinco minutos qué pasó, cómo 
 
 ## Estado actual
 
-Actualizado: sábado 21 de noviembre de 2026, 15:25 (hora 16 de 34).
+Actualizado: sábado 21 de noviembre de 2026, 16:25 (hora 17 de 34).
 
 **El proyecto.** Alicanto (hasta las 11:30 del sábado se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas. Mide cuántos bits de cada clave ya se filtraron, aunque salgan de a cuatro caracteres o codificados, y rota la clave antes de que la fuga se complete. Competimos en el track AI Security.
 
@@ -36,10 +36,7 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosa
 - **Tiene un costo.** En 34 de las 90 sesiones benignas difíciles rotó una clave sin necesidad. No bloqueó ninguna llamada benigna.
 - **El contador de bits solo no alcanza en familias nuevas** (40 de 180). Lo que frena esos ataques es la evidencia de comportamiento, que rota temprano.
 
-**En curso ahora:**
-- **#189, José Carlos:** medir qué pasa con la rotación periódica cuando los pedazos son más cortos que lo que el contador cuenta, y corregir en el README la frase que hoy promete más de lo demostrado.
-- **#190, Matías:** que los servicios locales no queden ocupando puertos cuando se cierran sin Ctrl+C.
-- **PR #178, espera al líder:** la descripción pública reescrita, menos técnica y con la frase de una línea acortada.
+**En curso ahora:** ninguna tarea de agentes. Lo que falta depende de personas (ver más abajo), empezando por el PR #178, que trae la descripción pública reescrita y espera la aprobación del líder.
 
 **Dónde verlo:**
 - **Demo en línea:** https://alicanto.vercel.app (portada, tres demos, informe de incidente y resultados). **No se actualiza sola:** el orquestador la vuelve a desplegar a mano después de cada cambio en `demo/viz` (ver `demo/DEPLOY.md`, «Cómo quedó desplegado»).
@@ -51,10 +48,10 @@ Ningún ataque sacó más de 32 de los 160 bits de la clave vigente. Cuatro cosa
 
 | Persona | Estado | Tarea |
 |---|---|---|
-| José Carlos (`JCBasulto`) | Activo | #189 |
+| José Carlos (`JCBasulto`) | Activo | Sin tarea abierta |
 | Victoria (`VictoriaGuerriero`) | Activa desde las 12:25 | Hizo las corridas con el modelo real. Sin tarea abierta |
 | Tomás (`Terdmannsdorffer`) | Sin tokens | No recibe tareas |
-| Matías (`matix3000`) | Activo desde las 12:25 | #190 |
+| Matías (`matix3000`) | Activo desde las 12:25 | Sin tarea abierta |
 | Juan Pedro (`jplira2`), líder | Activo | Corre el orquestador y la sesión del equipo rojo |
 
 Si alguien recupera tokens o se queda sin ellos, avísalo en el board: el orquestador reparte según eso.
@@ -91,6 +88,15 @@ Ningún agente puede hacer esto. Ordenado por importancia.
 ---
 
 ## Turnos
+
+### Sábado 21, 15:25 a 16:25
+
+Escrito por el orquestador.
+
+- **Un límite medido y publicado** (#189): la cota de la rotación periódica vale para pedazos de 4 caracteres o más (máximo observado, 84 de 160 bits). Con pedazos de 1 a 3, la configuración evaluada rota al primer envío (máximo 12 bits), y la de la demo y del hook, que deciden solo con el contador, dejan salir la clave entera en 10 de 18 combinaciones. Está dicho en el README, la página de resultados, el pitch, la guía de inicio y el README del hook.
+- **La frase de los equipos separados** pasó a decir lo que se puede sostener: los ataques se escribieron en una sesión aparte que tenía prohibido abrir el detector; es una regla del equipo y desde fuera no se puede comprobar.
+- **Servicios locales:** ya no dejan puertos ocupados al cerrarse sin Ctrl+C (#190).
+- **Comprobación de clon limpio** a las 16:20: el repo público instala, pasa la suite (823 tests; 800 y 23 saltados sin Playwright) y corren los comandos del README.
 
 ### Sábado 21, 14:00 a 15:25
 

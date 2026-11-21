@@ -1,14 +1,14 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 15:25 (H16,4). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 16:25 (H17,4). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
-**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. Tareas abiertas: #189 (medir la cota de la rotación periódica con pedazos cortos y corregir el texto) y #190 (cierre limpio de `services.stack`). En revisión del líder: PR #178 (descripción pública reescrita).
+**Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. No hay tareas abiertas. En revisión del líder: PR #178 (descripción pública reescrita).
 
 ## Qué hay en `main`
 
-- 809 tests en verde (`python -m pytest -q`).
+- 823 tests en verde (`python -m pytest -q`). Comprobado a las 16:20 en un clon limpio del repo público: instala con `pip install -r requirements.txt`, la suite pasa y corren los comandos del README.
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado en una sesión real: permite sin fricción y niega con el motivo; el contador con un modelo real no quedó probado, porque el modelo se negó por su cuenta).
@@ -23,6 +23,7 @@ Actualizado: sábado 21 de noviembre de 2026, 15:25 (H16,4). Lo mantiene el orqu
 - **Lee `results/test/LECTURA.md` antes de escribir una cifra.** 180 de 180 ataques grabados prevenidos y 0 de 5.879 llamadas benignas bloqueadas, con tres límites que van siempre al lado: son ataques grabados (el adaptativo se midió aparte: 180 de 180, deteniendo las salidas tras tres rotaciones); costo de 39 rotaciones de más, en 34 de 90 sesiones benignas difíciles; y con el contador de bits solo se previenen 40 de 180.
 - **Frase de novedad permitida:** «Hasta donde encontramos, nadie usa la fuga parcial medida de una credencial (en bits, sumada entre llamadas, codificaciones y agentes) para rotarla antes de que se complete.»
 - **No decir:** «detiene el 100 %» a secas; que nadie junta fragmentos (existen Pipelock y AgentBrake); que somos los primeros; que los grafos «conectan pasos lejanos»; que Alicanto frenó a un LLM real (se corrieron tres modelos y ninguno siguió la inyección, así que no hubo fuga que frenar).
+- **La cota de la rotación periódica vale para pedazos de 4 caracteres o más.** Con 1 a 3, la configuración evaluada rota al primer envío (máximo 12 bits) y la de la demo y del hook, sin modelo de evidencia, deja salir la clave entera en 10 de 18 combinaciones medidas (`results/short_fragments/`). No digas que la cota vale sin condiciones.
 - **El enjambre:** la cuenta compartida cubre varios agentes en una misma máquina, por un archivo común (`LEDGER_PATH`); no varias máquinas.
 - **Dos cifras, siempre juntas.** 180 de 180 se midió con las banderas `is_sink` y `untrusted` que escribió el generador de ataques; con las que calcula el proxy en vivo son **120 de 180** (cuatro de seis familias). Detalle y frases permitidas: `results/test/LECTURA.md`, sección «Las banderas de cada llamada venían de las grabaciones»; tabla en `results/proxy_flags/`. No escribas «180 de 180» sin decir en la misma frase que es con las banderas de las grabaciones.
 - **La demo y la evaluación usan configuraciones distintas:** la demo corre sin modelo de evidencia y rota al 30 % de la clave; la evaluación usa `models/search/frozen.json`.
