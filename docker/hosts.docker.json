@@ -1,0 +1,7 @@
+{
+  "vault.test": "http://vault.test:8101",
+  "api.empresa.test": "http://api.empresa.test:8102",
+  "attacker.test": "http://attacker.test:8103",
+  "github.test": "http://github.test:8104",
+  "web.test": "http://web.test:8105"
+}

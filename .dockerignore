@@ -1,0 +1,14 @@
+.git
+.gitignore
+logs/
+demo/out/
+.venv/
+**/__pycache__/
+**/*.pyc
+.board/
+.env
+.env.*
+!demo/repo/.env
+.claude/
+node_modules/
+.pytest_cache/
