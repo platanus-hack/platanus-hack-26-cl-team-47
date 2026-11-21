@@ -1,0 +1,287 @@
+/* Pantalla dividida sincronizada (tarea 15b).
+ *
+ * Dos registros de Event de la misma sesión (mismos t), uno por panel, movidos
+ * por un solo reloj. Reutiliza buildFrames y los ayudantes de app.js.
+ */
+"use strict";
+
+/**
+ * Función pura: estado HTTP del último intento del atacante (200, 401) o null.
+ * Busca eventos source="attacker", kind="received" con data.status.
+ */
+function finalStatus(events) {
+  let status = null;
+  for (const ev of events || []) {
+    if (ev && ev.source === "attacker" && ev.kind === "received" && ev.data && ev.data.status != null) {
+      status = Number(ev.data.status);
+    }
+  }
+  return status === 200 || status === 401 ? status : null;
+}
+
+/** Fracción filtrada final por secreto: la de la última Decision que lo menciona. */
+function finalFractions(frames) {
+  const out = {};
+  for (const f of frames) {
+    const leak = (f.decision && f.decision.leak) || {};
+    for (const sid of Object.keys(out)) if (!(sid in leak)) out[sid] = 0; // rotado o sin fuga
+    for (const [sid, l] of Object.entries(leak)) out[sid] = l.fraction;
+  }
+  return out;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { finalStatus, finalFractions };
+}
+
+/* ------------------------------------------------------------------ página */
+
+if (typeof document !== "undefined" && document.getElementById("side-left")) {
+  const BASE_MS = 600;
+  const clock = { ts: [], idx: -1, speed: 1, timer: null };
+  const panels = {
+    left: makePanel(document.getElementById("side-left")),
+    right: makePanel(document.getElementById("side-right")),
+  };
+  const $ = (id) => document.getElementById(id);
+
+  function makePanel(root) {
+    return {
+      root, events: [], frames: [], secrets: [], status: null,
+      list: root.querySelector(".call-list"),
+      chart: root.querySelector(".chart-box"),
+      detail: root.querySelector(".detail-body"),
+      result: root.querySelector(".result"),
+    };
+  }
+
+  function setEvents(p, events) {
+    p.events = events;
+    p.frames = buildFrames(events);
+    p.secrets = secretIds(p.frames);
+    p.status = finalStatus(events);
+    renderList(p);
+  }
+
+  /* ---- un solo reloj: la posición es un valor de t, común a los dos paneles */
+
+  function rebuildClock() {
+    const ts = new Set();
+    for (const p of Object.values(panels)) p.frames.forEach((f) => ts.add(f.t));
+    clock.ts = [...ts].sort((a, b) => a - b);
+    clock.idx = clock.ts.length ? 0 : -1;
+  }
+
+  const currentT = () => clock.ts[clock.idx];
+  const atEnd = () => clock.ts.length && clock.idx === clock.ts.length - 1;
+  const shownCount = (p) => p.frames.filter((f) => f.t <= currentT()).length;
+
+  /* ---- lista */
+
+  function renderList(p) {
+    p.list.innerHTML = "";
+    p.frames.forEach((f) => {
+      const li = document.createElement("li");
+      li.className = actionClass(f.decision && f.decision.action) + (f.rotations.length ? " has-rotation" : "");
+      li.innerHTML = `<span class="t"></span><span class="tool"></span><span class="args"></span><span class="marks"></span>`;
+      li.children[0].textContent = f.t;
+      li.children[1].textContent = f.call.tool;
+      li.children[2].textContent = li.children[2].title = summarizeArgs(f.call.args);
+      if (f.call.is_sink) li.children[3].insertAdjacentHTML("beforeend", `<span class="mark sink">sumidero</span>`);
+      if (f.call.untrusted) li.children[3].insertAdjacentHTML("beforeend", `<span class="mark untrusted">no confiable</span>`);
+      for (const r of f.rotations) {
+        const m = document.createElement("span");
+        m.className = "mark rotation";
+        m.textContent = `rotación ${r.secret_id} → v${r.version}`;
+        li.children[3].appendChild(m);
+      }
+      p.list.appendChild(li);
+    });
+  }
+
+  function updateList(p) {
+    const n = shownCount(p);
+    const items = p.list.children;
+    for (let i = 0; i < items.length; i++) {
+      items[i].hidden = i >= n;
+      items[i].classList.toggle("current", i === n - 1);
+    }
+    if (items[n - 1]) items[n - 1].scrollIntoView({ block: "nearest" });
+  }
+
+  /* ---- curva de bits (misma escala en los dos paneles para compararlos) */
+
+  function sharedYMax() {
+    let max = 1;
+    for (const p of Object.values(panels))
+      for (const f of p.frames) for (const sid of p.secrets) max = Math.max(max, bitsAt(f, sid));
+    return max;
+  }
+
+  function renderChart(p, yMax) {
+    const el = p.chart;
+    el.innerHTML = "";
+    const { width, height } = el.getBoundingClientRect();
+    if (!width || !height || !clock.ts.length) return;
+    const m = { top: 22, right: 12, bottom: 22, left: 40 };
+    const w = width - m.left - m.right, h = height - m.top - m.bottom;
+    const svg = d3.select(el).append("svg").attr("viewBox", `0 0 ${width} ${height}`);
+    const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
+    const tMin = clock.ts[0], tMax = clock.ts[clock.ts.length - 1];
+    const x = d3.scaleLinear().domain([tMin, Math.max(tMax, tMin + 1)]).range([0, w]);
+    const y = d3.scaleLinear().domain([0, yMax * 1.1]).nice().range([h, 0]);
+
+    g.append("g").attr("class", "gridline").call(d3.axisLeft(y).ticks(4).tickSize(-w).tickFormat(""))
+      .call((s) => s.select(".domain").remove());
+    g.append("g").attr("class", "axis").attr("transform", `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(8).tickFormat(d3.format("d")));
+    g.append("g").attr("class", "axis").call(d3.axisLeft(y).ticks(4));
+    g.append("text").attr("x", -m.left + 4).attr("y", -9).style("fill", "var(--muted)").style("font-size", "11px").text("bits");
+
+    const shown = p.frames.filter((f) => f.t <= currentT());
+    for (const f of shown)
+      for (const r of f.rotations) {
+        g.append("line").attr("class", "rotation-line").attr("x1", x(f.t)).attr("x2", x(f.t)).attr("y1", 0).attr("y2", h);
+        g.append("text").attr("class", "rotation-label").attr("x", x(f.t) + 3).attr("y", 10).text(`v${r.version}`);
+      }
+    const cx = x(currentT());
+    g.append("line").attr("class", "cursor-line").attr("x1", cx).attr("x2", cx).attr("y1", 0).attr("y2", h);
+
+    const line = d3.line().x((d) => x(d.t)).y((d) => y(d.y)).curve(d3.curveStepAfter);
+    p.secrets.forEach((sid, i) => {
+      const c = d3.schemeTableau10[i % 10];
+      const pts = shown.map((f) => ({ t: f.t, y: bitsAt(f, sid) }));
+      g.append("path").datum(pts).attr("fill", "none").style("stroke", c).attr("stroke-width", 2).attr("d", line);
+      if (pts.length) g.append("circle").attr("r", 3).style("fill", c)
+        .attr("cx", x(pts[pts.length - 1].t)).attr("cy", y(pts[pts.length - 1].y));
+      const lg = g.append("g").attr("class", "legend").attr("transform", `translate(${w - (i + 1) * 92},-18)`);
+      lg.append("rect").attr("width", 10).attr("height", 10).attr("y", -1).style("fill", c);
+      lg.append("text").attr("x", 14).attr("y", 8).text(sid);
+    });
+  }
+
+  /* ---- detalle y resultado */
+
+  function renderDetail(p) {
+    p.detail.innerHTML = "";
+    const f = p.frames.filter((fr) => fr.t <= currentT()).pop();
+    if (!f) return;
+    const d = f.decision || {};
+    const head = document.createElement("div");
+    const tag = document.createElement("span");
+    tag.className = `action ${actionClass(d.action)}`;
+    tag.textContent = d.action || "sin decisión";
+    head.append(tag, document.createTextNode(`t=${f.t} · ${f.call.tool}`));
+    const dl = document.createElement("dl");
+    const add = (k, v) => {
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd"); dd.textContent = v;
+      dl.append(dt, dd);
+    };
+    add("razón", d.reason || "—");
+    add("camino", d.path && d.path.length ? d.path.join(" → ") : "—");
+    p.detail.append(head, dl);
+  }
+
+  function renderResult(p) {
+    p.result.innerHTML = "";
+    p.result.className = "result";
+    if (!atEnd()) return;
+    const fr = finalFractions(p.frames);
+    const leaks = Object.entries(fr).map(([sid, x]) => `${sid}: ${(x * 100).toFixed(0)} % filtrado`).join(" · ");
+    const big = document.createElement("div");
+    big.className = "result-status";
+    if (p.status === 200) {
+      big.textContent = "El atacante usa la clave: 200";
+      p.result.classList.add("bad");
+    } else if (p.status === 401) {
+      big.textContent = "El atacante usa la clave: 401";
+      p.result.classList.add("good");
+    } else {
+      big.textContent = "Sin intento del atacante";
+      p.result.classList.add("none");
+    }
+    const small = document.createElement("div");
+    small.className = "result-leak";
+    small.textContent = leaks || "sin bits filtrados";
+    p.result.append(big, small);
+  }
+
+  function render() {
+    $("position").textContent = clock.ts.length ? `t = ${currentT()} / ${clock.ts[clock.ts.length - 1]}` : "—";
+    const yMax = sharedYMax();
+    for (const p of Object.values(panels)) {
+      updateList(p);
+      renderChart(p, yMax);
+      renderDetail(p);
+      renderResult(p);
+    }
+  }
+
+  /* ---- controles (un solo juego para los dos paneles) */
+
+  function step(delta) {
+    if (!clock.ts.length) return;
+    clock.idx = Math.max(0, Math.min(clock.ts.length - 1, clock.idx + delta));
+    render();
+  }
+  function tick() {
+    if (atEnd()) return stop();
+    step(1);
+    clock.timer = setTimeout(tick, BASE_MS / clock.speed);
+  }
+  function play() {
+    if (clock.timer || !clock.ts.length) return;
+    if (atEnd()) clock.idx = -1;
+    $("btn-play").classList.add("active");
+    tick();
+  }
+  function stop() {
+    clearTimeout(clock.timer);
+    clock.timer = null;
+    $("btn-play").classList.remove("active");
+  }
+
+  $("btn-play").addEventListener("click", play);
+  $("btn-pause").addEventListener("click", stop);
+  $("btn-fwd").addEventListener("click", () => { stop(); step(1); });
+  $("btn-back").addEventListener("click", () => { stop(); step(-1); });
+  $("btn-start").addEventListener("click", () => { stop(); clock.idx = clock.ts.length ? 0 : -1; render(); });
+  document.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
+    clock.speed = Number(b.dataset.speed);
+    document.querySelectorAll("[data-speed]").forEach((o) => o.classList.toggle("active", o === b));
+  }));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === " ") { e.preventDefault(); clock.timer ? stop() : play(); }
+    if (e.key === "ArrowRight") { stop(); step(1); }
+    if (e.key === "ArrowLeft") { stop(); step(-1); }
+  });
+  window.addEventListener("resize", render);
+
+  /* ---- carga */
+
+  const params = new URLSearchParams(location.search);
+  const fetchLog = (url) => fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`${url}: ${r.status} ${r.statusText}`);
+    return r.text();
+  }).then(parseJsonl);
+
+  const left = params.get("left"), right = params.get("right");
+  if (left && right) {
+    Promise.all([fetchLog(left), fetchLog(right)]).then(([l, r]) => {
+      setEvents(panels.left, l);
+      setEvents(panels.right, r);
+      rebuildClock();
+      if (params.get("t")) {
+        const target = params.get("t") === "end" ? Infinity : Number(params.get("t"));
+        const i = clock.ts.findIndex((t) => t >= target);
+        clock.idx = i < 0 ? clock.ts.length - 1 : i;
+      }
+      render();
+    }).catch((err) => {
+      for (const p of Object.values(panels)) { p.detail.textContent = `No se pudo cargar: ${err.message}`; }
+    });
+  } else {
+    for (const p of Object.values(panels)) p.detail.textContent = "Faltan ?left=…&right=… en la URL.";
+  }
+}

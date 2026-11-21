@@ -165,3 +165,77 @@ code { font-family: ui-monospace, Consolas, monospace; }
   }
   .file { margin-left: 0; }
 }
+
+/* ------------------------------------------------ pantalla dividida (15b) */
+
+:root { --good: #1f9d55; --good-bg: #e2f5ea; --bad: #d64545; --bad-bg: #fbe1e1; }
+@media (prefers-color-scheme: dark) {
+  :root { --good: #4fd18b; --good-bg: #173a27; --bad: #f07070; --bad-bg: #4a2326; }
+}
+
+.split-page .split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 16px 16px;
+}
+
+.split-page .side {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) minmax(160px, 34%) auto;
+  gap: 10px;
+}
+
+.split-page .side-head { display: flex; align-items: center; gap: 12px; min-height: 52px; flex-wrap: wrap; }
+.split-page .side-title { font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0; }
+
+.split-page .result {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  text-align: right;
+}
+.split-page .result:empty { display: none; }
+.split-page .result.bad { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+.split-page .result.good { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.split-page .result.none { border-color: var(--border); color: var(--muted); }
+.split-page .result-status { font-size: 18px; font-weight: 700; }
+.split-page .result-leak { font-size: 12px; opacity: .85; }
+
+.split-page .call-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.split-page .call-list li {
+  display: grid;
+  grid-template-columns: 2.5em 8em minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 6px;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.split-page .call-list li[hidden] { display: none; }
+.split-page .call-list li.a-block { background: var(--block); border-left-color: var(--block-edge); }
+.split-page .call-list li.a-rotate,
+.split-page .call-list li.has-rotation { background: var(--rotate); border-left-color: var(--rotate-edge); }
+.split-page .call-list li.current { outline: 2px solid var(--current); outline-offset: -2px; }
+.mark.rotation { border-color: var(--rotate-edge); color: var(--rotate-edge); font-weight: 600; }
+
+.split-page .detail-body { font-size: 13px; }
+.split-page .detail-body .action { display: inline-block; padding: 1px 8px; border-radius: 4px; font-weight: 600; margin-right: 8px; border: 1px solid var(--border); }
+.split-page .detail-body .action.a-block { background: var(--block); border-color: var(--block-edge); }
+.split-page .detail-body .action.a-rotate { background: var(--rotate); border-color: var(--rotate-edge); }
+.split-page .detail-body dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; margin: 6px 0 0; }
+.split-page .detail-body dt { color: var(--muted); }
+.split-page .detail-body dd { margin: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .split-page .split { grid-template-columns: minmax(0, 1fr); }
+  .split-page .side { grid-template-rows: auto 260px 200px auto; }
+}
+/* Las áreas con nombre del visor simple no aplican dentro de cada panel. */
+.split-page .side > * { grid-area: auto; }
