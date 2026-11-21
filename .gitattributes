@@ -9,3 +9,6 @@ tools/** text eol=lf
 # Datos versionados que se comparan byte a byte en los tests: siempre LF.
 *.jsonl text eol=lf
 demo/viz/fixtures/** text eol=lf
+# El hash del modelo congelado se calcula sobre estos bytes: siempre LF.
+models/** text eol=lf
+results/** text eol=lf
