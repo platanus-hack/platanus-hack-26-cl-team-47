@@ -139,20 +139,22 @@ Sesiones: `demo/sessions/goteo.jsonl` (tal cual), `goteo_base64.jsonl` y
 `goteo_reversed.jsonl`: la misma sesión de 88 llamadas, solo cambia el fragmento.
 Panel derecho con los parámetros fijos de la demo (`SWARM_PARAMS`).
 
-Hoy se ofrecen **Tal cual** y **Al revés** (las dos rotan en la llamada 24 y dan 401).
-**En base64 no se ofrece**: el atacante junta los 160 bits, pero el detector mide 0
-en los fragmentos de 4 caracteres en base64, no rota y la derecha también da 200.
+Hoy se ofrecen las tres: **Tal cual**, **En base64** y **Al revés**. En las tres el
+atacante junta los 160 bits y entra a la izquierda (200); a la derecha rota en la
+llamada 24 y da 401. Base64 se ofrece desde #126: antes el motor no contaba los
+fragmentos cortos codificados.
 
 Guion para el presentador (40 segundos):
 
 > «El atacante no es tonto: va a disfrazar los pedazos. Elijan ustedes. Levante la
 > mano quien quiere la clave tal cual… ¿en base64?… ¿al revés?» (Pulsa la opción
 > ganadora.) «Izquierda, sin protección: sube hasta el final y entra, 200. Derecha:
-> el mismo disfraz que eligieron, Cuentagotas cuenta igual, rota aquí, 401. No
-> importa cómo la disfracen: medimos información, no formato.»
+> el mismo disfraz que eligieron, Cuentagotas cuenta igual, rota aquí, 401. Elijan
+> cualquiera de las tres: no importa cómo la disfracen, medimos información, no formato.»
 
-Mientras base64 no se ofrezca, pregunta solo por las opciones que aparecen en la
-página (hoy «tal cual» y «al revés») y no digas «no importa cómo la disfracen».
+«No importa cómo la disfracen» vale solo para las opciones que ofrece la página
+(hoy las tres de arriba). Si `encodings.json` deja de ofrecer alguna, quítala de la
+pregunta y no generalices a otras codificaciones.
 
 **Plan B:** si algo falla, abrir `split.html` sin parámetros (la demo de siempre).
 
