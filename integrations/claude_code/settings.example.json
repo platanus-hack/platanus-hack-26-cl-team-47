@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|WebFetch|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PYTHONPATH=/ruta/a/alicanto SECRETS_MANIFEST=/ruta/a/secretos.json python3 -m integrations.claude_code.hook",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
