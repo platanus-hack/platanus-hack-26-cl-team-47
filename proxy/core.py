@@ -96,10 +96,24 @@ class Proxy:
         write_event(Event(ts=time.time(), session_id=self.session_id, source="proxy",
                           kind=kind, call_id=call_id, data=data))
 
+    def _call_args(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
+        """Args del ToolCall. En un git push se agrega lo que realmente saldría (`outgoing`)
+        para que la decisión lo inspeccione; el comando ejecutado no cambia."""
+        call_args = dict(args)
+        if tool == "git" and "push" in (args.get("args") or []):
+            text, err = T.outgoing_content(self.workspace)
+            if len(text) > T.OUTGOING_MAX_CHARS:
+                text = text[:T.OUTGOING_MAX_CHARS]
+                call_args["outgoing_truncated"] = True
+            call_args["outgoing"] = text
+            if err is not None:
+                call_args["outgoing_error"] = err
+        return call_args
+
     def handle(self, tool: str, args: dict[str, Any]) -> tuple[str, Decision]:
         self.t += 1
         call = ToolCall(
-            id=f"{self.session_id}-{self.t:04d}", t=self.t, tool=tool, args=dict(args),
+            id=f"{self.session_id}-{self.t:04d}", t=self.t, tool=tool, args=self._call_args(tool, args),
             output=None, resources=self._resources(tool, args),
             is_sink=self._is_sink(tool, args), untrusted=self._untrusted(tool, args),
             session_id=self.session_id, label=None,
