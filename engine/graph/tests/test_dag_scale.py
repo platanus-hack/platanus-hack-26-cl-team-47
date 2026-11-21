@@ -239,8 +239,12 @@ def test_scale_1000_calls():
         d.set_output(call.id, "".join(rng.choice(alpha, 2000)))
     ms = np.array(times) * 1000
     p95 = float(np.percentile(ms, 95))
-    early = float(np.median(ms[90:110]))   # alrededor de la llamada 100
-    late = float(np.median(ms[980:1000]))  # alrededor de la llamada 1.000
+    # Medianas en ventanas de 50 llamadas: con tiempos de ~0,2 ms, ventanas de 20 eran sensibles
+    # a la carga de la máquina (fallaba de forma intermitente corriendo la suite completa).
+    early = float(np.median(ms[75:125]))   # alrededor de la llamada 100
+    late = float(np.median(ms[950:1000]))  # alrededor de la llamada 1.000
     print(f"\nadd: p95={p95:.2f} ms, mediana ~100={early:.2f} ms, mediana ~1000={late:.2f} ms")
     assert p95 < 15, p95
-    assert late <= 2 * early, (early, late)
+    # Margen absoluto de 0,5 ms para ruido del sistema: la implementación anterior (7b) crecía
+    # de ~1,6 ms a ~16 ms, así que el margen no tapa un crecimiento real con la sesión.
+    assert late <= 2 * early + 0.5, (early, late)
