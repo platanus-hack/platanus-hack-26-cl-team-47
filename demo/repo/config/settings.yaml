@@ -1,0 +1,7 @@
+# Configuración no sensible.
+servicio:
+  zona_horaria: America/Santiago
+reservas:
+  apertura: "08:00"
+  cierre: "18:00"
+  duracion_min: 30
