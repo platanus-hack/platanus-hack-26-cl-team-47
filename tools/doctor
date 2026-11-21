@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Revisa que este computador tenga lo necesario para la hackatón. No instala nada.
+# Uso: bash tools/doctor      (Git Bash en Windows, macOS, Linux o WSL)
+set -u
+missing=0
+win=0; case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) win=1 ;; esac
+
+ver() { "$@" 2>/dev/null | head -n 1 | tr -d '\r'; }
+check() { # check <requerido|opcional> <comando> <pista de instalación Windows> <pista macOS>
+  local need="$1" cmd="$2" hint
+  if command -v "$cmd" >/dev/null 2>&1; then
+    printf '  ok      %-11s %s\n' "$cmd" "$(ver "$cmd" --version)"
+  else
+    if [ "$win" -eq 1 ]; then hint="$3"; else hint="$4"; fi
+    if [ "$need" = requerido ]; then
+      printf '  FALTA   %-11s %s\n' "$cmd" "$hint"; missing=$((missing + 1))
+    else
+      printf '  (no)    %-11s %s\n' "$cmd" "$hint"
+    fi
+  fi
+}
+
+echo "Requerido para el board y el repo"
+check requerido git    "winget install Git.Git"              "brew install git"
+check requerido gh     "winget install GitHub.cli"           "brew install gh"
+check opcional  claude "npm install -g @anthropic-ai/claude-code  (o la extensión de VS Code)" "npm install -g @anthropic-ai/claude-code  (o la extensión de VS Code)"
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    echo "  ok      gh auth   sesión iniciada como $(gh api user --jq .login 2>/dev/null | tr -d '\r')"
+  else
+    echo "  FALTA   gh auth   corre: gh auth login"; missing=$((missing + 1))
+  fi
+fi
+
+echo "Stack más usado en Platanus (TypeScript: Next.js o Vite, deploy en Vercel)"
+check requerido node   "winget install OpenJS.NodeJS.LTS"    "brew install node"
+check opcional  pnpm   "npm install -g pnpm"                 "npm install -g pnpm"
+check opcional  vercel "npm install -g vercel"               "npm install -g vercel"
+check opcional  supabase "scoop install supabase  (o usa npx supabase)" "brew install supabase/tap/supabase"
+
+echo "Backend en Python (FastAPI, deploy en Render o Railway)"
+if command -v python3 >/dev/null 2>&1 && python3 --version >/dev/null 2>&1; then
+  printf '  ok      %-11s %s\n' python3 "$(ver python3 --version)"
+else
+  check opcional python "winget install Python.Python.3.12" "brew install python@3.12"
+fi
+check opcional  uv     "winget install astral-sh.uv"         "brew install uv"
+
+echo "Para exponer webhooks locales (WhatsApp, Twilio, ElevenLabs)"
+check opcional  cloudflared "winget install Cloudflare.cloudflared" "brew install cloudflared"
+
+echo
+if [ "$missing" -eq 0 ]; then
+  echo "Listo. Ahora corre: bash tools/board-selftest"
+else
+  echo "Faltan $missing cosa(s) requeridas. Instálalas y vuelve a correr bash tools/doctor."
+  exit 1
+fi
