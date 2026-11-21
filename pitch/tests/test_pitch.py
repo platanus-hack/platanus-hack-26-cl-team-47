@@ -57,6 +57,18 @@ def parse():
     return p.slides
 
 
+def slide(titulo):
+    """La lámina cuyo título contiene `titulo` (sin importar mayúsculas)."""
+    for sl in parse():
+        if titulo.lower() in sl["title"].lower():
+            return sl
+    raise AssertionError(f"no hay lámina con título {titulo!r}")
+
+
+def idx(titulo):
+    return parse().index(slide(titulo))
+
+
 def words(s):
     return [w for w in re.split(r"\s+", s) if re.search(r"\w", w)]
 
@@ -66,7 +78,7 @@ def norm(s):
 
 
 def test_catorce_laminas():
-    assert len(parse()) == 14
+    assert len(parse()) == 16
 
 
 def test_sin_internet():
@@ -77,7 +89,7 @@ def test_sin_internet():
 
 def test_resultados_con_las_cifras_de_la_evaluacion_final_y_sus_limites():
     """16f: la lámina 10 lleva las cifras reales del set sellado y sus dos límites, en la misma lámina."""
-    s10 = parse()[9]
+    s10 = slide("180 ataques")
     assert s10["pendientes"] == 0
     assert norm(s10["title"]) == "180 ataques de seis familias nuevas: ninguno sacó más de 32 de 160 bits"
     for cifra in ("180", "32", "150", "34 de 90", "5.879", "16,7 % (30)", "38,9 % (70)"):
@@ -90,8 +102,7 @@ def test_resultados_con_las_cifras_de_la_evaluacion_final_y_sus_limites():
 
 
 def test_citas_literales():
-    slides = parse()
-    assert norm(slides[3]["quote"]) == QUOTE_4
+    assert norm(slide("La idea")["quote"]) == QUOTE_4
 
 
 def test_maximo_cuarenta_palabras_de_cuerpo():
@@ -109,10 +120,10 @@ def test_demo_enlaza_la_pantalla_dividida():
     assert (PITCH.parent / "demo" / "viz" / "split.html").is_file()
 
 
-def test_guion_catorce_secciones_y_pendientes():
+def test_guion_cinco_bloques_y_pendientes():
     guion = (PITCH / "GUION.md").read_text(encoding="utf-8")
     secciones = re.findall(r"^## (\d+)\. ", guion, flags=re.M)
-    assert secciones == [str(i) for i in range(1, 15)]
+    assert secciones == [str(i) for i in range(1, 6)]
     assert re.search(r"^## Pendientes", guion, flags=re.M)
     for falta in ("T1", "T2", "T3", "T4", "qué pedimos"):  # el escenario ya se decidió (15j)
         assert falta in guion
@@ -126,8 +137,9 @@ GUION = (PITCH / "GUION.md").read_text(encoding="utf-8")
 
 def test_preguntas_tiene_las_diez_hospital_y_enjambre():
     titulos = re.findall(r"^## \d+\. (.+)$", PREGUNTAS, flags=re.M)
-    assert len(titulos) == 14
-    claves = ("CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
+    assert len(titulos) == 19
+    claves = ("permisos de Claude Code", "falsos positivos", "clasificador o un LLM", "comprometen el proxy",
+              "instala", "CaMeL y FIDES", "Chauhan y Revankar", "OCELOT", "detect-secrets", "Pipelock", "broker de credenciales",
               "Dónde está la IA", "Qué no detectan", "Rotar no rompe producción", "Son los primeros",
               "resultados son reales", "Por qué un hospital", "varios agentes", "se adapta a la rotación")
     for clave, titulo in zip(claves, titulos):
@@ -152,13 +164,13 @@ def test_frases_prohibidas():
 
 
 def test_lamina_9_dice_hasta_donde_encontramos():
-    s9 = parse()[8]
+    s9 = slide("Qué hace cada uno")
     assert "hasta donde encontramos" in s9["body"].lower()
 
 
 def test_lamina_12_tiene_pendiente():
-    assert parse()[11]["pendientes"] >= 1
-    assert "LLM" in parse()[11]["pend_text"]
+    assert slide("Dónde está la IA")["pendientes"] >= 1
+    assert "LLM" in slide("Dónde está la IA")["pend_text"]
 
 
 # ------------------------------------------------ escenario del hospital (15j)
@@ -194,8 +206,9 @@ GTIG = "https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-
 
 def test_lamina_del_enjambre_tras_la_demo():
     slides = parse()
-    assert 'href="../demo/viz/split.html"' in HTML and "Demo" in slides[6]["text"]
-    s = slides[7]
+    demo = next(k for k, sl in enumerate(slides) if "Demo" in sl["text"] and not sl["title"])
+    assert 'href="../demo/viz/split.html"' in HTML
+    s = slides[demo + 1]
     assert "enjambre" in s["title"].lower()
     for cifra in ("32", "200", "401"):
         assert cifra in s["text"], cifra
@@ -232,7 +245,7 @@ def test_guion_usa_cuentagotas_y_dice_el_tiempo_total():
     assert "Cuentagotas" in GUION
     assert not re.search(r"\b(?:con|contra) el medidor\b", GUION)
     assert re.search(r"Tiempo total: \d+ min", GUION)
-    assert re.search(r"^## 8\. Y si atacan en enjambre", GUION, flags=re.M)
+    assert re.search(r"^## 3\. El enjambre", GUION, flags=re.M)
 
 
 def _pitch_files():
@@ -273,7 +286,7 @@ def test_texto_hablado_cabe_en_tres_minutos():
 
 def test_tabla_de_tiempos_con_total():
     assert re.search(r"^## Tiempos", GUION, flags=re.M)
-    m = re.search(r"Total sin la demo\*\* \| \*\*(\d+)\*\* \| \*\*(\d+) min (\d+) s", GUION)
+    m = re.search(r"\*\*Total\*\* \| \*\*(\d+)\*\* \| \*\*(\d+) min (\d+) s", GUION)
     assert m and int(m.group(2)) * 60 + int(m.group(3)) <= 180
     for clave in ("problema", "Cuentagotas", "200", "401", "enjambre", "Límites"):
         assert clave in _texto_hablado(GUION) or clave in GUION, clave
@@ -307,15 +320,16 @@ def test_preguntas_nombran_competidores():
 
 
 def test_lamina_de_competidores():
-    s = parse()[8]
+    s = slide("Qué hace cada uno")
     assert "Pipelock" in s["text"] and "AgentBrake" in s["text"] and "Cuentagotas" in s["text"]
     assert FRASE_NOVEDAD in norm(s["body"])
     assert "Según la documentación pública de cada proyecto, leída el 21 de noviembre de 2026" in norm(s["text"])
 
 
 def test_lamina_final_con_pedido():
-    s = parse()[13]
+    s = slide("Usuario y cierre")
     assert s["pendientes"] == 0 and "piloto" in s["body"]
+    assert idx("Usuario y cierre") < idx("Respaldo")   # el pedido va en el pitch, no en el respaldo
     assert "para que lo confirme una persona del equipo" in GUION
 
 
@@ -326,19 +340,21 @@ def test_demo_dice_que_decide_solo_el_contador():
 
 # ------------------------------------------------ pregunta del track y cifras (16d, segundo comentario)
 
-def test_guion_abre_con_la_pregunta_del_track():
-    primera = re.split(r"(?<=[.»])\s", _texto_hablado(GUION).strip(), maxsplit=1)[0]
-    assert "¿cómo te darías cuenta?" in primera
+def test_guion_abre_con_el_nombre_y_la_pregunta_del_track():
+    """16e: la primera frase hablada dice «Cuentagotas»; la segunda es la pregunta del track."""
+    frases = re.split(r"(?<=[.»?])\s+", _texto_hablado(GUION).strip())
+    assert "Cuentagotas" in frases[0]
+    assert "¿cómo te darías cuenta?" in frases[1]
     assert "Cuentagotas es ese monitor: mide cuánta clave ya salió y la cambia antes de que sirva." in GUION
 
 
 def test_lamina_del_problema_situa_el_track():
-    assert "AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya" in parse()[1]["text"]
+    assert "AI control: visibilidad y control sobre un agente que puede estar actuando en contra tuya" in slide("El problema")["text"]
 
 
 def test_lamina_36_horas():
-    s = next(sl for sl in parse() if "36 horas" in sl["title"])
-    assert parse().index(s) == len(parse()) - 2  # justo antes de la final
+    s = slide("36 horas")
+    assert idx("36 horas") > idx("Respaldo")   # en el respaldo (16e)
     for clave in ("tests automáticos", "80 + 80 + 180", "no vio el detector", "sin internet"):
         assert clave in s["text"], clave
     assert "PR" not in s["text"].split() and "commits" not in s["text"].lower()
@@ -395,3 +411,45 @@ def test_preguntas_con_cifras_reales():
 def test_lamina_36_horas_nueve_sistemas():
     s = next(sl for sl in parse() if "36 horas" in sl["title"])
     assert s["pendientes"] == 0 and "9" in s["text"] and "sistemas comparados" in s["text"]
+
+
+# ------------------------------------------------ formato de finales (16e)
+
+def test_orden_de_las_laminas_sigue_al_guion():
+    slides = parse()
+    assert slides[0]["title"] == "Cuentagotas" and "¿cómo te darías cuenta?" in slides[0]["text"]
+    assert "Demo" in slides[1]["text"]
+    assert "enjambre" in slides[2]["title"].lower()
+    assert slides[3]["title"] == "Qué es real y qué es simulado"
+    assert slides[4]["title"].startswith("180 ataques")
+    assert slides[5]["title"] == "Usuario y cierre"
+    assert slides[6]["title"] == "Respaldo"
+
+
+def test_real_y_simulado_en_lamina_y_guion():
+    s = slide("Qué es real y qué es simulado")
+    for clave in ("proxy", "motor", "gestor de secretos", "servidor del atacante", "sintéticas", "ficticio",
+                  "guion reproducible"):
+        assert clave in s["text"], clave
+    assert ("El proxy, el motor, el gestor de secretos y el servidor del atacante son reales y corren aquí. Las claves "
+            "son sintéticas, los servidores son locales y el hospital es ficticio. El agente de la demo es un guion "
+            "reproducible.") in norm(_texto_hablado(GUION))
+
+
+def test_texto_hablado_sin_jerga():
+    hablado = _texto_hablado(GUION)
+    for palabra in ("CUSUM", "min-entropía", "GFF", "DAG", "features"):
+        assert palabra not in hablado, palabra
+    assert "pinza" not in hablado.lower()
+
+
+def test_laminas_respaldo_y_36_horas():
+    assert slide("Respaldo") and slide("36 horas")
+
+
+def test_preguntas_que_mas_se_repiten():
+    assert "## Las que más se repiten" in PREGUNTAS and "permisos" in PREGUNTAS
+    titulos = re.findall(r"^## (\d+)\. (.+)$", PREGUNTAS, flags=re.M)
+    assert "permisos de Claude Code" in titulos[0][1] and "instala" in titulos[4][1]
+    assert PREGUNTAS.index("## Las que más se repiten") < PREGUNTAS.index("## 1. ")
+    assert "PENDIENTE: enlace a `docs/QUICKSTART.md` (#138)" in PREGUNTAS
