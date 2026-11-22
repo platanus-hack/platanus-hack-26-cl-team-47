@@ -1,6 +1,6 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: sábado 21 de noviembre de 2026, 20:00 (H21). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: sábado 21 de noviembre de 2026, 23:20 (H24,3). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
@@ -8,12 +8,12 @@ Actualizado: sábado 21 de noviembre de 2026, 20:00 (H21). Lo mantiene el orques
 
 ## Qué hay en `main`
 
-- 887 tests en verde (`python -m pytest -q`). A las 16:20 se comprobó en un clon limpio del repo público que instala con `pip install -r requirements.txt`, que la suite pasa y que corren los comandos del README.
+- 888 tests en verde (`python -m pytest -q`). A las 16:20 se comprobó en un clon limpio del repo público que instala con `pip install -r requirements.txt`, que la suite pasa y que corren los comandos del README.
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado en una sesión real: permite sin fricción y niega con el motivo; el contador con un modelo real no quedó probado, porque el modelo se negó por su cuenta).
 - Ideas de demo en paralelo: `demo/alternativas/`, una subcarpeta por alternativa; la demo oficial sigue siendo `demo/viz/`. Hay tres: 01 «El botín», 02 «El juez es el atacante» y 03 «20 agentes, una clave».
-- Informe final del proyecto, para personas: `docs/INFORME_FINAL.md`.
+- Informe final del proyecto, para personas: `docs/INFORME_FINAL.md`. Informe técnico completo en PDF (89 páginas), con sus fuentes LaTeX y los scripts que regeneran sus tablas desde `results/`: `docs/informe/informe.pdf`.
 - Pitch con cifras: `pitch/`. Guía para conectar el proxy a un agente real: `docs/QUICKSTART.md`.
 - Corridas con un LLM real a través del proxy, hechas: `docs/LLM_EN_VIVO.md` (Haiku 5.5 y Sonnet 5.5 con n = 10, Opus 5.5 con n = 1; ninguna siguió la inyección, y hubo una rotación de más con Sonnet).
 
