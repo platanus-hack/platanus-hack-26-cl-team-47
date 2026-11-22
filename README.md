@@ -16,7 +16,7 @@ En la leyenda del desierto de Atacama, el alicanto es un ave que brilla como el 
 - Victoria Guerriero ([@VictoriaGuerriero](https://github.com/VictoriaGuerriero))
 - Matías Morgado ([@matix3000](https://github.com/matix3000))
 
-**Demo en línea:** https://alicanto.vercel.app · [resultados y sus límites](https://alicanto.vercel.app/results.html)
+**Demo en línea:** https://alicanto.vercel.app · [cómo lo probamos, con los datos](https://alicanto.vercel.app/pruebas) · [informe técnico (PDF)](https://alicanto.vercel.app/informe)
 
 **Evaluación:** con las banderas que calcula el proxy en vivo, 120 de 180 ataques grabados: cuatro de las seis familias; las dos que no se cubren son la clave enviada a su propio destino permitido y la fuga por commits de git. Cero llamadas benignas bloqueadas en 5.879, con las banderas del generador y con las del proxy. Cómo leer las cifras: [results/test/LECTURA.md](results/test/LECTURA.md).
 
@@ -34,7 +34,17 @@ Requiere Python 3.11 o superior.
 pip install -r requirements.txt
 ```
 
-**La demo en el navegador** (sitio estático, sin instalar nada más):
+**La demo, con sus terminales** (la misma que está en el sitio; aquí las terminales son procesos de tu computador que ejecutan cada llamada en el momento):
+
+```bash
+python demo/alternativas/03-enjambre-juanpedro/servidor.py
+```
+
+- `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/terminales.html`: una clínica ficticia, 20 asistentes de código y una nota plantada. Sin Alicanto, quien plantó la nota arma la clave y recibe 200; con Alicanto, la clave cambia y recibe 401.
+- `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/pruebas.html`: los datos de las pruebas.
+- Con `?pitch=1` la misma página lleva el pitch de 3 minutos: [GUION_3_MIN.md](demo/alternativas/03-enjambre-juanpedro/GUION_3_MIN.md).
+
+**La demo anterior** (pantalla dividida, sitio estático; ya no está en el sitio público):
 
 ```bash
 python -m http.server 8200 --directory demo/viz
