@@ -20,6 +20,8 @@ http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html?pitch=1
 
 El servidor queda imprimiendo en su terminal cada corrida en vivo y el sello recalculado. Abajo a la derecha, la página muestra el reloj: cuenta hacia atrás desde 3:00 y se pone dorado cuando quedan 20 segundos.
 
+En el pitch la pantalla va con poco texto: no hay subtítulos ni frases que describan cada zona, solo nombres, cifras y estados. Lo que antes se leía abajo ahora lo dices tú, así que el texto de «Qué decir» importa más. Si en algún momento quieres los subtítulos de vuelta (por ejemplo, para responder una pregunta mostrando la escena), la tecla `T` los trae y los vuelve a sacar.
+
 ### Con las terminales debajo
 
 Para mostrar que lo que se ve está corriendo de verdad, abre esta dirección en vez de la anterior (el servidor es el mismo):
@@ -151,6 +153,7 @@ Respuestas cortas, con su fuente:
 | `T` `B` `R` | En el panel: tal cual, base64, al revés |
 | Números y Enter | En el panel: el número del público, y correr |
 | Flechas y Enter | En el panel: otra forma de elegir. Fuera del panel: un cuadro adelante o atrás |
+| `T` | Fuera del panel: poco texto (como parte el pitch) o todo el texto, con subtítulos |
 | Retroceso | En el panel: borra o vuelve a la pregunta anterior |
 | `S` | Salta las llamadas normales hasta lo próximo que importa. Para cuando el reloj aprieta |
 | `E` | Abre «Cómo lo probamos» desde cualquier momento. Adentro: espacio y flechas cambian de paso; Escape la cierra |

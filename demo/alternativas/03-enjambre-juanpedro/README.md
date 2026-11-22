@@ -30,7 +30,7 @@ Tres recursos ayudan a seguirla:
 - **En los momentos clave, lo demás se atenúa.** En la rotación quedan a la vista Alicanto y el gestor de secretos; en el cobro, el atacante y la API.
 - **El resultado en grande se puede deshacer.** Flecha izquierda vuelve un cuadro y muestra el grafo completo, con el resultado chico.
 
-Con todo a la vista, un clic en cualquier pantalla acerca la cámara a ese asistente y muestra sus llamadas; Escape vuelve. Teclas: espacio (reproducir o pausar), flechas (un paso), 1 y 2 (sin y con Alicanto), E (cómo lo probamos), R (inicio).
+Con todo a la vista, un clic en cualquier pantalla acerca la cámara a ese asistente y muestra sus llamadas; Escape vuelve. Teclas: espacio (reproducir o pausar), flechas (un paso), 1 y 2 (sin y con Alicanto), E (cómo lo probamos), T (poco texto o todo), R (inicio).
 
 Dura 64 segundos sin Alicanto (27 de ellos son el origen y el prólogo) y 46 con Alicanto: 1 minuto 50 en total. `?speed=1.3` lo deja en 1 minuto 25; las flechas permiten saltar cuadros. `?w=b` parte directo en el mundo con Alicanto.
 
@@ -59,6 +59,25 @@ El disfraz no cambia ninguna fila, y el número solo cambia qué asistentes filt
 En un ensayo a velocidad real, con el texto del guion dicho a 150 palabras por minuto, el pitch completo terminó en 2 minutos 53.
 
 Sin `servidor.py` la página igual funciona: el panel avisa que no hay servidor en vivo y sigue la corrida grabada. Fuera del pitch, la tecla `V` abre el panel del público en cualquier momento.
+
+## Poco texto: cuando alguien explica en voz alta
+
+En el pitch una persona cuenta lo que pasa. Si la pantalla trae además frases completas, los jueces leen en vez de mirar y escuchar. Con `?pitch=1` la escena va con poco texto: quedan nombres, cifras y estados, y se va lo que dice quien presenta.
+
+| Se va | Se queda |
+|---|---|
+| Los subtítulos narrados de abajo | Los títulos, en corto: «Sin Alicanto», «Con Alicanto» |
+| Las frases que describen cada zona (el atacante, el equipo de TI, la API) | Los nombres de cada zona y sus estados: «versión 1, anulada», «versión 2, vigente», el 200 o el 401 |
+| Las explicaciones de la nota plantada | La nota, con sus tres términos marcados |
+| Los párrafos del resultado | La cifra, una línea («Manos vacías.») y un dato: «0 llamadas bloqueadas de 88» |
+| La ficha clínica entera | De quién es la ficha y dos líneas, con su aviso de que es de ejemplo |
+| En «Cómo lo probamos», lo que hace cada equipo | Los tres equipos con su hecho (hora, sello, hash), las cifras y el pedido |
+
+Lo que es ficticio, maqueta o grabado se sigue diciendo, en una línea chica. Sin subtítulos, la banda de abajo ocupa una sola línea y el escenario gana ese alto: las 20 pantallas se ven más grandes.
+
+Medido en la llamada 60 del mundo con Alicanto, fuera de las 20 pantallas: el modo de poco texto deja menos del 60 % de las palabras. Un test lo comprueba.
+
+Fuera del pitch va todo el texto, porque ahí la escena se explica sola (así queda en la web). Se puede pedir cualquiera de los dos con `?texto=poco` o `?texto=todo`, y la tecla `T` cambia entre ellos en cualquier momento. Con las terminales debajo (`terminales.html?pitch=1`) vale lo mismo, y la barra tampoco lleva su frase.
 
 ## Las terminales: la misma sesión, ejecutada de verdad debajo de la escena
 

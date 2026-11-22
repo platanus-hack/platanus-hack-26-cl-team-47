@@ -175,6 +175,7 @@ body[data-modo="vivo"] #modo::before { background: var(--gold); }
 @media (max-width: 1180px) {
   #que { display: none; }
 }
+body[data-texto="poco"] #que { display: none; }
 /* Teléfono, de pie: la escena queda de miniatura arriba, como un video, y las tres terminales se
  * apilan debajo. Las líneas se doblan en vez de cortarse. */
 @media (max-width: 899px) and (orientation: portrait) {

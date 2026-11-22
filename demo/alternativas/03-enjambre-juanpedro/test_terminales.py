@@ -552,6 +552,9 @@ def test_en_el_pitch_las_terminales_corren_lo_que_elige_el_publico(browser, siti
     escena = page.frame_locator("#escena")
     arriba = lambda js: page.evaluate(f"document.getElementById('escena').contentDocument.{js}")
     assert arriba("getElementById('opening').classList.contains('on')")
+    # En el pitch alguien explica: la escena va con poco texto y la barra de abajo no lleva su frase.
+    assert arriba("body.dataset.texto") == "poco" and page.get_attribute("body", "data-texto") == "poco"
+    assert not page.locator("#que").is_visible()
     # Las teclas son de la escena, aunque el foco esté en la página de afuera.
     page.locator("#franja").click()
     page.keyboard.press("Space")

@@ -577,7 +577,7 @@ def test_el_pitch_completo_con_el_motor_en_vivo(browser, live_site):
     assert page.get_attribute("body", "data-live") == "si"
     # Lo que sigue es la corrida que eligieron, no la grabada.
     assert "en vivo: 5 asistentes, en base64, número 37" in page.inner_text("#title")
-    assert "recién" in page.inner_text("#note")
+    assert "en vivo" in page.inner_text("#engine") and "ficticios" in page.inner_text("#note")   # con poco texto, lo dice la línea del motor
     page.wait_for_function(
         "!document.getElementById('verdict').hidden && document.getElementById('v-code').textContent === '401'",
         timeout=60000)
@@ -589,7 +589,8 @@ def test_el_pitch_completo_con_el_motor_en_vivo(browser, live_site):
     # Cierre: cómo lo probamos. Corre sola desde el equipo rojo hasta el pedido, y ahí se queda.
     page.keyboard.press("Space")
     assert on("proof") and page.get_attribute("#proof", "data-step") == "0"
-    assert "equipo rojo" in page.inner_text("#caption")
+    # En el pitch no hay subtítulos: lo dice quien presenta. Los equipos se leen en sus tarjetas.
+    assert not page.locator("#caption").is_visible() and page.inner_text("#pf-rojo h3") == "Equipo rojo"
     page.wait_for_function("document.getElementById('proof').classList.contains('s4')", timeout=20000)
     page.wait_for_timeout(700)
     assert page.get_attribute("#proof", "data-step") == "4"  # no sigue sola a la comparación
@@ -625,7 +626,7 @@ def test_sin_servidor_en_vivo_el_pitch_sigue_con_la_corrida_grabada(browser, sit
     page.wait_for_function("!document.getElementById('live').classList.contains('on')", timeout=20000)
     assert "No hay servidor en vivo" in page.text_content("#console")
     assert page.get_attribute("body", "data-live") == "grabada"
-    assert "en vivo" not in page.inner_text("#title") and "grabada" in page.inner_text("#note")
+    assert "en vivo" not in page.inner_text("#title") and "grabada" in page.inner_text("#engine")
     page.wait_for_function(
         "!document.getElementById('verdict').hidden && document.getElementById('v-code').textContent === '401'",
         timeout=60000)
@@ -945,3 +946,85 @@ def test_la_escena_no_usa_palabras_que_el_equipo_pidio_no_decir():
     textos = json.dumps(json.loads((HERE / "escenario.json").read_text(encoding="utf-8"))["prueba"], ensure_ascii=False)
     for frase in ("100 %", "100%", "detiene todo", "los primeros", "independientes", "otro equipo"):
         assert frase not in textos, frase
+
+
+# ---------- poco texto: cuando alguien explica en voz alta ----------
+
+# Las palabras que hay que leer fuera de las 20 pantallas (que son parte del dibujo).
+PALABRAS = """() => ['title', 'atk', 'gate', 'clinic', 'verdict', 'caption', 'note', 'engine']
+  .map(id => document.getElementById(id)).filter(e => e && !e.hidden)
+  .map(e => e.innerText.trim()).join(' ').split(/\\s+/).filter(Boolean).length"""
+VISIBLE = "(id) => { const e = document.getElementById(id); return !!e && e.getClientRects().length > 0; }"
+
+
+def test_el_pitch_va_con_poco_texto_y_fuera_de_el_va_todo(browser, site):
+    for consulta, esperado in (("?pitch=1", "poco"), ("?pitch=1&texto=todo", "todo"), ("", "todo"),
+                               ("?texto=poco", "poco"), ("?w=b&t=60&texto=poco", "poco")):
+        page, errors = _open(browser, site + consulta)
+        assert page.get_attribute("body", "data-texto") == esperado, consulta
+        assert errors == []
+        page.close()
+
+
+@pytest.mark.parametrize("size", [(1280, 720), (1920, 1080), (1920, 745)])
+def test_con_poco_texto_quedan_nombres_cifras_y_estados(browser, site, size):
+    """Quien presenta dice las frases. En pantalla no hay subtítulos ni descripciones que leer."""
+    todo, _ = _open(browser, site + "?w=b&t=60", *size)
+    page, errors = _open(browser, site + "?w=b&t=60&texto=poco", *size)
+    for oculto in ("caption", "atk-sub", "intent-text", "team-text"):
+        assert not page.evaluate(VISIBLE, oculto), oculto
+        assert todo.evaluate(VISIBLE, oculto), oculto
+    assert page.inner_text("#title") == "Con Alicanto"
+    # Lo que sí se queda: quién es quién, cuánto lleva la cuenta y en qué estado está cada cosa.
+    assert page.inner_text("#atk h2") == "Servidor del atacante" and page.inner_text("#gate h2") == "Alicanto"
+    assert page.inner_text("#held") == "0" and "de 160 bits" in page.inner_text("#held-of")
+    assert "anulada" in page.inner_text("#vault-v1") and "vigente" in page.inner_text("#vault-v2")
+    assert page.locator(".node").count() == 20
+    # Que es ficticio, maqueta y grabado se sigue diciendo, en una sola línea chica.
+    nota = page.inner_text("#note")
+    assert "ficticios" in nota and "maqueta" in nota and "corrida grabada del motor" in page.inner_text("#engine")
+    banda = page.evaluate("document.querySelector('.band').getBoundingClientRect().height")
+    assert banda <= (46 if size[0] >= 1200 else 70), banda
+    # Hay que leer mucho menos, y el escenario gana el alto que ocupaban los subtítulos.
+    assert page.evaluate(PALABRAS) <= 0.6 * todo.evaluate(PALABRAS)
+    alto = "document.getElementById('stage').clientHeight"
+    assert page.evaluate(alto) >= todo.evaluate(alto) + 40
+    assert page.evaluate(FITS) == [] and errors == []
+    todo.close()
+    page.close()
+
+
+def test_con_poco_texto_el_resultado_es_una_cifra_y_una_linea(browser, site):
+    page, errors = _open(browser, site + "?w=b&t=end&texto=poco")
+    assert page.inner_text("#v-code") == "401" and page.inner_text("#v-line") == "Manos vacías."
+    assert page.inner_text("#v-facts") == "Clave anulada en la llamada 48."
+    assert page.inner_text(".nothing b") == "0 fichas"
+    assert page.locator(".nothing p").all_inner_texts() == ["0 llamadas bloqueadas de 88"]
+    assert page.inner_text("#api-text") == "401"
+    assert page.evaluate(FITS) == []
+    page.close()
+    page, errors2 = _open(browser, site + "?w=a&t=end&texto=poco")
+    assert page.inner_text("#v-code") == "200" and page.inner_text("#title") == "Sin Alicanto"
+    assert page.inner_text("#v-facts") == "Ningún monitor vio más de 16 de 160 bits."
+    # La ficha que se lleva: de quién es y qué dice, en dos líneas, y que es de ejemplo.
+    assert page.inner_text(".doc h3") == "Rosa Fuentes Araya"
+    assert len(page.locator(".doc .doc-line").all_inner_texts()) == 2 and page.locator(".doc dl").count() == 0
+    assert "ficticia" in page.inner_text(".doc em")
+    assert page.evaluate(FITS) == [] and errors == [] and errors2 == []
+    page.close()
+
+
+def test_la_tecla_t_cambia_entre_poco_texto_y_todo(browser, site):
+    page, errors = _open(browser, site + "?w=b&t=60")
+    alto = lambda: page.evaluate("document.getElementById('stage').clientHeight")
+    antes = alto()
+    assert page.evaluate(VISIBLE, "caption") and "una sola cuenta por clave" in page.inner_text("#title")
+    page.keyboard.press("t")
+    assert page.get_attribute("body", "data-texto") == "poco" and not page.evaluate(VISIBLE, "caption")
+    assert page.inner_text("#title") == "Con Alicanto" and alto() > antes
+    assert page.evaluate(FITS) == []          # el escenario se vuelve a armar con su alto nuevo
+    page.keyboard.press("T")
+    assert page.get_attribute("body", "data-texto") == "todo" and page.evaluate(VISIBLE, "caption") and alto() == antes
+    assert page.evaluate(FITS) == [] and errors == []
+    page.close()
+

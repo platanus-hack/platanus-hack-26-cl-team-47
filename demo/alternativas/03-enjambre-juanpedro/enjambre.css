@@ -718,6 +718,43 @@ body.idle #play { color: var(--gold); font-weight: 700; }
 .ui-input.typed::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: var(--ui-brand); animation: blink 0.9s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
+/* =====================================================================
+   Poco texto: cuando alguien explica en voz alta (el pitch).
+   En pantalla quedan nombres, cifras y estados. Se van los subtítulos narrados y las frases que
+   describen cada zona: lo dice quien presenta, y así nadie lee mientras escucha. Lo que es
+   ficticio, maqueta o grabado se sigue diciendo, en una línea. Tecla T, o ?texto=poco|todo.
+   ===================================================================== */
+body[data-texto="poco"] #caption,
+body[data-texto="poco"] #atk-sub,
+body[data-texto="poco"] #intent-text,
+body[data-texto="poco"] #team-text,
+body[data-texto="poco"] #card-2,
+body[data-texto="poco"] #open-3,
+body[data-texto="poco"] .issue-gloss dd,
+body[data-texto="poco"] .pf-what { display: none; }
+/* Sin subtítulos, la banda de abajo es una sola línea, y el escenario gana ese alto. Su alto no
+   cambia mientras corre la escena: si la línea del motor crece (en la rotación), se corta ella. */
+body[data-texto="poco"] .band { display: block; min-height: 0; padding: 8px 20px 10px; }
+body[data-texto="poco"] .side { width: auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 4px 22px; }
+body[data-texto="poco"] #note { white-space: nowrap; }
+body[data-texto="poco"] #engine { min-width: 0; min-height: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+body[data-texto="poco"] .controls { flex-wrap: nowrap; white-space: nowrap; }
+/* En una ventana angosta, y en «Cómo lo probamos» (cuya letra chica es más larga), van dos filas. */
+@media (max-width: 1199px) {
+  body[data-texto="poco"] .side { grid-template-columns: minmax(0, 1fr) auto; }
+  body[data-texto="poco"] #note { grid-column: 1; grid-row: 1; white-space: normal; }
+  body[data-texto="poco"] .controls { grid-column: 2; grid-row: 1; }
+  body[data-texto="poco"] #engine { grid-column: 1 / -1; grid-row: 2; }
+}
+body[data-texto="poco"]:has(#proof.on) .side { grid-template-columns: minmax(0, 1fr) auto; }
+body[data-texto="poco"]:has(#proof.on) #note { grid-column: 1; grid-row: 1; white-space: normal; }
+body[data-texto="poco"]:has(#proof.on) .controls { grid-column: 2; grid-row: 1; }
+body[data-texto="poco"]:has(#proof.on) #engine { grid-column: 1 / -1; grid-row: 2; }
+body[data-texto="poco"] .issue-gloss { grid-template-columns: max-content; }
+body[data-texto="poco"] #api-text.estado { font-size: 1.9em; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+body[data-texto="poco"] .nothing .dato { color: var(--ink); }
+body[data-texto="poco"] .doc .doc-line { margin: 0.35em 0 0; font-size: 1.15em; line-height: 1.3; }
+
 /* ---------- teléfono: no es su lugar, pero no se rompe ---------- */
 @media (max-width: 899px) {
   .band { flex-direction: column; gap: 10px; min-height: 0; }

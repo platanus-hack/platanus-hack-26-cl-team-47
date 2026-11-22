@@ -57,6 +57,8 @@
   function alCambiar() {
     const e = escena();
     if (!e) return;
+    // Con alguien explicando (el pitch) la escena va con poco texto, y la barra tampoco lleva su frase.
+    document.body.dataset.texto = marco.contentDocument.body.dataset.texto || "todo";
     const clave = e.mundo + "|" + JSON.stringify(e.params);
     // Otra corrida si cambió el mundo, si el público eligió otro reparto o si la escena volvió atrás.
     if (!corrida || corrida.clave !== clave || e.T < corrida.hecho) abrir(e.mundo, e.params, clave);
@@ -69,7 +71,7 @@
     if (!doc || !doc.body) return;
     new MutationObserver(alCambiar).observe(doc.body, {
       attributes: true,
-      attributeFilter: ["data-world", "data-t", "data-params"],
+      attributeFilter: ["data-world", "data-t", "data-params", "data-texto"],
     });
     try { marco.contentWindow.focus(); } catch (_) { /* sin foco no pasa nada */ }
     alCambiar();

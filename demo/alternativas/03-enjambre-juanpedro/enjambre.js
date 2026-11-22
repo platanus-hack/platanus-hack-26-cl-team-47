@@ -26,8 +26,13 @@
  * Parámetros: ?w=a|b, ?t=<llamada>|end (abre con todo a la vista), ?speed=<n> (1.3 acorta todo
  * un 30 %), ?autoplay=1,
  * ?a=<jsonl>&b=<jsonl>, ?pitch=1 (el pitch completo de 3 minutos), ?escena=prueba (abre en
- * «Cómo lo probamos»; con &paso=0..5). Teclas: espacio, flechas, 1 y 2 (mundo), S (salta a lo
- * próximo que importa), V (el público elige), E (cómo lo probamos), R, Escape.
+ * «Cómo lo probamos»; con &paso=0..5), ?texto=poco|todo. Teclas: espacio, flechas, 1 y 2 (mundo),
+ * S (salta a lo próximo que importa), V (el público elige), E (cómo lo probamos), T (poco texto o
+ * todo), R, Escape.
+ *
+ * Poco texto: cuando alguien explica en voz alta (el pitch), la escena muestra nombres, cifras y
+ * estados, sin frases: no hay subtítulos ni descripciones que leer mientras se escucha. Es lo
+ * que se usa con ?pitch=1. Sin presentador (la web) va todo el texto, que hace de narración.
  * Con todo a la vista, un clic en una pantalla acerca la cámara a ese asistente.
  */
 "use strict";
@@ -234,6 +239,9 @@ if (typeof document !== "undefined") (function () {
   let started = false;
   let zoomAgent = 0; // asistente al que se acercó la cámara con un clic (0: ninguno)
   const PITCH = Q.get("pitch") === "1"; // el pitch completo: apertura, ataque, público, cierre
+  // Con alguien explicando, la pantalla no compite con la voz: nombres, cifras y estados, sin frases.
+  let pocoTexto = Q.has("texto") ? Q.get("texto") === "poco" : PITCH;
+  document.body.dataset.texto = pocoTexto ? "poco" : "todo";
   const PITCH_MS = 180000; // 3 minutos, ni uno más
   const API = "/api/correr"; // lo sirve servidor.py; sin él, sigue la corrida grabada
   const ENC = Q.get("enc") || "auto";
@@ -458,6 +466,7 @@ if (typeof document !== "undefined") (function () {
       else if (ev.key === "2") setWorld("b");
       else if (ev.key === "Escape") setZoom(0);
       else if (ev.key === "r" || ev.key === "R") restart();
+      else if (ev.key === "t" || ev.key === "T") setTexto(!pocoTexto);
     });
     window.addEventListener("resize", () => { layout(); render(false); });
   }
@@ -758,6 +767,14 @@ if (typeof document !== "undefined") (function () {
     if (liveRun) { location.reload(); return; } // vuelven las grabaciones del archivo
     render(false, false, true);
   }
+  /** Poco texto (alguien explica) o todo el texto (se explica sola). La banda cambia de alto. */
+  function setTexto(poco) {
+    pocoTexto = !!poco;
+    document.body.dataset.texto = pocoTexto ? "poco" : "todo";
+    layout();
+    render(false);
+  }
+
   function setWorld(w, andPlay) {
     pause();
     if (card === "proof") { clearTimeout(proofTimer); proofTimer = null; proofAutoOn = false; card = ""; }
@@ -858,7 +875,7 @@ if (typeof document !== "undefined") (function () {
       const hot = part.includes(ATTACKER_HOST) || /asistente/i.test(part);
       p.appendChild(el(hot ? "mark" : "span", null, part + " "));
     }
-    box.appendChild(el("p", "issue-flag", "Esta nota no la escribió el equipo. La plantó un atacante."));
+    box.appendChild(el("p", "issue-flag", pocoTexto ? "Nota plantada: no es del equipo." : "Esta nota no la escribió el equipo. La plantó un atacante."));
     if (f.gloss) {
       const dl = box.appendChild(el("dl", "issue-gloss"));
       for (const [term, meaning] of sc.glosas || []) {
@@ -922,7 +939,7 @@ if (typeof document !== "undefined") (function () {
     if (st.cashPhase === 0) return;
     const cash = r.cash || {};
     if (st.cashPhase < 2 || cash.status == null) {
-      out.appendChild(el("p", "trying", "Prueba la clave contra la API de la clínica…"));
+      out.appendChild(el("p", "trying", pocoTexto ? "Prueba la clave…" : "Prueba la clave contra la API de la clínica…"));
       return;
     }
     const ok = cash.status === 200;
@@ -986,9 +1003,12 @@ if (typeof document !== "undefined") (function () {
     for (let i = 0; i < r.chars.length; i += group) {
       vk.appendChild(el("span", null, r.chars.slice(i, i + group).map((x) => x.ch).join("")));
     }
-    $("v-facts").textContent = ok
-      ? `Juntó los ${totalBits} bits de la clave con pedazos de ${cuantos(senders(r, f.T), "asistente")}. Lo máximo que vio un monitor: ${Math.round(st.monitorMax)} bits.`
-      : `Juntó ${r.chars.length} caracteres de una clave que la clínica anuló en la llamada ${r.rotation ? r.rotation.t : "?"}.`;
+    $("v-facts").textContent = pocoTexto
+      ? (ok ? `Ningún monitor vio más de ${Math.round(st.monitorMax)} de ${totalBits} bits.`
+            : `Clave anulada en la llamada ${r.rotation ? r.rotation.t : "?"}.`)
+      : ok
+        ? `Juntó los ${totalBits} bits de la clave con pedazos de ${cuantos(senders(r, f.T), "asistente")}. Lo máximo que vio un monitor: ${Math.round(st.monitorMax)} bits.`
+        : `Juntó ${r.chars.length} caracteres de una clave que la clínica anuló en la llamada ${r.rotation ? r.rotation.t : "?"}.`;
     const right = $("v-right");
     right.textContent = "";
     if (ok) {
@@ -999,20 +1019,29 @@ if (typeof document !== "undefined") (function () {
       head.appendChild(el("b", null, fi.titulo || "Ficha clínica"));
       head.appendChild(el("span", null, sc.clinica || ""));
       doc.appendChild(el("h3", null, fi.nombre || ""));
-      const dl = doc.appendChild(el("dl"));
-      for (const [k, val] of fi.campos || []) { dl.appendChild(el("dt", null, k)); dl.appendChild(el("dd", null, val)); }
-      for (const [title, text] of fi.secciones || []) {
-        const sec = doc.appendChild(el("section"));
-        sec.appendChild(el("b", null, title));
-        sec.appendChild(el("p", null, text));
+      if (pocoTexto) {
+        // Con alguien explicando basta con ver de quién es y qué dice: dos líneas, no la ficha entera.
+        for (const linea of fi.lineas || []) doc.appendChild(el("p", "doc-line", linea));
+      } else {
+        const dl = doc.appendChild(el("dl"));
+        for (const [k, val] of fi.campos || []) { dl.appendChild(el("dt", null, k)); dl.appendChild(el("dd", null, val)); }
+        for (const [title, text] of fi.secciones || []) {
+          const sec = doc.appendChild(el("section"));
+          sec.appendChild(el("b", null, title));
+          sec.appendChild(el("p", null, text));
+        }
       }
       doc.appendChild(el("em", null, "Ficha de ejemplo, ficticia"));
     } else {
       const none = right.appendChild(el("div", "nothing"));
       none.appendChild(el("b", null, "0 fichas"));
-      none.appendChild(el("p", null, "La API de la clínica no le entregó nada: la clave que juntó ya no existe."));
-      none.appendChild(el("p", null, `Los ${r.agents.length} asistentes siguieron trabajando: ${blocked} llamadas bloqueadas de ${total}.`));
-      none.appendChild(el("p", null, "La clínica tiene una clave nueva, que el atacante no conoce."));
+      if (pocoTexto) {
+        none.appendChild(el("p", "dato", `${blocked} llamadas bloqueadas de ${total}`));
+      } else {
+        none.appendChild(el("p", null, "La API de la clínica no le entregó nada: la clave que juntó ya no existe."));
+        none.appendChild(el("p", null, `Los ${r.agents.length} asistentes siguieron trabajando: ${blocked} llamadas bloqueadas de ${total}.`));
+        none.appendChild(el("p", null, "La clínica tiene una clave nueva, que el atacante no conoce."));
+      }
     }
     if (was && live && !calm && geo) {
       // Crece desde la columna del atacante hasta llenar el escenario.
@@ -1050,13 +1079,16 @@ if (typeof document !== "undefined") (function () {
     v1.lastChild.textContent = stage >= 2 ? "anulada" : "vigente";
     $("vault-v2").hidden = stage < 2;
     const cash = r.cash || {};
-    $("api-text").textContent = st.cashPhase === 0
-      ? "Entrega fichas a quien presente la clave vigente."
-      : st.cashPhase === 1
-        ? "Llega un pedido con la clave que juntó el atacante."
-        : cash.status === 200
-          ? "200. La clave sirve: entrega la ficha."
-          : `${cash.status}. Esa clave ya no existe: no entrega nada.`;
+    $("api-text").textContent = pocoTexto
+      ? (st.cashPhase === 0 ? "Exige la clave vigente." : st.cashPhase === 1 ? "Llega un pedido…" : String(cash.status))
+      : st.cashPhase === 0
+        ? "Entrega fichas a quien presente la clave vigente."
+        : st.cashPhase === 1
+          ? "Llega un pedido con la clave que juntó el atacante."
+          : cash.status === 200
+            ? "200. La clave sirve: entrega la ficha."
+            : `${cash.status}. Esa clave ya no existe: no entrega nada.`;
+    $("api-text").classList.toggle("estado", pocoTexto && st.cashPhase >= 2);
     paths.cashEl.setAttribute("class", "cash" + (st.cashPhase > 0 ? " on" : ""));
   }
 
@@ -1200,14 +1232,17 @@ if (typeof document !== "undefined") (function () {
     document.body.dataset.spot = zoomAgent ? "" : f.rot ? `rot${f.rot}` : st.cashPhase > 0 && !f.verdict ? "cash" : "";
 
     $("title").textContent = world === "a"
-      ? "Sin Alicanto: cada asistente con su propio monitor"
+      ? (pocoTexto ? "Sin Alicanto" : "Sin Alicanto: cada asistente con su propio monitor")
       : liveRun
         ? `Con Alicanto, en vivo: ${cuantos(liveRun.params.reparten, "asistente")}, ${DISFRAZ[liveRun.params.disfraz] || liveRun.params.disfraz}, número ${liveRun.params.semilla}`
-        : "Con Alicanto: una sola cuenta por clave, en la salida";
+        : (pocoTexto ? "Con Alicanto" : "Con Alicanto: una sola cuenta por clave, en la salida");
     const proof = card === "proof";
     $("engine").textContent = proof ? proofEngine() : engineLine(st, f, stage);
-    $("note").textContent = proof ? proofNote() : `${sc.ficticio || "Todo es ficticio."} ${sc.maqueta || ""} ` +
-      (liveRun ? (sc.corrida_en_vivo || "") : (sc.corrida_grabada || ""));
+    // Lo que es ficticio, maqueta o grabado se dice siempre; con poco texto, en una línea.
+    $("note").textContent = proof ? proofNote() : pocoTexto
+      ? `${sc.ficticio || "Todo es ficticio."} ${sc.maqueta_corta || ""}`
+      : `${sc.ficticio || "Todo es ficticio."} ${sc.maqueta || ""} ` +
+        (liveRun ? (sc.corrida_en_vivo || "") : (sc.corrida_grabada || ""));
     paintPitch();
     const cap = $("caption");
     const text = proof ? proofCaption() : card || liveOpen ? "" : caption(st, f, stage);
@@ -1228,14 +1263,14 @@ if (typeof document !== "undefined") (function () {
     const r = rec();
     if (f.rot && r.rotation) {
       const c = r.calls.find((x) => x.t === r.rotation.t);
-      const ms = c && c.latency != null ? ` · decidió y rotó en ${c.latency.toFixed(2).replace(".", ",")} ms` : "";
+      const ms = c && c.latency != null ? ` · ${pocoTexto ? "" : "decidió y rotó en "}${c.latency.toFixed(2).replace(".", ",")} ms` : "";
       return `motor › ${c ? c.action : "rotate"} · ${Math.round(c ? c.bits : 0)} de ${totalBits} bits${ms}`;
     }
     if (liveRun) {
       const p = liveRun.params;
       return `en vivo › reparten ${p.reparten} · ${DISFRAZ[p.disfraz]} · número ${p.semilla} · ${Math.round(liveRun.ms.a + liveRun.ms.b)} ms`;
     }
-    return `corrida grabada del motor › ${total} llamadas de ${r.agents.length} agentes`;
+    return pocoTexto ? "corrida grabada del motor" : `corrida grabada del motor › ${total} llamadas de ${r.agents.length} agentes`;
   }
 
   /** Las tarjetas del pitch y el panel del público: se arman una vez. */
