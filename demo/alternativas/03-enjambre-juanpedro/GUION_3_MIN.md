@@ -20,6 +20,27 @@ http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html?pitch=1
 
 El servidor queda imprimiendo en su terminal cada corrida en vivo y el sello recalculado. Abajo a la derecha, la página muestra el reloj: cuenta hacia atrás desde 3:00 y se pone dorado cuando quedan 20 segundos.
 
+### Con las terminales debajo
+
+Para mostrar que lo que se ve está corriendo de verdad, abre esta dirección en vez de la anterior (el servidor es el mismo):
+
+```
+http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/terminales.html?pitch=1
+```
+
+Arriba queda la misma escena, con las mismas teclas. Abajo aparecen tres terminales: el proxy, el gestor de secretos con la API, y el servidor del atacante. Son procesos de este computador que ejecutan cada llamada en el momento en que la escena la muestra. La barra dice «En vivo · procesos de este computador» y cuenta cuántas decisiones van iguales a las de la escena.
+
+Dónde mirar abajo en cada momento:
+
+| Momento | Terminal | Qué aparece |
+|---|---|---|
+| El ataque | Servidor del atacante | Cada pedazo que llega y cuánto lleva: 16, 32, hasta 160 de 160 bits. Al final, «← 200» |
+| La rotación | Proxy y gestor | En el proxy, la llamada 48 con `rotate+allow` y 48 de 160 bits. En el gestor, el `POST` de la rotación: versión 2 vigente, versión 1 anulada |
+| Después de rotar | Servidor del atacante | Siguen llegando pedazos, y dice «0/160 bits de la clave vigente» |
+| El cobro | Gestor y atacante | La API le pregunta al gestor y responde 401. En el atacante, «← 401» |
+
+Si la barra dice «Grabación de una corrida real», el servidor no está corriendo o no pudo levantar los procesos. La demo sigue, pero no digas que es en vivo.
+
 ## La línea de tiempo
 
 Tiempos medidos en un ensayo a velocidad real, con el texto de abajo dicho a 150 palabras por minuto. El ensayo terminó en 2:53.
@@ -79,6 +100,8 @@ Corre solo, con el ataque que eligieron. El título lo dice: «Con Alicanto, en 
 > Todo lo que sale pasa por Alicanto, que lleva una sola cuenta por clave, no por agente. Sale un pedazo, sale otro. Al tercero la cuenta llega a su límite. Alicanto no bloquea a nadie: le pide al gestor de secretos que cambie la clave. Lo que el atacante juntó es de la clave vieja. Sigue juntando, prueba, y recibe 401. Cero fichas, y los veinte asistentes siguieron trabajando.
 
 Si eligieron base64 o al revés, agrega al pasar: «La escondieron, y da lo mismo: contamos información, no formato».
+
+Con las terminales debajo, una frase basta, dicha cuando rota: «Y esto no es una animación: acá abajo, en las terminales, está pasando de verdad. El proxy acaba de pedir la rotación, el gestor de secretos cambió la clave, y al servidor del atacante le siguen llegando pedazos de una clave que ya no sirve». Son 45 palabras: si las dices, saca una frase del texto de arriba para no pasarte del tiempo.
 
 ### 5. Cómo lo probamos · 2:21 a 2:53
 
@@ -146,6 +169,7 @@ Respuestas cortas, con su fuente:
 - **Real, en vivo:** el sello del set de prueba. Al abrir «Cómo lo probamos», el servidor vuelve a calcular el sha256 de los 335 archivos del set y la página lo compara con el que se publicó a las 07:10. Si no coincidiera, la página lo diría.
 - **Real, grabado:** el ataque del principio. Es una corrida del mismo motor, guardada en el repositorio.
 - **Real, medido antes:** las cifras de «Cómo lo probamos». La página no las calcula: las lee de `evaluacion.json`, que `hacer_evaluacion.py` copia de `results/` y de `redteam/SELLO.md`. Un test regenera ese archivo y lo compara.
+- **Real, en vivo (con `terminales.html`):** las terminales de abajo. El proxy, el gestor de secretos, la API y el servidor del atacante son procesos de ese computador, y cada llamada se ejecuta cuando la escena la muestra. La escena de arriba es la animación; lo de abajo es la ejecución, y la barra compara las dos.
 - **Guion:** el agente. No es un modelo: es una secuencia fija de llamadas. Tres modelos reales pasaron por el proxy en 21 corridas y ninguno siguió la nota plantada.
 - **Maqueta:** la pantalla de la clínica, la tarea que se escribe y la ficha.
 
@@ -160,7 +184,7 @@ Respuestas cortas, con su fuente:
 
 ## Antes de salir a escena
 
-1. El servidor corriendo, y en su terminal la línea «Motor listo».
+1. El servidor corriendo, y en su terminal la línea «Motor listo». Si usas las terminales, la barra de abajo debe decir «En vivo · procesos de este computador» al empezar el ataque.
 2. La página abierta con `?pitch=1`, a pantalla completa, en el proyector de verdad.
 3. Una pasada entera con reloj: debe terminar antes de 2:55.
 4. En esa pasada, al llegar a «Cómo lo probamos», la terminal del servidor imprime «sello del set de prueba, recalculado: … coincide con el publicado».
