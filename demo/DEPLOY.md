@@ -1,5 +1,14 @@
 # Desplegar la demo como sitio estático
 
+> **Desde el domingo 22 de noviembre el sitio público es la escena de la alternativa 03.**
+> `vercel.json` redirige `/` a `/escena/terminales.html` (la escena con sus terminales) y publica el tablero
+> en `/pruebas` y el informe técnico en `/informe`. Las direcciones de la demo anterior (`/home.html`,
+> `/index.html`, `/split.html`, `/results.html`, `/report.html`) redirigen a la escena o al tablero: sus
+> archivos siguen en `demo/viz/` y se pueden abrir en local como dice este documento, pero ya no se ven
+> en el sitio. Comprobación después de cada despliegue: `/`, `/terminales`, `/pruebas`, `/informe`,
+> `/escena/terminales.html`, `/escena/pruebas.html`, `/escena/informe.pdf`, `/pitch/index.html`, y que
+> `/home.html`, `/split.html` y `/results.html` redirijan. Lo que sigue describe la demo anterior.
+
 La demo es un sitio estático: `demo/viz/` (HTML, CSS, JS y d3 local, sin paso de
 compilación). La portada es `home.html`; sin parámetros, `split.html` abre la
 demo real versionada (`fixtures/real_*`).

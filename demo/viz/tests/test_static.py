@@ -49,6 +49,13 @@ def test_valores_por_defecto_son_los_fixtures_reales():
 def test_vercel_json():
     cfg = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     assert cfg["outputDirectory"] == "demo/viz"
-    assert {"source": "/", "destination": "/home.html", "permanent": False} in cfg["redirects"]
+    # Desde el domingo 22 la portada del sitio es la escena de la alternativa 03; las páginas de la demo
+    # anterior siguen en el repositorio, pero sus direcciones redirigen a la escena o al tablero.
+    assert {"source": "/", "destination": "/escena/terminales.html", "permanent": False} in cfg["redirects"]
+    destinos = {r["source"]: r["destination"] for r in cfg["redirects"]}
+    for vieja in ("/home.html", "/index.html", "/split.html"):
+        assert destinos[vieja] == "/escena/terminales.html", vieja
+    for vieja in ("/results.html", "/report.html"):
+        assert destinos[vieja] == "/escena/pruebas.html", vieja
     # El único paso de build copia las láminas al sitio (tarea 15n; detalle en test_legible.py).
     assert cfg["buildCommand"].startswith("mkdir -p demo/viz/pitch && cp pitch/")
