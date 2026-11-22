@@ -1,0 +1,193 @@
+/* La escena con terminales debajo. Mismos materiales que enjambre.css: fondo oscuro, tinta
+ * clara, y un solo color con significado. El oro es la clave viva; la ceniza, la clave muerta.
+ * Sin degradados, sin brillos, sin marcos de ventana: son salidas de proceso, no un dibujo de
+ * una terminal.
+ */
+:root {
+  --ground: #0d0c0a;
+  --surface: #191712;
+  --track: #2c2922;
+  --ink: #f3efe4;
+  --mute: #918b7d;
+  --gold: #e8b23a;
+  --ash: #625e55;
+  --sans: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  --code: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --alto: clamp(190px, 31vh, 360px);      /* lo que ocupa la franja de terminales */
+  --letra: clamp(10.5px, 0.58vw + 0.58vh, 15px);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  margin: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) var(--alto);
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  overflow: hidden;
+}
+/* La escena se dibuja en el ancho para el que fue hecha (el de un proyector) y se achica entera
+ * hasta caber sobre la franja: así en un notebook se ve igual que en el proyector, más chica, en
+ * vez de quedar cortada. El tamaño y la escala los pone terminales.js (encajar). */
+#lienzo { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--ground); }
+#escena {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--ground);
+  transform-origin: 0 0;
+}
+
+/* ---------- la franja ---------- */
+#franja {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  border-top: 1px solid var(--track);
+}
+#barra {
+  display: flex;
+  align-items: baseline;
+  gap: 1.6em;
+  padding: 0.5em 16px 0.45em;
+  font-size: clamp(11px, 0.55vw + 0.55vh, 14.5px);
+  color: var(--mute);
+  white-space: nowrap;
+}
+#barra p { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#que { flex: 1 1 auto; color: var(--ink); }
+#modo { flex: 0 0 auto; }
+#igual { flex: 0 1 auto; font-variant-numeric: tabular-nums; }
+#modo::before {
+  content: "";
+  display: inline-block;
+  width: 0.62em;
+  height: 0.62em;
+  margin-right: 0.55em;
+  background: var(--ash);
+}
+body[data-modo="vivo"] #modo { color: var(--ink); }
+body[data-modo="vivo"] #modo::before { background: var(--gold); }
+#igual.difiere { color: var(--gold); }
+#mas { flex: 0 0 auto; }
+#mas a { color: var(--mute); text-decoration: underline; text-decoration-color: var(--ash); text-underline-offset: 0.22em; }
+#mas a:hover, #mas a:focus-visible { color: var(--ink); text-decoration-color: var(--ink); }
+#mas a:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+#terms {
+  display: grid;
+  grid-template-columns: minmax(0, 1.78fr) minmax(0, 0.92fr) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--track);
+  min-height: 0;
+  border-top: 1px solid var(--track);
+}
+.term {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  background: var(--ground);
+}
+.term h2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  margin: 0;
+  padding: 0.55em 14px 0.35em;
+  font-size: clamp(10px, 0.46vw + 0.5vh, 12.5px);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mute);
+  white-space: nowrap;
+}
+.term h2 .nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.term h2 .proc { flex: 0 0 auto; font-family: var(--code); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ash); }
+
+/* Las líneas se apilan desde abajo, como en una terminal que va corriendo. */
+.salida {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0 14px 0.7em;
+  list-style: none;
+  overflow: hidden;
+  font: var(--letra) / 1.46 var(--code);
+  font-variant-ligatures: none;
+}
+.salida li { flex: 0 0 auto; white-space: pre; overflow: hidden; text-overflow: ellipsis; color: var(--mute); }
+.salida .num, .salida .dim, .salida .ms { color: var(--ash); }
+.salida .accion { font-weight: 700; }
+.salida .proc { color: var(--ink); }
+.salida .difiere { color: var(--gold); text-decoration: underline; }
+
+/* qué pasó en cada línea */
+.salida li.inicio { color: var(--mute); }
+.salida li.clave, .salida li.issue { color: var(--ink); }
+.salida li.envio { color: var(--gold); }                 /* un pedazo de la clave viva */
+.salida li.viejo { color: var(--ash); }                  /* un pedazo de una clave que ya no existe */
+.salida li.viejo .num, .salida li.viejo .ms { color: var(--track); }
+.salida li.rota { color: var(--ink); font-weight: 700; }
+.salida li.rota .accion { color: var(--gold); }
+.salida li.bloquea { color: var(--ink); font-weight: 700; }
+.salida li.cobro { color: var(--ink); }
+.salida li.cobro-ok { color: var(--gold); font-weight: 700; }   /* 200: el atacante entró */
+.salida li.cobro-no { color: var(--ink); font-weight: 700; }    /* 401: no le sirvió */
+.salida li.corte { color: var(--ash); }
+
+/* Cuánto se abrevia en cada terminal. No depende del ancho de la ventana sino de si las líneas
+ * caben: terminales.js escribe en .medir las líneas que espera de la corrida (invisibles), prueba
+ * los niveles en orden y deja el primero en que ninguna se corta. Así se decide antes de partir
+ * y ninguna línea cambia de forma a mitad de la escena.
+ *   1  sin los milisegundos
+ *   2  además, sin «http_request»: «GET attacker.test/…» ya dice que es una petición
+ *   3  además, el medio de las rutas largas pasa a «…»
+ */
+.medir {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0;
+  margin: 0;
+  padding: 0 14px;
+  list-style: none;
+  overflow: hidden;
+  visibility: hidden;
+  font: var(--letra) / 1.46 var(--code);
+  font-variant-ligatures: none;
+}
+.medir li { white-space: pre; overflow: hidden; font-weight: 700; }
+.term[data-nivel="1"] .ms, .term[data-nivel="2"] .ms, .term[data-nivel="3"] .ms { display: none; }
+.term[data-nivel="2"] .tool.http, .term[data-nivel="3"] .tool.http { display: none; }
+.term[data-nivel="3"] .largo { font-size: 0; }
+.term[data-nivel="3"] .largo::after { content: "…"; font-size: var(--letra); }
+
+@media (max-width: 1180px) {
+  #que { display: none; }
+}
+/* Teléfono, de pie: la escena queda de miniatura arriba, como un video, y las tres terminales se
+ * apilan debajo. Las líneas se doblan en vez de cortarse. */
+@media (max-width: 899px) and (orientation: portrait) {
+  body { grid-template-rows: auto minmax(0, 1fr); }
+  #lienzo { width: 100%; aspect-ratio: 16 / 9; }
+  #barra { flex-wrap: wrap; row-gap: 0.25em; column-gap: 1.2em; }
+  #terms { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .salida li, .medir li { white-space: pre-wrap; overflow-wrap: anywhere; text-overflow: clip; }
+  .salida { padding-bottom: 0.4em; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .salida li.rota, .salida li.cobro-ok, .salida li.cobro-no { animation: llega 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes llega { from { opacity: 0.25; } to { opacity: 1; } }
+}
+
+.salida li[hidden] { display: none; }

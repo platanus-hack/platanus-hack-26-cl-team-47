@@ -1619,6 +1619,7 @@ if (typeof document !== "undefined") (function () {
   function finishLive(resp) {
     if (resp) {
       liveRun = resp;
+      document.body.dataset.params = JSON.stringify(resp.params); // lo lee terminales.html
       recs.a = parseRecording(resp.a, SECRET, resp.params.disfraz);
       recs.b = parseRecording(resp.b, SECRET, resp.params.disfraz);
       frames.a = buildFrames(recs.a, "a");
