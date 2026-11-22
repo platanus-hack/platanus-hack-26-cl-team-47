@@ -360,8 +360,13 @@
   };
   encajar();
   marco.addEventListener("load", enganchar);
-  // En el sitio publicado, sin parámetros, la escena parte sola: quien llega no tiene por qué saber
-  // qué tecla pulsar. En este computador (el del pitch) espera a quien presenta.
+  // En el sitio publicado la escena parte sola, salvo que la dirección pida algo que la escena
+  // entiende: quien llega no tiene por qué saber qué tecla pulsar. Los parámetros que no son suyos
+  // (los de un enlace viejo, como ?demo=enjambre) no cuentan. En este computador (el del pitch)
+  // espera a quien presenta.
   const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) || location.protocol === "file:";
-  marco.src = "enjambre.html" + (location.search || (local ? "" : "?autoplay=1")) + location.hash;
+  const SUYOS = ["w", "t", "speed", "autoplay", "a", "b", "pitch", "escena", "paso", "texto", "enc"];
+  const consulta = new URLSearchParams(location.search);
+  const pide = SUYOS.some((k) => consulta.has(k));
+  marco.src = "enjambre.html" + (pide ? location.search : local ? "" : "?autoplay=1") + location.hash;
 })();

@@ -736,6 +736,11 @@ def test_la_copia_publicada_funciona_sin_servidor(browser, publicado):
     page.goto("http://alicanto.test/escena/terminales.html?w=b&t=50")       # con parámetros, se respeta lo pedido
     page.wait_for_function("Number(document.body.dataset.hecho) >= 50", timeout=20000)
     assert page.get_attribute("#escena", "src") == "enjambre.html?w=b&t=50"
+    # Un enlace viejo trae parámetros que la escena no entiende (las láminas enlazan ?demo=enjambre):
+    # no cuentan, y la escena parte sola igual.
+    page.goto("http://alicanto.test/escena/terminales.html?demo=enjambre")
+    page.wait_for_function("document.body.dataset.modo !== ''", timeout=30000)
+    assert page.get_attribute("#escena", "src") == "enjambre.html?autoplay=1"
     page.close()
     # En el computador del pitch, en cambio, espera a quien presenta.
     local, errores = _abrir(browser, f"{url}/escena/terminales.html")
