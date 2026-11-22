@@ -309,7 +309,9 @@ técnico.
 
 \subsection{La demo oficial}
 
-Está en \cod{demo/viz/} y publicada en \href{https://alicanto.vercel.app}{alicanto.vercel.app}.
+Está en \cod{demo/viz/} y se corre en local. Fue la que publicó el sitio hasta el domingo 22 a las
+05:27. Desde entonces \href{https://alicanto.vercel.app}{alicanto.vercel.app} publica la alternativa
+03, con sus terminales, el tablero de pruebas y este informe.
 Muestra el mismo ataque dos veces. Sin protección, el atacante arma la clave y recibe 200. Con
 Alicanto, la clave rota en la llamada 24, con 48 bits filtrados, y recibe 401. Una segunda versión
 reparte la fuga entre cinco agentes: con una cuenta por agente nadie la ve; con la cuenta por clave,
@@ -331,7 +333,7 @@ Alternativa & Qué muestra \\
 02, «El juez es el atacante» & Una página para el teléfono de alguien del jurado, que recibe la clave
   pedazo a pedazo y la prueba \\
 03, «20 agentes, una clave» & Una clínica ficticia, sus 20 asistentes de código y una nota plantada.
-  Es la que lleva el pitch de 3 minutos \\
+  Es la que lleva el pitch de 3 minutos y, desde el domingo, la del sitio público \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -533,7 +535,8 @@ Cada cambio al detector, con hora y motivo & \cod{docs/BITACORA_DETECTOR.md} \\
 El atacante que se adapta y los fragmentos cortos & \cod{results/adaptive/}, \cod{results/short_fragments/} \\
 Las corridas con modelos reales & \cod{docs/LLM_EN_VIVO.md} \\
 El \esp{hook} de Claude Code & \cod{integrations/claude_code/README.md} \\
-La demo oficial y su despliegue & \cod{demo/viz/}, \cod{demo/DEPLOY.md} \\
+La demo oficial & \cod{demo/viz/} \\
+El sitio público y su despliegue & \cod{demo/alternativas/03-enjambre-juanpedro/publicar.sh}, \cod{vercel.json}, \cod{demo/DEPLOY.md} \\
 Las demos alternativas & \cod{demo/alternativas/} \\
 El pitch de 3 minutos con la parte en vivo & \cod{demo/alternativas/03-enjambre-juanpedro/GUION_3_MIN.md} \\
 El pitch oficial y las preguntas del jurado & \cod{pitch/GUION.md}, \cod{pitch/PREGUNTAS.md} \\
