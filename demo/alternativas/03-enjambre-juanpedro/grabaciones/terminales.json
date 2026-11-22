@@ -1,7 +1,7 @@
 {
  "nota": "Generado por vivo.py --grabar: una corrida real con los procesos del banco de pruebas. No se edita a mano.",
- "fecha": "2026-11-22T00:01:27-03:00",
- "commit": "21b4fc3",
+ "fecha": "2026-11-22T00:49:34-03:00",
+ "commit": "639b0ee",
  "python": "3.14.0",
  "params": {
   "semilla": 47,
@@ -1683,7 +1683,7 @@
        "bits"
       ],
       [
-       "  0.6 ms",
+       "  0.7 ms",
        "ms"
       ]
      ]
@@ -1857,7 +1857,7 @@
        "accion"
       ],
       [
-       "  0.2 ms",
+       "  0.3 ms",
        "ms"
       ]
      ]
@@ -1896,7 +1896,7 @@
        "bits"
       ],
       [
-       "  0.6 ms",
+       "  0.7 ms",
        "ms"
       ]
      ]
@@ -1965,7 +1965,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -2341,7 +2341,7 @@
        "agente"
       ],
       [
-       "  1 ms",
+       "  2 ms",
        "ms"
       ]
      ]
@@ -2554,7 +2554,7 @@
        "agente"
       ],
       [
-       "  1 ms",
+       "  2 ms",
        "ms"
       ]
      ]
@@ -2767,7 +2767,7 @@
        "agente"
       ],
       [
-       "  1 ms",
+       "  2 ms",
        "ms"
       ]
      ]
@@ -2961,7 +2961,7 @@
        "bits"
       ],
       [
-       "  0.6 ms",
+       "  0.7 ms",
        "ms"
       ]
      ]
@@ -3193,7 +3193,7 @@
        "agente"
       ],
       [
-       "  1 ms",
+       "  2 ms",
        "ms"
       ]
      ]
@@ -3387,7 +3387,7 @@
        "bits"
       ],
       [
-       "  0.6 ms",
+       "  0.7 ms",
        "ms"
       ]
      ]
@@ -3456,7 +3456,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -3526,7 +3526,7 @@
        "accion"
       ],
       [
-       "  0.3 ms",
+       "  0.4 ms",
        "ms"
       ]
      ]
@@ -3704,6 +3704,7 @@
     "bloqueadas": 0,
     "coinciden": 88,
     "difieren": [],
+    "azar": [],
     "cobro_igual": true,
     "esperado": {
      "cobro": 200,
@@ -5598,7 +5599,7 @@
        "bits"
       ],
       [
-       "  4.0 ms",
+       "  4.2 ms",
        "ms"
       ]
      ]
@@ -5689,7 +5690,7 @@
        "agente"
       ],
       [
-       "  5 ms",
+       "  6 ms",
        "ms"
       ]
      ]
@@ -6165,7 +6166,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -6378,7 +6379,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -6626,7 +6627,7 @@
        "accion"
       ],
       [
-       "  0.2 ms",
+       "  0.3 ms",
        "ms"
       ]
      ]
@@ -6804,7 +6805,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -6967,7 +6968,7 @@
        "agente"
       ],
       [
-       "  1 ms",
+       "  2 ms",
        "ms"
       ]
      ]
@@ -7161,7 +7162,7 @@
        "bits"
       ],
       [
-       "  1.0 ms",
+       "  1.2 ms",
        "ms"
       ]
      ]
@@ -7180,7 +7181,7 @@
        "agente"
       ],
       [
-       "  2 ms",
+       "  3 ms",
        "ms"
       ]
      ]
@@ -7230,7 +7231,7 @@
        "accion"
       ],
       [
-       "  0.1 ms",
+       "  0.2 ms",
        "ms"
       ]
      ]
@@ -7480,6 +7481,7 @@
     "bloqueadas": 0,
     "coinciden": 88,
     "difieren": [],
+    "azar": [],
     "cobro_igual": true,
     "esperado": {
      "cobro": 401,

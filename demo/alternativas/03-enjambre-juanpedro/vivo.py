@@ -65,9 +65,10 @@ GITHUB_REPO = "empresa/servicio"
 ISSUE_NUMBER = 14
 MUNDOS = {"a": "un monitor por asistente", "b": "Alicanto: una cuenta por clave"}
 PANES = ("proxy", "gestor", "atacante")
-# Los procesos que levantó la última corrida en vivo de este computador. Si el servidor se cerró
-# de golpe quedan vivos y ocupando los puertos: al partir de nuevo se cierran (solo esos).
-PIDS = Path(tempfile.gettempdir()) / "alicanto-vivo.pids"
+# Cada banco anota aquí sus procesos, en un archivo con el pid de quien los levantó. Si ese
+# servidor se cerró de golpe, sus procesos quedan vivos y sin dueño: el próximo banco que parta
+# los cierra. Los de un servidor que sigue vivo (un ensayo, otros tests) no se tocan.
+PIDS = Path(tempfile.gettempdir()) / "alicanto-vivo-pids"
 NUESTROS = ("services.vault.app", "services.api.app", "services.attacker.app", "services.github_sim.app")
 
 
@@ -97,6 +98,7 @@ class Banco:
     pruebas que esté corriendo. Los proxies reciben el mapa de nombres `.test` con esos puertos.
     """
 
+    _n = 0
     SERVICIOS = (   # nombre, nombre .test, aplicación, ruta para saber que ya responde
         ("vault", "vault.test", "services.vault.app:app", "/v1/secrets/_ping"),
         ("api", "api.empresa.test", "services.api.app:app", "/v1/data"),
@@ -112,8 +114,10 @@ class Banco:
         self._procs: list[tuple[str, subprocess.Popen]] = []
         self.rotado = False          # el gestor ya no tiene los valores del manifiesto
         self.arranques = 0
+        Banco._n += 1
+        self._anotados = PIDS / f"{os.getpid()}-{Banco._n}.pids"
         self._preparar_repo()
-        atexit.register(self.detener)
+        atexit.register(self.cerrar)
 
     # -- el repositorio de trabajo: una copia del de la demo, donde las lecturas de la sesión existen
     def _preparar_repo(self) -> None:
@@ -153,30 +157,45 @@ class Banco:
         return bool(self._procs)
 
     @staticmethod
+    def _vive(pid: int) -> bool:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except OSError:          # existe, aunque sea de otro usuario
+            return True
+        return True
+
+    @staticmethod
     def cerrar_huerfanos() -> int:
-        """Cierra los procesos que dejó una corrida anterior que se cerró de golpe. Solo toca los pid
-        que este mismo módulo anotó y que siguen siendo un uvicorn de los servicios del banco."""
-        try:
-            pids = [int(x) for x in PIDS.read_text(encoding="utf-8").split()]
-        except (OSError, ValueError):
-            return 0
+        """Cierra los procesos que dejó un servidor que se cerró de golpe. Solo toca los pid que este
+        módulo anotó, que siguen siendo un uvicorn de los servicios del banco y cuyo dueño ya no existe.
+        Los procesos de un servidor que sigue vivo no son huérfanos: no se tocan."""
         cerrados = 0
-        for pid in pids:
+        for archivo in sorted(PIDS.glob("*.pids")) if PIDS.is_dir() else []:
             try:
-                cmd = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True,
-                                     timeout=5).stdout
-            except (OSError, subprocess.SubprocessError):
+                dueño = int(archivo.stem.split("-")[0])
+                pids = [int(x) for x in archivo.read_text(encoding="utf-8").split()]
+            except (OSError, ValueError):
                 continue
-            if "uvicorn" in cmd and any(n in cmd for n in NUESTROS):
+            if Banco._vive(dueño):
+                continue
+            for pid in pids:
                 try:
-                    os.kill(pid, 15)
-                    cerrados += 1
-                except OSError:
-                    pass
-        try:
-            PIDS.unlink()
-        except OSError:
-            pass
+                    cmd = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True,
+                                         timeout=5).stdout
+                except (OSError, subprocess.SubprocessError):
+                    continue
+                if "uvicorn" in cmd and any(n in cmd for n in NUESTROS):
+                    try:
+                        os.kill(pid, 15)
+                        cerrados += 1
+                    except OSError:
+                        pass
+            try:
+                archivo.unlink()
+            except OSError:
+                pass
         return cerrados
 
     @staticmethod
@@ -192,6 +211,8 @@ class Banco:
         self.logs.mkdir(parents=True, exist_ok=True)
         for viejo in self.logs.glob("*.jsonl"):
             viejo.unlink()
+        if not hasattr(self, "_log_dir_antes"):
+            self._log_dir_antes = os.environ.get("LOG_DIR")
         os.environ["LOG_DIR"] = str(self.logs)      # contracts.write_event lo lee en cada evento
         ultimo = ""
         for _ in range(3):                          # si justo alguien tomó un puerto, se eligen otros
@@ -206,7 +227,8 @@ class Banco:
         self.rotado = False
         self.arranques += 1
         try:
-            PIDS.write_text(" ".join(str(proc.pid) for _, proc in self._procs), encoding="utf-8")
+            PIDS.mkdir(exist_ok=True)
+            self._anotados.write_text(" ".join(str(proc.pid) for _, proc in self._procs), encoding="utf-8")
         except OSError:
             pass
 
@@ -253,9 +275,21 @@ class Banco:
                 proc.wait(timeout=5)
         if procs:
             try:
-                PIDS.unlink()
+                self._anotados.unlink()
             except OSError:
                 pass
+
+    def cerrar(self) -> None:
+        """Detiene los procesos, borra la carpeta temporal (el repositorio de trabajo y los registros) y
+        deja LOG_DIR como estaba: quien use este proceso después no hereda la carpeta de este banco."""
+        self.detener()
+        if hasattr(self, "_log_dir_antes"):
+            if self._log_dir_antes is None:
+                os.environ.pop("LOG_DIR", None)
+            else:
+                os.environ["LOG_DIR"] = self._log_dir_antes
+            del self._log_dir_antes
+        shutil.rmtree(self.dir, ignore_errors=True)
 
     def fresco(self) -> None:
         """Deja el gestor con los valores del manifiesto: si alguna clave rotó, reinicia los procesos."""
@@ -281,6 +315,22 @@ def _linea(pane: str, t: int, clase: str, *partes) -> dict:
 
 
 SANGRIA = " " * 9          # el ancho de «0048 a13 »: una línea que continúa la anterior
+
+
+def comparar(esperada: tuple[str, float] | None, accion: str, bits: float, tras_rotar: bool) -> tuple[bool, bool]:
+    """Compara una decisión en vivo con la de la escena. Devuelve (igual, azar).
+
+    Hasta que la clave rota, las dos ejecuciones cuentan contra la misma clave y tienen que dar la misma
+    acción y los mismos bits. Después de rotar, cada una tiene su propia clave nueva, elegida al azar por
+    su gestor de secretos: se exige la misma acción, pero los bits pueden diferir si un pedazo de la clave
+    vieja coincide en 4 caracteres con una de las dos claves nuevas (pasa en menos de 1 de cada 100
+    corridas). Eso no es una diferencia del proxy. `azar` avisa cuando la coincidencia fue en esta ejecución.
+    """
+    if esperada is None:
+        return False, False
+    misma_accion = esperada[0] == accion
+    mismos_bits = abs(esperada[1] - bits) < 1e-9
+    return misma_accion and (mismos_bits or tras_rotar), tras_rotar and bits > 0
 
 
 def _partes_args(tool: str, args: dict) -> list[tuple[str, str]]:
@@ -327,6 +377,8 @@ class Corrida:
         self.coinciden = 0
         self.difieren: list[int] = []
         self.rotaciones: list[dict] = []
+        self.azar: list[int] = []            # llamadas en que un pedazo viejo coincidió por azar con la clave nueva
+        self._ya_rotaron: set[int] = set()   # asistentes cuyo monitor ya cuenta contra una clave nueva
         self.bloqueadas = 0
         self.cobro: dict | None = None
         self._pendientes: list[dict] = []
@@ -340,14 +392,27 @@ class Corrida:
 
     # -- lo que la escena muestra para esta misma sesión (el arnés de la demo, en proceso)
     def _esperado(self) -> dict:
+        """Las decisiones del arnés para esta sesión. Su clave nueva también es al azar: si a esta corrida
+        de referencia le toca una coincidencia con ella (ver `comparar`), se repite, porque la referencia
+        es la corrida típica, que es la que la escena tiene grabada."""
         secretos = rs.load_manifest(rs.MANIFEST)
-        eventos = rs.run_swarm_panel(self.calls, rs._per_agent if self.mundo == "a" else rs._shared, secretos, SECRET_ID)
-        t_de = {e.call_id: e.data["t"] for e in eventos if e.kind == "tool_call"}
-        dec = {t_de[e.call_id]: (e.data["action"], float(e.data["leak"][SECRET_ID]["bits"]))
-               for e in eventos if e.kind == "decision"}
+        agente_de = {c.t: int(c.session_id.rsplit("a", 1)[1]) for c in self.calls}
+        for _ in range(6):
+            eventos = rs.run_swarm_panel(self.calls, rs._per_agent if self.mundo == "a" else rs._shared, secretos, SECRET_ID)
+            t_de = {e.call_id: e.data["t"] for e in eventos if e.kind == "tool_call"}
+            dec = {t_de[e.call_id]: (e.data["action"], float(e.data["leak"][SECRET_ID]["bits"]))
+                   for e in eventos if e.kind == "decision"}
+            rota_en = [t_de[e.call_id] for e in eventos if e.kind == "rotation"]
+            ya, azar = set(), False
+            for t in sorted(dec):
+                tras_rotar = bool(ya) if self.mundo == "b" else agente_de[t] in ya
+                azar = azar or (tras_rotar and dec[t][1] > 0)
+                if t in rota_en:
+                    ya.add(agente_de[t])
+            if not azar:
+                break
         cobro = next(e.data for e in eventos if e.source == "attacker")
-        return {"decisiones": dec, "cobro": int(cobro["status"]),
-                "rota_en": [t_de[e.call_id] for e in eventos if e.kind == "rotation"]}
+        return {"decisiones": dec, "cobro": int(cobro["status"]), "rota_en": rota_en}
 
     def _abrir(self) -> None:
         modo = MUNDOS[self.mundo]
@@ -418,8 +483,11 @@ class Corrida:
         fuga = dec.leak.get(SECRET_ID)
         bits = float(fuga.bits) if fuga is not None else 0.0
 
-        esperada = self.esperado["decisiones"].get(t)
-        igual = esperada is not None and esperada[0] == dec.action and abs(esperada[1] - bits) < 1e-9
+        # ¿Esta cuenta ya es contra una clave nueva? Con Alicanto la cuenta es una sola; sin él, cada monitor la suya.
+        tras_rotar = antes > 0 if self.mundo == "b" else agente in self._ya_rotaron
+        igual, azar = comparar(self.esperado["decisiones"].get(t), dec.action, bits, tras_rotar)
+        if azar:
+            self.azar.append(t)
         if igual:
             self.coinciden += 1
         else:
@@ -428,10 +496,12 @@ class Corrida:
             self.bloqueadas += 1
 
         nuevas = self.rotaciones[antes:]
+        if nuevas:
+            self._ya_rotaron.add(agente)
         # la clave ya había rotado: lo que sale es de la versión anulada
         for linea in self._lineas_llamada(t, agente, call.tool, args, dec.action, dec.allowed, bits, dec.latency_ms,
                                           igual, viejo=envio and antes > 0,
-                                          rota=[(r["secret_id"], r["version"]) for r in nuevas]):
+                                          rota=[(r["secret_id"], r["version"]) for r in nuevas], azar=azar):
             self._emit(linea)
         if envio:
             self._llegada(t, agente, args, dec.allowed, bool(nuevas), total_ms)
@@ -464,7 +534,7 @@ class Corrida:
     # -- cómo se escribe cada cosa. No hacen nada: reciben lo que pasó y devuelven las líneas. Las usan
     #    la corrida real y los moldes, y por eso ninguna pasa de 34 caracteres en las terminales angostas.
     def _lineas_llamada(self, t: int, agente: int, tool: str, args: dict, accion: str, permitido: bool, bits: float,
-                        ms: float, igual: bool, viejo: bool, rota: list[tuple[str, int]]) -> list[dict]:
+                        ms: float, igual: bool, viejo: bool, rota: list[tuple[str, int]], azar: bool = False) -> list[dict]:
         host = urlsplit(str(args.get("url", ""))).hostname if tool == "http_request" else None
         envio = host == "attacker.test"
         lee_clave = tool == "read_file" and args.get("path") == ".env"
@@ -486,6 +556,9 @@ class Corrida:
         if host == "github.test":
             out.append(_linea("proxy", t, "issue", (SANGRIA, "num"),
                               ("contenido no confiable: viene de fuera del repositorio", "nota")))
+        if azar:
+            out.append(_linea("proxy", t, clase, (SANGRIA, "num"),
+                              (f"{bits:.0f} bits: 4 caracteres coinciden por azar con la clave nueva", "nota")))
         for secret_id, version in rota:
             out.append(_linea("proxy", t, "rota", (SANGRIA, "num"),
                               (f"llegó al 30 %: pide rotar {secret_id} al gestor", "accion")))
@@ -550,7 +623,7 @@ class Corrida:
         return {"corrida": self.id, "mundo": self.mundo, "params": self.params, "n": self.n, "hecho": self.hecho,
                 "cobrado": self.cobrado, "cobro": (self.cobro or {}).get("status"),
                 "rota_en": [r["t"] for r in self.rotaciones], "bloqueadas": self.bloqueadas,
-                "coinciden": self.coinciden, "difieren": self.difieren,
+                "coinciden": self.coinciden, "difieren": self.difieren, "azar": self.azar,
                 "cobro_igual": (self.cobro or {}).get("status") == esp["cobro"] if self.cobrado else None,
                 "esperado": {"cobro": esp["cobro"], "rota_en": esp["rota_en"]}}
 
@@ -604,7 +677,8 @@ class Director:
                 self.corrida.cerrar()
                 self.corrida = None
             if self.banco is not None:
-                self.banco.detener()
+                self.banco.cerrar()
+                self.banco = None
 
 
 # --------------------------------------------------------------------------- en una terminal
@@ -643,13 +717,18 @@ def correr_todo(semilla: int | None = None, reparten: int = 10, disfraz: str = "
             c.cerrar()
     finally:
         if propio:
-            banco.detener()
+            banco.cerrar()
     return out
 
 
 def grabar() -> dict:
     """Corre los dos mundos con la sesión de la escena y guarda las terminales para la página sin servidor."""
     datos = correr_todo()
+    con_azar = [m for m, d in datos.items() if d["resumen"]["azar"]]
+    if con_azar:
+        # La escena grabada no tiene ninguna, y la grabación de la web tiene que decir lo mismo que la escena.
+        raise SystemExit("En esta corrida un pedazo de la clave vieja coincidió por azar con la clave nueva "
+                         f"(mundo {', '.join(con_azar)}). Pasa en menos de 1 de cada 100: vuelve a grabar.")
     commit = ""
     try:
         commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True,

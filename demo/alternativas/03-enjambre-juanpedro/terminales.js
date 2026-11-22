@@ -40,6 +40,7 @@
   let turno = 0; // para descartar respuestas de una apertura que ya se reemplazó
   let pidiendo = false;
   let quiere = 0; // hasta qué llamada va la escena
+  let quitadas = []; // cuándo otra ventana le quitó la corrida a esta
 
   // ---------- la escena ----------
 
@@ -174,10 +175,11 @@
   }
 
   function fecha(iso) {
-    const d = new Date(iso);
-    if (isNaN(d)) return "";
-    const mes = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][d.getMonth()];
-    return `${d.getDate()} ${mes}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    // Tal como la anotó quien grabó (hora de Santiago), no en la zona horaria de quien mira.
+    const m = /^\d{4}-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(iso || "");
+    if (!m) return "";
+    const mes = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][Number(m[1]) - 1];
+    return `${Number(m[2])} ${mes}, ${m[3]}:${m[4]}`;
   }
 
   function pintarBarra() {
@@ -317,7 +319,19 @@
       if (quiere > c.hecho) avanzar();
       return;
     }
-    if (r.estado === 410) { abrir(c.mundo, c.params, c.clave); return; } // el servidor ya tiene otra corrida
+    if (r.estado === 410) {
+      // El servidor ya tiene otra corrida: la abrió otra ventana. Esta recupera la suya, pero si se la
+      // quitan varias veces seguidas deja de insistir (dos ventanas se pelearían sin fin) y sigue con la grabación.
+      const ahora = Date.now();
+      quitadas = quitadas.filter((x) => ahora - x < 20000).concat(ahora);
+      if (quitadas.length <= 2) { abrir(c.mundo, c.params, c.clave); return; }
+      modo = "grabacion";
+      motivo = "otra ventana está usando los procesos";
+      await cargarGrabacion();
+      pintarBarra();
+      avanzar();
+      return;
+    }
     // Se perdió el servidor a mitad de camino: sigue la grabación desde donde iba.
     modo = "grabacion";
     motivo = "se perdió el servidor";
@@ -344,5 +358,8 @@
   };
   encajar();
   marco.addEventListener("load", enganchar);
-  marco.src = "enjambre.html" + location.search + location.hash;
+  // En el sitio publicado, sin parámetros, la escena parte sola: quien llega no tiene por qué saber
+  // qué tecla pulsar. En este computador (el del pitch) espera a quien presenta.
+  const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) || location.protocol === "file:";
+  marco.src = "enjambre.html" + (location.search || (local ? "" : "?autoplay=1")) + location.hash;
 })();
