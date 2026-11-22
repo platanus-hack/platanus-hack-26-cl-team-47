@@ -260,6 +260,66 @@ Varias de las cosas más útiles del proyecto salieron de buscarle fallas.
 - Cubrir las dos familias que hoy se escapan: la clave que viaja a su propio destino permitido y la fuga por commits de git.
 - Bajar las rotaciones de más en sesiones que leen contenido no confiable.
 - Probarlo con dos equipos que usen agentes de código y tengan claves en sus repositorios, y medir con su tráfico.
+- Medir si el grafo de archivos sirve para leer el recorrido de una sesión, y no solo cada llamada. Es la propuesta de la sección siguiente.
+
+## Propuesta: leer el recorrido de la sesión en el grafo de archivos
+
+Propuesta de Matías Morgado, del domingo 22 de noviembre, revisada por el equipo. **No está implementada ni medida**, y el detector sigue congelado. Va escrita para que quien evalúe la parte técnica sepa qué haríamos con la matemática del grafo, que hoy se calcula y casi no se aprovecha. Esta sección no está en el PDF del informe técnico.
+
+### El hueco que queremos cerrar
+
+El grafo de archivos (`engine/graph/gff.py`) trata la sensibilidad de cada archivo como un campo gaussiano sobre el árbol del repositorio. Hoy entrega tres señales por llamada: la sensibilidad del archivo más sensible que tocó la llamada (`m`), su incertidumbre (`m_sd`) y a cuántos saltos queda de lo tocado en las cinco llamadas anteriores (`jump`). Ninguna mira el recorrido completo de la sesión.
+
+Lo que medimos dice que eso es poco. En validación, un indicador de sí o no («la llamada toca un archivo conocido») dio lo mismo que `m`, y el aporte del grafo para separar llamadas fue de +0,0045 de AUC (`results/test/LECTURA.md`). El campo calcula además cuánto se parecen dos archivos entre sí, su covarianza, y esa parte no decide nada.
+
+### La idea
+
+1. **Un mapa de lo sensible.** Se toman solo los archivos sensibles y se mide qué tan cerca están con una distancia que sale del propio campo: la resistencia efectiva, `R_ij = G_ii + G_jj − 2·G_ij`, donde `G` es la inversa de la matriz que el motor ya resuelve. A diferencia de contar saltos, baja cuando dos archivos están unidos por muchos caminos, y es una distancia en sentido estricto.
+2. **El recorrido sobre el mapa.** En una ventana de llamadas, los archivos sensibles que tocó la sesión se ubican en ese mapa. Un recorrido que avanza de vecino en vecino hacia lo más sensible se parece a alguien explorando dónde están las claves.
+3. **Evidencia acumulada.** Cada toque suma al acumulador que ya existe (el CUSUM) el logaritmo de cuánto más probable es ese paso en una exploración que en el trabajo normal. El término se recorta en cero: solo puede sumar sospecha.
+4. **Entre varios agentes.** Con la cuenta compartida, los toques de todos los agentes se ubican en el mismo mapa. Una exploración repartida, en la que ningún agente recorre mucho, se ve igual. Es lo que ya hacemos con los pedazos de la clave, llevado al mapa de archivos.
+
+### Una variante que no depende del orden
+
+Al revisar la propuesta apareció una segunda forma, que nos parece más sólida. En vez de mirar el orden de los toques, mide cuánto del mapa sensible ya conoce la sesión, en bits:
+
+`I(S) = ½·log det Σ_T − ½·log det Σ_T|S`
+
+`T` son los archivos sensibles, `S` los que la sesión tocó y `Σ` la covarianza del campo. Tiene tres propiedades que la otra no tiene: no cambia si quien explora baraja el orden, nunca baja cuando se toca un archivo más, y entre varios agentes basta unir lo que tocó cada uno. Es el criterio de información mutua que se usa para ubicar sensores en procesos gaussianos.
+
+Queda así un segundo medidor, gemelo del que ya tenemos: uno cuenta cuántos bits de la clave salieron, el otro cuántos bits aprendió la sesión sobre dónde están las claves.
+
+### Qué haría Alicanto con esa señal
+
+No rotaría: mientras nada sale, no hay nada que anular. Se **armaría**: el acumulador de esa sesión partiría con ventaja, o bajaría el umbral de rotación de las claves de la zona explorada. Si la señal se equivoca, el costo es una rotación antes de tiempo, no un trabajo interrumpido. Por eso una señal de precisión modesta puede servir aquí y no serviría en un sistema que bloquea.
+
+### Por qué puede no funcionar
+
+- **El trabajo normal también es local.** Quien depura la configuración recorre archivos vecinos. Avanzar de vecino en vecino, por sí solo, no separa. Lo que podría separar es la amplitud: cubrir zonas alejadas del mapa.
+- **El camino más común no explora.** Va directo al archivo de claves, y eso ya lo mide `jump`.
+- **Con pocos archivos sensibles no hay recorrido que leer.** El repositorio de la demo tiene dos.
+- **Quien conoce la señal puede esquivarla** espaciando los toques. Por eso solo suma, y por eso la variante sin orden.
+- **Una cuenta trivial puede dar lo mismo.** «Cuántos archivos sensibles distintos tocó la sesión» es una línea de código. Ya nos pasó: en el set de prueba una regla de una línea empató con el modelo de evidencia. El grafo se gana su lugar solo si distingue cinco archivos del mismo módulo de cinco repartidos por todo el mapa.
+
+### Por qué nuestros datos no responden la pregunta
+
+Ninguna de las seis familias evaluadas explora antes de leer, y el repositorio tiene dos archivos sensibles. El aporte casi nulo del grafo se midió donde el grafo no podía importar. No es evidencia a favor de la propuesta; tampoco en contra.
+
+### El experimento que lo decidiría
+
+Uno o dos días de trabajo, con las reglas de siempre: quien escribe las sesiones no ve el detector, y el criterio se fija antes de medir.
+
+1. Un repositorio sintético con 10 a 30 archivos sensibles, en varias zonas.
+2. Una familia nueva de sesiones que exploran antes de leer, con un agente y repartida entre varios, y sesiones normales difíciles que depuran configuración.
+3. Cinco señales comparadas a igual costo, con 5 rotaciones de más por cada 1.000 llamadas como máximo: `jump`, el indicador de sí o no, la cuenta de archivos sensibles distintos y las dos variantes de la propuesta.
+4. Dos medidas: cuántas llamadas antes de la primera salida queda armado el detector, y cuántos bits de la clave vigente alcanzan a salir.
+5. **Criterio de descarte:** si ninguna variante supera a la cuenta trivial con intervalos que no se crucen, se descarta y se publica así.
+
+### Nuestra lectura
+
+Vale la pena medirla. Extiende lo que distingue a Alicanto, una cuenta por recurso compartida entre agentes, y sería el primer uso de la covarianza del campo. No hay ninguna evidencia de que funcione, y la experiencia de este proyecto dice que las reglas simples suelen empatar. Por eso va como propuesta con criterio de descarte y no como resultado.
+
+Referencias, que una persona debe confirmar antes de citarlas en otro lugar: Zhu, Ghahramani y Lafferty (ICML 2003), campos gaussianos sobre grafos; Klein y Randić (1993), la resistencia efectiva como distancia; Krause, Singh y Guestrin (JMLR 2008), información mutua para ubicar sensores en procesos gaussianos; Lucas y Crosier (1982), el acumulador que parte con ventaja.
 
 ## Dónde está cada cosa
 
