@@ -4,6 +4,8 @@
 - **Estado:** funciona con una corrida real de 20 agentes, grabada con el arnés del enjambre del repositorio, y con corridas hechas en el momento, con lo que elige el público. Termina con «Cómo lo probamos»: el equipo rojo, el morado y el azul, el set de prueba sellado y las cifras de la evaluación, leídas de `results/`.
 - **Cómo abrirla:** `python -m http.server 8300 --directory demo` y luego `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html`. Pulsa espacio para reproducir: corre entera, del mundo sin Alicanto al mundo con Alicanto, sin tocar nada más.
 - **El pitch de 3 minutos, con la parte en vivo:** `python demo/alternativas/03-enjambre-juanpedro/servidor.py` (en vez del servidor de arriba) y luego `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/enjambre.html?pitch=1`. El guion está en [GUION_3_MIN.md](GUION_3_MIN.md).
+- **Con terminales debajo, ejecutando lo mismo de verdad:** el mismo `servidor.py` y `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/terminales.html?pitch=1`. Está descrito en «Las terminales».
+- **Los datos de las pruebas:** `http://127.0.0.1:8300/alternativas/03-enjambre-juanpedro/pruebas.html`. Está descrito en «El tablero».
 
 ## Qué muestra
 
@@ -57,6 +59,75 @@ El disfraz no cambia ninguna fila, y el número solo cambia qué asistentes filt
 En un ensayo a velocidad real, con el texto del guion dicho a 150 palabras por minuto, el pitch completo terminó en 2 minutos 53.
 
 Sin `servidor.py` la página igual funciona: el panel avisa que no hay servidor en vivo y sigue la corrida grabada. Fuera del pitch, la tecla `V` abre el panel del público en cualquier momento.
+
+## Las terminales: la misma sesión, ejecutada de verdad debajo de la escena
+
+`terminales.html` pone la escena arriba y tres terminales debajo. La escena es una animación de una corrida grabada. Lo de abajo es esa misma sesión ejecutada en ese momento por los procesos del repositorio, llamada por llamada, al paso de la escena. Sirve para decir «acá abajo está pasando lo que se ve arriba».
+
+Cómo funciona, con `servidor.py` corriendo:
+
+1. **Se levantan los procesos.** Al entrar a un mundo, `vivo.py` arranca cuatro procesos en puertos libres de este computador: el gestor de secretos (`services/vault`), la API que exige la clave (`services/api`), el servidor del atacante (`services/attacker`) y el GitHub simulado con el issue plantado (`services/github_sim`). Arma además un proxy real por asistente (`proxy.core.Proxy` con el `Detector` del repositorio y los parámetros del enjambre de la demo). En «Sin Alicanto» cada proxy lleva su propia cuenta. En «Con Alicanto» los 20 comparten una sola (`SharedLedger`).
+2. **La escena marca el paso.** La escena deja en su `<body>` el mundo y la llamada en que va. `terminales.js` lo observa y le pide al servidor que ejecute las llamadas que faltan hasta esa (`/api/vivo/paso`). Cada llamada pasa por el proxy de su asistente.
+3. **Lo que sale, sale de verdad.** Cada envío viaja por HTTP al servidor del atacante, que es otro proceso. La rotación es un `POST` al gestor de secretos. Al final el servidor del atacante arma la clave con lo que recibió y llama a la API, que le pregunta al gestor y responde 200 o 401.
+4. **Se compara con la escena.** El servidor compara cada decisión en vivo con la de la corrida que dibuja la escena: la acción siempre, y los bits mientras las dos cuentan contra la misma clave. La barra lo va diciendo: «88 de 88 decisiones iguales a las de la escena». Si una difiere, su línea queda marcada «≠ escena».
+
+| Terminal | Qué proceso es | Qué muestra |
+|---|---|---|
+| Proxy | Los 20 proxies, dentro de `servidor.py` | Una línea por llamada: el asistente, la herramienta, la decisión y, en los envíos, cuántos bits lleva la cuenta y cuánto tardó en decidir |
+| Gestor de secretos y API | `services/vault` y `services/api` | La rotación (`POST /v1/secrets/SECRET_1/rotate`, versión 2 vigente, versión 1 anulada) y, en el cobro, la consulta de la API al gestor y su respuesta |
+| Servidor del atacante | `services/attacker` | Cada pedazo que le llega, cuántos bits tiene de la clave vigente (se lo pregunta la demo a ese proceso) y el resultado del cobro |
+
+Con la sesión de la escena el resultado es el mismo que arriba. Sin Alicanto nadie rota, el servidor del atacante junta 160 de 160 bits y la API le responde 200. Con Alicanto la clave rota en la llamada 48 con 48 de 160 bits afuera, y el cobro recibe 401. En los dos mundos, 0 llamadas bloqueadas.
+
+En el pitch, si el público elige otro reparto, las terminales corren ese reparto: la escena deja los valores elegidos y `terminales.js` abre una corrida nueva con ellos.
+
+**Sin `servidor.py` (así queda en la web).** No hay procesos que levantar, y la página lo dice: «Grabación de una corrida real», con su fecha. Las terminales muestran, al paso de la escena, lo que escribieron los procesos en una corrida real guardada en `grabaciones/terminales.json`. Se rehace con `python demo/alternativas/03-enjambre-juanpedro/vivo.py --grabar`; un test repite la corrida y la compara con la guardada. Si justo en esa corrida hay una coincidencia de azar con la clave nueva (ver más abajo), el comando no la guarda y pide repetirla, porque la escena grabada no la tiene.
+
+**En terminales de verdad.** `python demo/alternativas/03-enjambre-juanpedro/terminal.py proxy` (o `gestor`, `atacante`, `todo`) imprime las mismas líneas en una ventana de terminal, pedidas al mismo servidor. Sirve para poner ventanas de terminal debajo del navegador en vez de la franja de la página. `python demo/alternativas/03-enjambre-juanpedro/vivo.py` corre los dos mundos de punta a punta sin navegador.
+
+**En cualquier pantalla.** La escena está hecha para un proyector. Con la franja debajo le queda menos alto, así que se dibuja al ancho de un proyector y se achica entera en vez de cortarse. Cada terminal mide las líneas que espera de la corrida y decide antes de partir cuánto abreviar (primero los milisegundos, después el nombre de la herramienta), para que ninguna línea quede cortada ni cambie de forma en la rotación. En un teléfono la escena queda de miniatura arriba y las tres terminales se apilan.
+
+Lo que hay que decir de esta parte:
+
+- **El agente sigue siendo un guion.** Las llamadas las hace `vivo.py` con la sesión de `hacer_corrida.py`, no un modelo. Lo real es todo lo que pasa después: el proxy, la cuenta, la rotación, los envíos y el cobro.
+- **Arriba y abajo son dos ejecuciones de la misma sesión.** Coinciden porque el motor es determinista, y la barra lo comprueba llamada por llamada en vez de darlo por hecho.
+- **Lo único al azar es la clave nueva.** Al rotar, el gestor de secretos elige una clave nueva, distinta en cada ejecución. Hasta la rotación se comparan la acción y los bits. Después se compara la acción. En menos de 1 de cada 100 corridas, un pedazo de la clave vieja coincide en 4 caracteres con la clave nueva, y la cuenta marca 16 bits donde lo normal es 0. No es una diferencia del proxy, y la línea lo dice: «4 caracteres coinciden por azar con la clave nueva». El cobro igual recibe 401. Medido con 250 corridas por configuración: 1 o 2 con coincidencia.
+- **Todo corre en un computador.** Los nombres `attacker.test`, `vault.test` y `api.empresa.test` apuntan a procesos locales. Nada sale a internet.
+- **La etiqueta del asistente en la terminal del atacante («a15») la pone la demo** para poder seguirlo con la vista. Ese proceso solo ve una petición.
+- **Los milisegundos son de la máquina donde corre.** En la versión grabada son los del computador que hizo la grabación.
+- **En la web es una grabación**, no una ejecución en el navegador de quien mira.
+
+## El tablero: los datos de las pruebas
+
+`pruebas.html` muestra en una página cómo se probó el método y con qué resultado. No tiene cifras escritas a mano: lee `pruebas.json`, que `hacer_pruebas.py` arma desde `results/` y `docs/informe/datos/cifras.json`. Un test lo regenera y lo compara, y otro revisa que las cifras no estén escritas en el HTML ni en el JavaScript.
+
+De arriba abajo:
+
+1. **La cifra y lo que cuesta.** Los ataques frenados con las marcas que calcula el proxy, las llamadas normales bloqueadas, las sesiones normales en que rotó una clave de más (con la meta, que no se cumple) y los tests de la suite.
+2. **El set de prueba, entero.** Una casilla por ataque y por sesión normal difícil, por familia, con qué regla rotó primero y cuántos bits salieron. Se ve qué familias se frenan y cuáles no.
+3. **La misma medición con otros guardias.** Una fila por sistema. La barra es el resultado con las marcas del proxy y la marca fina el resultado con las marcas que traían las grabaciones.
+4. **El orden de los hechos.** El sello del set, el congelamiento del detector y la corrida, con sus hashes y commits. Con `servidor.py`, el sello se vuelve a calcular en ese momento.
+5. **Lo que se midió después.** El atacante que se adapta y los pedazos más cortos que el mínimo del contador.
+6. **Lo que este resultado no dice**, y los comandos para repetir cada cosa.
+
+Para actualizarlo: `python demo/alternativas/03-enjambre-juanpedro/hacer_pruebas.py`. Con `--suite` corre además la suite completa del repositorio y anota cuántos tests pasaron (`suite.json`).
+
+Los colores de los estados y de los tres equipos se revisaron con el validador de paletas (contraste sobre el fondo y separación para daltonismo). Ningún dato depende solo del color: cada fila tiene su cifra al lado, y las barras muestran su valor al pasar el cursor o con el teclado.
+
+## Cómo queda en la web
+
+El sitio publica `demo/viz`. Antes del build, `vercel.json` corre `publicar.sh`, que copia a `demo/viz/escena/` lo que estas páginas necesitan para funcionar sin servidor: los HTML, CSS y JS de esta carpeta, sus datos, las grabaciones, el logo y el PDF del informe técnico (`docs/informe/informe.pdf`). No copia Python, tests ni documentos, y `demo/viz/escena/` no se versiona.
+
+| Dirección en el sitio | Qué abre |
+|---|---|
+| `/terminales` | La escena con las terminales debajo (`/escena/terminales.html`). En el sitio parte sola; con parámetros (`?w=b`, `?pitch=1`) hace lo que se le pida |
+| `/pruebas` | El tablero con los datos de las pruebas (`/escena/pruebas.html`) |
+| `/informe` | El informe técnico en PDF |
+| `/escena/enjambre.html` | La escena sola |
+
+En la web no hay procesos: las terminales muestran la grabación y lo dicen, y el tablero muestra el sello publicado sin recalcularlo. Un test arma la copia con `publicar.sh`, la sirve como archivos sueltos y la recorre de punta a punta.
+
+Para verla en local igual que en la web: `sh demo/alternativas/03-enjambre-juanpedro/publicar.sh /tmp/sitio/escena` y `python -m http.server 8400 --directory /tmp/sitio`.
 
 ## Cómo lo probamos: equipo rojo, morado y azul
 
@@ -135,6 +206,8 @@ Frase sugerida para quien presenta: «Una clínica trabaja con veinte asistentes
   - En pantalla, cada llamada de cada agente, cada pedazo, la rotación y el resultado del cobro salen de `grabaciones/por_agente.jsonl` y `grabaciones/global.jsonl`.
   - **La parte en vivo del pitch es una corrida de verdad.** `servidor.py` llama a `hacer_corrida.py` con lo que eligió el público; el motor procesa las 88 llamadas en unos 200 ms y la página dibuja esos eventos. El texto de la consola es lo que devolvió esa corrida, sin editar. Se puede repetir a mano: `python demo/alternativas/03-enjambre-juanpedro/hacer_corrida.py --reparten 5 --disfraz base64 --semilla 37`.
   - **La línea «motor»** de abajo a la derecha es la decisión grabada del motor en la llamada que rota (acción, bits y milisegundos), o los datos de la corrida en vivo.
+  - **Las terminales de `terminales.html`, con `servidor.py`,** son procesos de verdad ejecutando la sesión en ese momento (ver «Las terminales»). Sin servidor, son la grabación de una corrida real, y la página lo dice.
+  - **El tablero `pruebas.html`** solo muestra cifras leídas de `results/` y de los datos del informe técnico.
 - **Maqueta, y lo dice en pantalla:**
   - **La pantalla de la clínica** (módulos, cifras del día, agenda, pacientes, el error de la última franja): es decorado. Los pacientes son inventados.
   - **La tarea que se escribe** («Arregla el error de la última franja de la agenda. Es el issue 14»): la sesión es un guion, nadie escribió ese mensaje. Las llamadas que aparecen debajo sí son las grabadas de cada agente.

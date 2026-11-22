@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alicanto · la escena y, debajo, los procesos</title>
+  <link rel="stylesheet" href="terminales.css">
+</head>
+<body data-modo="">
+  <!-- Arriba, la escena de siempre (enjambre.html), sin tocar: es una animación de una corrida
+       grabada. Abajo, la misma sesión ejecutada por los procesos reales, llamada por llamada,
+       en el momento en que la escena la muestra. terminales.js las mantiene al mismo paso. -->
+  <div id="lienzo">
+    <iframe id="escena" title="La escena: los 20 asistentes de código de una clínica y el servidor de un atacante"></iframe>
+  </div>
+
+  <section id="franja" aria-label="Lo que hacen los procesos mientras corre la escena">
+    <header id="barra">
+      <p id="que">Abajo no hay dibujo: cada línea es una llamada que el proxy acaba de decidir.</p>
+      <p id="modo" role="status"></p>
+      <p id="igual" role="status"></p>
+      <p id="mas"><a href="pruebas.html">Datos de las pruebas</a></p>
+    </header>
+    <div id="terms">
+      <article class="term" id="t-proxy" aria-label="Proxy">
+        <h2><span class="nombre">Proxy</span><span class="proc"></span></h2>
+        <ol class="salida"></ol>
+        <ol class="medir" aria-hidden="true"></ol>
+      </article>
+      <article class="term" id="t-gestor" aria-label="Gestor de secretos y API de fichas">
+        <h2><span class="nombre">Gestor de secretos y API</span><span class="proc"></span></h2>
+        <ol class="salida"></ol>
+        <ol class="medir" aria-hidden="true"></ol>
+      </article>
+      <article class="term" id="t-atacante" aria-label="Servidor del atacante">
+        <h2><span class="nombre">Servidor del atacante</span><span class="proc"></span></h2>
+        <ol class="salida"></ol>
+        <ol class="medir" aria-hidden="true"></ol>
+      </article>
+    </div>
+  </section>
+
+  <script src="terminales.js"></script>
+</body>
+</html>
