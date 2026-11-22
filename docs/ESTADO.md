@@ -1,10 +1,14 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: domingo 22 de noviembre de 2026, 04:05 (H29,1). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: domingo 22 de noviembre de 2026, 05:35 (H30,6). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
 **Alicanto** (hasta el sábado a las 11:30 se llamó Cuentagotas) es un proxy entre un agente de IA y sus herramientas que mide cuánta de cada clave ya se filtró y la rota antes de que la fuga se complete. Está construido, evaluado y desplegado. **Congelamiento total desde el domingo a las 02:00:** solo arreglos de errores, láminas y ensayo; nada de funciones nuevas sin el visto bueno del líder. No hay tareas ni PR abiertos. La descripción pública reescrita (PR #178) entró el domingo a las 04:05, aprobada por el líder.
+
+## La demo y el sitio, desde el domingo 22 a las 05:30
+
+Por decisión del líder, **la demo oficial es la alternativa 03** (`demo/alternativas/03-enjambre-juanpedro/`): la escena de la clínica con 20 asistentes y sus terminales. Es la portada de https://alicanto.vercel.app; el tablero está en `/pruebas` y el informe técnico en `/informe`. Las direcciones de la demo anterior (`/home.html`, `/split.html`, `/results.html`, `/report.html`) redirigen a la escena o al tablero. `demo/viz/` sigue en el repositorio como demo anterior: no la cites como la demo del proyecto. En el sitio las terminales muestran la grabación de una corrida real; en vivo solo corren con `servidor.py` en local.
 
 ## Qué hay en `main`
 
