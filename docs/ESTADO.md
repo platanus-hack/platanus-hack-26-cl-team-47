@@ -1,6 +1,6 @@
 # Estado del proyecto (para agentes)
 
-Actualizado: domingo 22 de noviembre de 2026, 03:35 (H28,6). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
+Actualizado: domingo 22 de noviembre de 2026, 04:00 (H29). Lo mantiene el orquestador. Si empiezas una sesión, lee esto, `AGENTS.md` y tu issue. El resumen para personas está en `docs/INFORME_TURNOS.md`.
 
 ## En una frase
 
@@ -8,7 +8,7 @@ Actualizado: domingo 22 de noviembre de 2026, 03:35 (H28,6). Lo mantiene el orqu
 
 ## Qué hay en `main`
 
-- 931 tests en verde (`python -m pytest -q`). A las 16:20 se comprobó en un clon limpio del repo público que instala con `pip install -r requirements.txt`, que la suite pasa y que corren los comandos del README.
+- 937 tests en verde (`python -m pytest -q`). A las 16:20 se comprobó en un clon limpio del repo público que instala con `pip install -r requirements.txt`, que la suite pasa y que corren los comandos del README.
 - Demo principal, del enjambre e interactiva (`demo/viz/`), desplegadas en https://alicanto.vercel.app. El despliegue es a mano: `demo/DEPLOY.md`.
 - Evaluación final corrida una sola vez sobre el set sellado: `results/test/`. Simulación del atacante adaptativo: `results/adaptive/`.
 - Hook de Claude Code que pasa `Bash` y `WebFetch` por el contador de bits: `integrations/claude_code/` (probado en una sesión real: permite sin fricción y niega con el motivo; el contador con un modelo real no quedó probado, porque el modelo se negó por su cuenta).
