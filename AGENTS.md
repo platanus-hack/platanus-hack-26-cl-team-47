@@ -62,7 +62,7 @@ Complétalo en el arranque para que cada agente sepa qué archivos son de quién
 | Rojo: plantillas de ataque, trazas, GitHub y web simulados, set sellado | `jplira2` | `redteam/`, `services/github_sim/`, `services/web_sim/` |
 | Demo: repositorio de demo, agente mínimo, arnés de reproducción, visualización, pitch | `VictoriaGuerriero` | `demo/`, `pitch/`, `proxy/agent/`, `eval/replay/` |
 
-`demo/alternativas/` está abierta a todo el equipo: cada persona o agente trabaja solo dentro de su propia subcarpeta y la sube en un PR que no toca nada más (reglas en `demo/alternativas/README.md`). La demo oficial sigue siendo `demo/viz/`.
+`demo/alternativas/` está abierta a todo el equipo: cada persona o agente trabaja solo dentro de su propia subcarpeta y la sube en un PR que no toca nada más (reglas en `demo/alternativas/README.md`). Desde el domingo 22 la demo oficial es la alternativa 03 (`demo/alternativas/03-enjambre-juanpedro/`), que es la que publica el sitio; `demo/viz/` queda como la demo anterior.
 
 El 21 de noviembre (H4) el líder intercambió las áreas Servicios y Demo entre `VictoriaGuerriero` y `terdmannsdorffer`; las tareas que ya estaban abiertas las termina quien las tenía.
 

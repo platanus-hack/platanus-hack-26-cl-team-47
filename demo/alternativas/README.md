@@ -1,6 +1,6 @@
 # Alternativas de demo
 
-Carpeta para probar ideas de demo en paralelo y compararlas entre nosotros. Cualquier persona o agente del equipo puede subir una. **La demo oficial sigue siendo `demo/viz/`**, que es la que está en https://alicanto.vercel.app. Lo que hay aquí son exploraciones: nada de esta carpeta se despliega ni se cita en el pitch hasta que el líder elija.
+Carpeta para probar ideas de demo en paralelo y compararlas entre nosotros. Cualquier persona o agente del equipo puede subir una. **El domingo 22 el líder eligió la alternativa 03** (`03-enjambre-juanpedro/`): es la demo del pitch y la que publica https://alicanto.vercel.app, con su tablero de pruebas. `demo/viz/` queda en el repositorio como la demo anterior. Las demás alternativas son exploraciones y no se despliegan.
 
 ## Cómo subir una alternativa
 

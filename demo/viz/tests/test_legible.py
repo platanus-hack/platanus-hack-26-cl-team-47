@@ -197,7 +197,7 @@ def test_vercel_json_publica_las_laminas():
         assert f"pitch/{f}" in build
         assert (ROOT / "pitch" / f).is_file()
     assert build.rstrip().endswith("demo/viz/pitch/")
-    for r in ({"source": "/", "destination": "/home.html", "permanent": False},
+    for r in ({"source": "/", "destination": "/escena/terminales.html", "permanent": False},
               {"source": "/pitch", "destination": "/pitch/index.html", "permanent": False},
               {"source": "/demo/viz/:path*", "destination": "/:path*", "permanent": False}):
         assert r in cfg["redirects"], r

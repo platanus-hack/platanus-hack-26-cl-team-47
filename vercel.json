@@ -6,11 +6,60 @@
   "outputDirectory": "demo/viz",
   "cleanUrls": false,
   "redirects": [
-    { "source": "/", "destination": "/home.html", "permanent": false },
-    { "source": "/pitch", "destination": "/pitch/index.html", "permanent": false },
-    { "source": "/terminales", "destination": "/escena/terminales.html", "permanent": false },
-    { "source": "/pruebas", "destination": "/escena/pruebas.html", "permanent": false },
-    { "source": "/informe", "destination": "/escena/informe.pdf", "permanent": false },
-    { "source": "/demo/viz/:path*", "destination": "/:path*", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/escena/terminales.html",
+      "permanent": false
+    },
+    {
+      "source": "/terminales",
+      "destination": "/escena/terminales.html",
+      "permanent": false
+    },
+    {
+      "source": "/pruebas",
+      "destination": "/escena/pruebas.html",
+      "permanent": false
+    },
+    {
+      "source": "/informe",
+      "destination": "/escena/informe.pdf",
+      "permanent": false
+    },
+    {
+      "source": "/pitch",
+      "destination": "/pitch/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/home.html",
+      "destination": "/escena/terminales.html",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "destination": "/escena/terminales.html",
+      "permanent": false
+    },
+    {
+      "source": "/split.html",
+      "destination": "/escena/terminales.html",
+      "permanent": false
+    },
+    {
+      "source": "/results.html",
+      "destination": "/escena/pruebas.html",
+      "permanent": false
+    },
+    {
+      "source": "/report.html",
+      "destination": "/escena/pruebas.html",
+      "permanent": false
+    },
+    {
+      "source": "/demo/viz/:path*",
+      "destination": "/:path*",
+      "permanent": false
+    }
   ]
 }

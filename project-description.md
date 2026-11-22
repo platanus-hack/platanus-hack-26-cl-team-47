@@ -2,7 +2,7 @@
 
 **Cuando tu agente de IA empieza a filtrar una clave de a pedazos, Alicanto la cambia antes de que esté completa.**
 
-**Míralo funcionar, sin instalar nada:** https://alicanto.vercel.app
+**Míralo funcionar, sin instalar nada:** https://alicanto.vercel.app · [cómo lo probamos](https://alicanto.vercel.app/pruebas)
 
 ## El problema
 
@@ -22,14 +22,19 @@ Se pone entre el agente y todo lo que el agente envía hacia afuera. No hay que 
 
 ## La prueba: el mismo ataque, dos finales
 
+Una clínica ficticia con 20 asistentes de código. Una nota plantada reparte la fuga entre diez de ellos: cada uno saca cuatro letras de la clave.
+
 | | Sin Alicanto | Con Alicanto |
 |---|---|---|
-| Lo que junta el atacante | 40 de 40 letras de la clave | 0 de la clave vigente |
-| Lo que responde el sistema | **Entra** (código 200) | **Queda afuera** (código 401) |
+| Lo que ve cada vigilante | 4 de 40 letras por asistente: nadie nota nada | Una sola cuenta por clave: suma lo de todos |
+| Lo que pasa con la clave | Sale entera | Cambia al tercer pedazo |
+| Lo que responde la clínica | **Entra** (código 200) | **Queda afuera** (código 401) |
 
-![El mismo ataque en dos pantallas: a la izquierda el atacante entra, a la derecha la clave ya cambió](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-goteo.png)
+![La escena al terminar: quien plantó la nota recibe 401 y cero fichas; abajo, las terminales con cada llamada](https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-47/main/docs/img/demo-escena.png)
 
-Lo que consiguió el atacante lo cuenta su propio servidor, no nuestro detector. No nos ponemos la nota nosotros.
+En las dos corridas los 20 asistentes siguieron trabajando: 0 llamadas bloqueadas de 88. Lo que consiguió el atacante lo cuenta su propio servidor, no nuestro detector.
+
+Debajo de la escena hay tres terminales con cada llamada. En el sitio muestran la grabación de una corrida real; en el pitch son procesos del computador que presenta, ejecutando cada llamada en ese momento.
 
 ## Por qué es distinto
 
@@ -50,18 +55,18 @@ Cualquiera puede repetir la medición, o probar su propia defensa contra los mis
 
 ## Para quién
 
-Para equipos que ya usan agentes de programación y tienen claves en sus repositorios. El ejemplo de la demo es un hospital ficticio: en Chile, un prestador de salud tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad, y Alicanto deja escrito qué salió, hacia dónde y cuándo cambió la clave. Se conecta al agente sin modificarlo ([guía de inicio](https://github.com/platanus-hack/platanus-hack-26-cl-team-47/blob/main/docs/QUICKSTART.md)).
+Para equipos que ya usan agentes de programación y tienen claves en sus repositorios. El ejemplo de la demo es una clínica ficticia: en Chile, un prestador de salud tiene 3 horas para avisar de un incidente a la autoridad de ciberseguridad, y Alicanto deja escrito qué salió, hacia dónde y cuándo cambió la clave. Se conecta al agente sin modificarlo ([guía de inicio](https://github.com/platanus-hack/platanus-hack-26-cl-team-47/blob/main/docs/QUICKSTART.md)).
 
 ## Lo que es real y lo que no prometemos
 
 - **Real:** el programa que vigila, el gestor que cambia la clave, el sistema que responde 200 o 401 y el servidor del atacante. Las cifras salen de ejecutarlos.
-- **Simulado:** todo corre en local, las claves son inventadas y el hospital no existe. Los ataques son guiones nuestros.
+- **Simulado:** todo corre en local, las claves son inventadas y la clínica no existe. Los ataques son guiones nuestros.
 - **Dos tipos de ataque se nos escapan en la medición:** la clave enviada a su propio destino legítimo y la clave escondida en mensajes de `git commit`.
 - **Nuestra primera cifra era 180 de 180.** Al revisarla vimos que usaba marcas escritas por quien generó los ataques, no las que calcula el sistema en vivo. La recalculamos, bajó a 120 y publicamos las dos.
 
 ## Hecho en 36 horas
 
-Más de 800 pruebas automáticas, una evaluación que se repite con un comando y resultados reproducidos en tres computadores. Lo demás está en el [README](https://github.com/platanus-hack/platanus-hack-26-cl-team-47#readme).
+Más de 900 pruebas automáticas, una evaluación que se repite con un comando y resultados reproducidos en tres computadores. Lo demás está en el [README](https://github.com/platanus-hack/platanus-hack-26-cl-team-47#readme).
 
 El nombre viene de una leyenda de Atacama: el alicanto es un ave que brilla como el oro, y quien la sigue por codicia termina con las manos vacías.
 
