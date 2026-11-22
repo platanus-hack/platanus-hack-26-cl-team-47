@@ -90,6 +90,8 @@ Cada afirmación del proyecto, con el archivo que la sostiene y un comando que l
 
 Ningún número está puesto a mano sin explicación. Los que se ajustan se eligieron en validación con una búsqueda de 750 combinaciones (`python -m eval.search`, resultados en `models/search/`), con dos restricciones: como máximo una falsa alarma por cada 1.000 llamadas expuestas y 5 rotaciones benignas por cada 1.000.
 
+Cómo se eligió la configuración congelada: entre las combinaciones que cumplían las dos restricciones, la de menor mediana de bits de los ataques y, si empataban, la de más ataques prevenidos; entre las empatadas, la primera de la grilla (`choose` en `eval/search/search.py`). Las rotaciones de más solo contaban como tope. Por eso la congelada (`lambda_rot` 0,1) rotó una vez de más en validación aunque 144 combinaciones con las mismas cifras no rotaron nunca, y el umbral `b` no movió ninguna métrica de la búsqueda. Detalle en los puntos 9 y 10 de [results/test/LECTURA.md](results/test/LECTURA.md).
+
 | Parámetro | Valor | Qué significa y por qué |
 |---|---|---|
 | `k` | 8 caracteres | Largo desde el cual una coincidencia con la clave se da por confirmada. Con claves hexadecimales, 8 caracteres al azar coinciden con probabilidad despreciable |
