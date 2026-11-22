@@ -1,0 +1,25 @@
+% Portada: fondo del mismo negro del logo, para que no se vea el borde de la imagen.
+\definecolor{fondologo}{HTML}{060606}
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[fondologo] (current page.south west) rectangle (current page.north east);
+  \node[anchor=north] at ($(current page.north)+(0,-3.6cm)$)
+    {\includegraphics[width=10.4cm]{figuras/logo.jpg}};
+  \draw[oroclaro,line width=1.4pt] ($(current page.center)+(-1.6cm,-0.9cm)$) -- ++(3.2cm,0);
+  \node[anchor=north,align=center,text=marfil,font=\sffamily\bfseries\fontsize{25}{30}\selectfont]
+    at ($(current page.center)+(0,-1.7cm)$) {Informe final\\[2pt] y explicación técnica};
+  \node[anchor=north,align=center,text=marfil!78!fondologo,text width=11.6cm,font=\sffamily\large]
+    at ($(current page.center)+(0,-4.6cm)$)
+    {Un proxy entre un agente de código y sus herramientas que mide cuántos bits
+     de cada clave ya salieron y la cambia antes de que se complete};
+  \node[anchor=south,align=center,text=marfil!70!fondologo,font=\sffamily\small]
+    at ($(current page.south)+(0,3.3cm)$)
+    {\textls[80]{PLATANUS HACK 26 \textperiodcentered\ SANTIAGO \textperiodcentered\ TEAM-47 \textperiodcentered\ TRACK AI SECURITY}\\[5pt]
+     Sábado 21 de noviembre de 2026};
+  \node[anchor=south,align=center,text=marfil!48!fondologo,text width=12.5cm,font=\sffamily\footnotesize]
+    at ($(current page.south)+(0,1.5cm)$)
+    {Lo preparó el agente del líder con lo que está en el repositorio del equipo.
+     Una persona del equipo lo revisa antes de la entrega.};
+\end{tikzpicture}
+\end{titlepage}

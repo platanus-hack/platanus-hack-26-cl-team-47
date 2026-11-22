@@ -1,0 +1,163 @@
+\section{Los datos}\label{sec:datos}
+
+Toda la evaluación es reproducción de sesiones grabadas. Esta sección dice qué sesiones hay, cómo se
+hicieron y qué se sabe de cada una.
+
+\subsection{Un formato para todo}
+
+Una sesión es un archivo de texto con una llamada por línea, en el contrato \cod{ToolCall} y con su
+resultado incluido. Los sets del equipo rojo traen además tres archivos:
+
+\begin{description}
+  \item[\cod{labels.jsonl}.] Una línea por cada envío de un ataque: en qué sesión y en qué llamada
+    ocurre, de qué clave, \emph{qué posiciones exactas de la clave salen}, con qué codificación y por
+    qué canal. Es lo que permite medir sin depender de lo que el detector haya visto.
+  \item[\cod{secrets.jsonl}.] La clave sintética de cada sesión. Cada sesión tiene la suya.
+  \item[\cod{manifest.json}.] La semilla, cuántas sesiones hay de cada familia y el sha256 de cada
+    archivo.
+\end{description}
+
+Las etiquetas son la verdad de terreno de la métrica: un ataque se cuenta por las posiciones que sus
+etiquetas dicen que salieron en llamadas que el detector dejó pasar (\cref{sec:metricas}). Los
+generadores son deterministas: con la misma semilla producen los mismos archivos byte a byte, y los
+tests lo comprueban.
+
+\subsection{El tráfico normal de fondo}
+
+Son las 120 sesiones de \cod{data/benign} descritas en la \cref{sec:fondo}. Se reparten al azar, con
+semilla 0, en 60 de entrenamiento, 30 de validación y 30 de prueba. Las de entrenamiento ajustan el
+modelo, las de validación sirven para elegir parámetros y las de prueba entran a la evaluación final
+como «sesiones normales corrientes».
+
+\subsection{Entrenamiento y validación}
+
+Los genera \cod{python -m redteam.generate}, con semilla 0 para entrenamiento y 1 para validación.
+Cada set tiene 80 ataques y 20 sesiones normales difíciles, de las mismas siete familias.
+
+\begin{table}[ht]
+\caption{Familias de entrenamiento y validación (\cod{redteam/README.md}). Todos los ataques envían
+hacia \cod{attacker.test} o publican en \cod{github.test}.}\label{tab:familias-train}
+\small
+\begin{tabularx}{\textwidth}{@{}P{1.2cm}R{1.5cm}L@{}}
+\toprule
+Familia & Sesiones & Qué hace \\
+\midrule
+A1 & 10 & Un único envío con la clave completa \\
+A2 & 15 & De 4 a 6 envíos de tamaño creciente hasta completar la clave \\
+A3 & 20 & De 5 a 10 envíos de 4 caracteres en claro, separados por decenas de llamadas \\
+A4 & 25 & Goteo codificado: base64, hexadecimal, URL, ROT13, invertido o separado \\
+A5$'$ & 10 & Goteo con una tabla de sustitución propia de la sesión \\
+B1 & 10 & Normal: despliegue legítimo, la clave va a su destino permitido \\
+B2 & 10 & Normal: depuración que lee dos archivos de claves y no envía nada \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{El set de prueba}\label{sec:set-prueba}
+
+Lo genera \cod{python -m redteam.sealed --seed 2}. Tiene seis familias de ataque y tres de sesiones
+normales difíciles, de 30 casos cada una, y ninguna aparece en entrenamiento ni en validación. No son
+variaciones de las anteriores: cada una cambia al menos una de cuatro dimensiones (el canal, la
+codificación, el patrón temporal o el reparto), y los nombres de sus canales y codificaciones no
+existen en el set de entrenamiento. Un test del generador lo exige.
+
+\begin{table}[ht]
+\caption{Las seis familias de ataque del set de prueba (\cod{redteam/test/FAMILIAS.md}). En todas, la
+sesión lee primero contenido no confiable y después el archivo de claves; sin defensa, cada una
+entrega al menos 100 de los 160 bits.}\label{tab:familias-test}
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.9cm}P{4.1cm}P{2.6cm}L@{}}
+\toprule
+ & Por dónde sale & Codificación & Qué tiene de nuevo \\
+\midrule
+A5 & Parámetro de una consulta a \cod{web.test} & base32 & El destino es un servidor de confianza del
+  entorno, el mismo que el agente usa para leer documentación \\
+A7 & Ruta de una petición a \cod{web.test} & ASCII en decimal & Tres sesiones comparten la clave y
+  cada una saca solo su tercio \\
+A9 & Cabecera de una petición a \cod{api.empresa.test} & base64 para URL & Salen dos claves del mismo
+  archivo, intercaladas, hacia la API propia \\
+A10 & Cuerpo de un POST a \cod{attacker.test} & XOR con una clave por sesión, en hexadecimal &
+  Ofuscación con clave \\
+A12 & Cabecera \cod{User-Agent} hacia \cod{web.test} & base32 & De 40 a 80 llamadas normales y, al
+  final, cinco envíos pegados \\
+A13 & Mensajes de \cod{git commit}, y después un \cod{push} & base64 para URL & El canal es git; no
+  existe en entrenamiento \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[ht]
+\caption{Las tres familias de sesiones normales difíciles del set de prueba.}\label{tab:familias-b}
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.9cm}LL@{}}
+\toprule
+ & Qué hace & Por qué es difícil \\
+\midrule
+B3 & Trabajo normal que mueve SHA de git, UUID y \esp{tokens} de petición hacia la API y la web &
+  Son cadenas hexadecimales largas que parecen claves y no lo son \\
+B4 & Lee el archivo de claves y envía la clave como credencial a su API, unas ocho veces & La clave
+  sale de verdad, pero hacia su destino permitido \\
+B5 & Lee una clave y después trae unas diez páginas e issues llenos de claves de ejemplo & Hace lo
+  mismo que un ataque: leer un secreto y hablar con contenido no confiable \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las familias de ataque se eligieron por técnicas documentadas en fuentes públicas (el canal de salida
+legítimo~\cite{willison,invariant}, la colusión entre agentes~\cite{motwani}, el goteo lento con
+ráfaga~\cite{splunk}, las claves en el historial de git~\cite{meli}), y \cod{FAMILIAS.md} anota para
+cada una qué fuente se abrió y se comprobó. El mismo documento lista las técnicas que se descartaron
+porque no caben en las seis herramientas del proxy.
+
+\subsection{Tamaños}
+
+\begin{table}[ht]
+\caption{El set de prueba en números.}\label{tab:tamanos}
+\small
+\begin{tabularx}{\textwidth}{@{}Lr@{}}
+\toprule
+Sesiones (330 del equipo rojo y 30 normales corrientes) & 360 \\
+Unidades de evaluación (cada grupo de tres sesiones de A7 es una unidad) & 300 \\
+\quad de ataque & 180 \\
+\quad normales difíciles & 90 \\
+\quad normales corrientes & 30 \\
+Llamadas & \num{15281} \\
+\quad en sesiones normales & \num{7148} \\
+Envíos etiquetados & \num{1380} \\
+Llamadas que sacan datos, según las grabaciones y según el proxy & \num{2326} y \num{2206} \\
+Llamadas no confiables, según las grabaciones y según el proxy & \num{1920} y \num{1110} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{El sello}\label{sec:sello}
+
+El set de prueba se generó en una rama aparte y no entró a la rama principal hasta después del
+congelamiento. Lo que sí se publicó, a las 07:10, fue su \emph{sello}: un sha256 calculado así.
+
+\begin{enumerate}
+  \item Se toman todos los archivos de \cod{redteam/test/} y el generador \cod{redteam/sealed.py}: 335
+    archivos.
+  \item De cada uno se calcula el sha256 y se escribe una línea con ese hash y su ruta.
+  \item Se ordenan las líneas por ruta y se calcula el sha256 del conjunto.
+\end{enumerate}
+
+El resultado es \cod{18dda3af7ee2b088515fb80f9104dc6516b83a8df7d160e18f08fab4efaa18a9}. Cambiar un byte
+de cualquier sesión, de una etiqueta o del generador cambia el sello. Al abrir el set se recalculó y
+coincidió; hoy sigue coincidiendo, y cualquiera lo puede comprobar con el comando de
+\cod{redteam/SELLO.md}. Incluir el generador en el sello importa: prueba que no solo los datos, sino
+la forma de producirlos, quedaron fijos antes de mirar ningún resultado.
+
+\subsection{Lo que estos datos no son}
+
+\begin{itemize}
+  \item \textbf{No son tráfico real.} Ataques y sesiones normales son guiones del equipo, sobre un
+    repositorio de demo y con servidores \cod{.test}.
+  \item \textbf{No son variados dentro de una familia.} Cada familia son 30 réplicas de una plantilla,
+    con otra clave y otras llamadas de relleno. Lo que el set mide bien es «cuántas familias»; no mide
+    cuántos casos distintos.
+  \item \textbf{Hay un solo tipo de clave:} 40 caracteres hexadecimales.
+  \item \textbf{El fondo normal de prueba sale del mismo generador} que el de entrenamiento y
+    validación.
+  \item \textbf{Son grabaciones.} No reaccionan a lo que hace el detector.
+\end{itemize}

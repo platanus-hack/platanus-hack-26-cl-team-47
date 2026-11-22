@@ -1,0 +1,324 @@
+\section{Los resultados, con todo el detalle}\label{sec:resultados-detalle}
+
+Esta sección sigue el orden en que ocurrieron las cosas: la corrida única, el hallazgo que obligó a
+recalcular, el resultado que hoy decimos y, familia por familia, por qué sale lo que sale.
+
+\subsection{La corrida única}
+
+La evaluación final se corrió a las 09:40 sobre el set recién abierto, con las marcas que traían las
+grabaciones. La \cref{tab:pruebas} es su tabla de pruebas, tal como quedó en
+\cod{results/test/report.md}.
+
+\begin{table}[ht]
+\caption{La corrida única sobre el set de prueba, con las marcas de las grabaciones
+(\cod{results/test/report.json}). Los valores p están corregidos por Holm.}\label{tab:pruebas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.7cm}LP{3.3cm}P{2.3cm}P{1.2cm}@{}}
+\toprule
+ & Resultado & Intervalo al \qty{95}{\percent} & $p$ ajustado & ¿Pasa? \\
+\midrule
+T1 & 0 falsas alarmas en \num{5879} llamadas expuestas de sesiones normales & tasa
+  $\leq \num{0.0005}$ & \num{0.0028} & sí \\
+T2 & 180 de 180 ataques frenados & tasa $\geq \num{0.9835}$ & \num{7.2e-18} & sí \\
+T3 & 150 ataques que Alicanto frena y la línea de base no; ninguno al revés & --- & \num{4.2e-45} &
+  sí \\
+T4 & El ataque triunfa en 0 de 180 con rotación y en 150 de 180 sin ella; mediana de bits, 20 contra
+  160 & --- & \num{1.6e-70} & sí \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Con esas marcas, ningún ataque sacó más de 32 de los 160 bits de la clave vigente, y la mediana fue
+de 20. La razón de un resultado tan parejo apareció unas horas después.
+
+\subsection{El hallazgo: de quién eran las marcas}\label{sec:hallazgo-marcas}
+
+Una revisión crítica del proyecto contra la rúbrica del evento encontró que las marcas de cada
+llamada no las calculaba el proxy: venían escritas en los datos. El generador de los ataques había
+marcado \emph{todos} los envíos de ataque del set de prueba como llamadas que sacan datos y como
+contenido no confiable.
+
+El proxy en vivo calcula esas marcas con sus propias reglas (\cref{tab:herramientas}), y no coincide
+con el generador en 810 de las \num{15281} llamadas del set.
+
+\begin{table}[ht]
+\caption{Las llamadas del set de prueba cuyas marcas cambian al calcularlas como el proxy
+(\cod{results/proxy_flags/changes.json}).}\label{tab:cambios}
+\small
+\begin{tabular}{@{}lrl@{}}
+\toprule
+Llamadas & Cuántas & Marcas: grabación $\to$ proxy \\
+\midrule
+\tabladatos{tab_cambios}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las tres primeras filas son tres familias enteras. Para entender por qué importan basta recordar el
+modelo de evidencia: la señal «desciende de contenido no confiable» vale por sí sola más que el tope
+del incremento. Con la marca del generador, todo envío de ataque recibía $+3$ y la evidencia rotaba
+en el primero, cualquiera fuese la familia. La marca no describía la llamada: delataba el envío.
+
+\begin{clave}
+\textbf{La decisión.} Se pudo dejar el resultado con una salvedad. El líder decidió recalcular y
+publicar como cifra principal la que sale con las marcas del proxy, porque es la que describe al
+sistema instalado. El análisis (\cod{python -m eval.final.proxy_flags}) usa el detector congelado y
+no ajusta nada. Desde entonces hay tests que fallan si algún texto público dice «180 de 180» sin
+decir que es con las marcas de las grabaciones.
+\end{clave}
+
+\subsection{El resultado con las marcas del proxy}
+
+La \cref{fig:rejilla} es el set de prueba entero, con una casilla por ataque y una por sesión normal
+difícil.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\input{datos/fig_rejilla}
+\end{tikzpicture}
+\caption{El set de prueba con las marcas del proxy y el detector congelado. Arriba, los 180 ataques:
+\cuadro{tinta}~frenado, \cuadro{oroclaro}~no frenado. Abajo, las 90 sesiones normales difíciles:
+\cuadro{cenizaclara}~Alicanto rotó una clave sin necesidad, \cuadrovacio~no hizo nada. Cada fila son
+30 réplicas de una misma plantilla, y por eso salen enteras.}
+\label{fig:rejilla}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Ataques:} 120 de 180 frenados. Son cuatro de las seis familias, enteras.
+  \item \textbf{Llamadas normales bloqueadas:} ninguna, de \num{5879} expuestas.
+  \item \textbf{Rotaciones de más:} 39, en 34 de las 90 sesiones normales difíciles. Son 5,46 por cada
+    \num{1000} llamadas normales, sobre la meta de 5.
+\end{itemize}
+
+La meta de la prueba T2 era frenar más del \qty{80}{\percent} de los ataques. Con las marcas del proxy
+la tasa es del \qty{66.7}{\percent}: esa meta no se cumple. Las pruebas no se recalcularon con estas
+marcas; lo que sigue son los conteos.
+
+\begin{table}[ht]
+\caption{Todos los sistemas sobre el set de prueba. La primera columna de cifras es la corrida única,
+con las marcas de las grabaciones; las demás son con las marcas del proxy. El intervalo es de
+Clopper--Pearson y trata las unidades como independientes, que no lo son
+(\cod{results/proxy_flags/systems.json}).}\label{tab:sistemas}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}LR{1.35cm}R{1.3cm}P{2.0cm}R{1.55cm}R{1.45cm}R{1.15cm}@{}}
+\toprule
+ & \multicolumn{3}{c}{Ataques frenados, de 180} & Llamadas & Rotaciones & Mediana \\
+\cmidrule(lr){2-4}
+Sistema & marcas grabadas & marcas del proxy & intervalo al \qty{95}{\percent} & normales bloq.
+  (\unit{\percent}) & de más por \num{1000} & de bits \\
+\midrule
+\tabladatos{tab_sistemas}
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Dos lecturas de esta tabla.
+
+\textbf{La regla simple.} Con las marcas de las grabaciones, una regla de una línea («la sesión leyó
+una clave y esta llamada saca datos hacia un destino no confiable») frena lo mismo que Alicanto: los
+180. El set, medido así, no distingue a Alicanto de esa regla. Con las marcas del proxy, Alicanto
+frena 120 y la regla 90, y la regla rota algo menos en el tráfico normal (4,20 contra 5,46 por cada
+\num{1000}).
+
+\textbf{La cuenta por sesión.} Empata con la cuenta compartida en todas las columnas. En este set la
+evidencia decide antes que el contador, y la evidencia es por sesión.
+
+\subsection{Por qué se frena o se escapa cada familia}\label{sec:por-familia}
+
+Para este informe se repitió la medición guardando, en cada llamada, el incremento $\ell$, la
+evidencia acumulada y la regla que disparó cada rotación. La \cref{tab:mecanismo} lo resume por
+familia y la \cref{fig:trayectorias} muestra una sesión de cada una.
+
+\begin{table}[ht]
+\caption{Qué frena cada familia, con las marcas del proxy. «Primera rotación» es la mediana de la
+llamada en que ocurre. Los bits son los de la clave vigente que salieron en llamadas permitidas.
+Corrida hecha para este informe; reproduce los totales de \cod{results/proxy_flags/}.}\label{tab:mecanismo}
+\small
+\begin{tabular}{@{}lrlrrr@{}}
+\toprule
+ & Frenados & Regla de la primera rotación & Primera & \multicolumn{2}{c}{Bits que salieron} \\
+\cmidrule(l){5-6}
+Familia & de 30 & (número de casos) & rotación & mediana & máximo \\
+\midrule
+\tabladatos{tab_mecanismo}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=3 by 2,horizontal sep=1.05cm,vertical sep=1.55cm},
+  width=5.75cm,height=4.0cm,xmin=0,ymin=-2.4,ymax=14,ytick={0,2,4,8,12},
+  axis x line=bottom,axis y line=left,
+  extra y ticks={2,4},extra y tick labels={},
+  extra y tick style={grid=major,grid style={ceniza!70,dashed,line width=0.4pt}}]
+\input{datos/fig_trayectorias}
+\end{groupplot}
+\end{tikzpicture}
+\caption{Una sesión de cada familia, llamada a llamada, con las marcas del proxy y el detector
+congelado. La línea es la evidencia acumulada $S_t$; las líneas punteadas son los umbrales
+$\brot = 2$ y $b = 4$. Las marcas bajo el eje son los envíos etiquetados. La línea de oro es una
+rotación. El eje horizontal es el número de llamada. El panel de B5 tiene otra escala vertical: la
+evidencia de esa sesión normal llega a 30, y aun así no se bloquea nada, porque el bloqueo exige además
+un camino de contenido. En el de A12, la rotación periódica de la llamada 75 llega antes que los
+envíos.}
+\label{fig:trayectorias}
+\end{figure}
+
+\paragraph{A5 y A7: hacia un servidor de confianza.} Los envíos van a \cod{web.test}, que el proxy
+marca como no confiable. El primer envío lleva la evidencia a 3, sobre el umbral de 2, y rotan las
+claves expuestas. Ese primer envío pasa (la acción es rotar y permitir), así que salen 20 bits, un
+fragmento de 5 caracteres, de una clave que deja de existir en ese instante. En A7 cada una de las
+tres sesiones vuelve a leer el archivo y vuelve a exponer la clave, y la evidencia rota en cada una.
+En un grupo se llegó al tope de tres rotaciones y el modo escalado bloqueó tres envíos: son los
+únicos bloqueos de todo el set, y son sobre llamadas de ataque.
+
+\paragraph{A10: ofuscada con XOR.} Es la familia que separa a Alicanto de la regla simple. El destino
+es \cod{attacker.test}, que el proxy \emph{no} marca como no confiable, y el contador no sabe leer el
+XOR. Aun así el modelo da $+3$ a 269 de los 300 envíos, porque van a un \esp{host} que no es destino
+permitido de ninguna clave. En 29 sesiones la rotación llega en el primer envío y salen 16 bits, un
+fragmento. En la restante los primeros envíos quedaron en \num{1.88}, bajo el umbral, y salieron tres
+fragmentos (48 bits) antes de la rotación.
+
+\paragraph{A12: goteo lento y ráfaga.} Hay dos mecanismos. En 24 sesiones la evidencia rota en el
+primer envío de la ráfaga, y sale un fragmento de 8 caracteres (32 bits). En las otras 6, el
+primer envío llegó después de la llamada 75 y la rotación periódica ocurrió \emph{antes} que la
+ráfaga: cuando los envíos empiezan, lo que la sesión leyó ya no es la clave vigente, y no sale ningún
+bit útil. El
+panel de la \cref{fig:trayectorias} es uno de esos casos: la evidencia sube con cada envío, pero ya no
+hay ninguna clave expuesta que rotar.
+
+\paragraph{A9: dos claves hacia la API propia.} Se escapa. La sesión envía fragmentos de dos claves
+del mismo archivo, intercalados, en una cabecera hacia \cod{api.empresa.test}.
+\begin{itemize}
+  \item Para la segunda clave, ese \esp{host} no es un destino permitido. El contador lee su primer
+    fragmento (6 caracteres, 24 bits, el \qty{15}{\percent}) y esa clave rota de inmediato.
+  \item Para la primera clave, ese \esp{host} es \emph{su} destino permitido. Lo que el contador suma
+    se descarta, como en cualquier uso legítimo.
+  \item La evidencia no ayuda: para el modelo, hablar con la API de la empresa es trabajo normal.
+\end{itemize}
+Salen 120 bits de la primera clave, sobre el límite de 96. Es el hueco de la regla del destino
+permitido: no distingue \emph{en qué parte} de la petición viaja la clave. Una credencial va en la
+cabecera de autorización, entera; aquí va en otra cabecera y a pedazos.
+
+\paragraph{A13: por los mensajes de \esp{commit}.} Se escapa en la métrica. Un \cod{git commit} no
+saca datos, así que el proxy no lo marca como sumidero, el contador no lo mira y el modelo le da
+$-3$. No hay ninguna rotación. Las etiquetas del set ponen la fuga en cada \esp{commit}, y con cuatro
+de ellos salen los 160 bits.
+
+Lo que pasa en vivo es distinto. El \cod{push} sí es un sumidero, y el proxy le agrega lo que
+realmente saldría: los mensajes de los \esp{commits}. El contador encuentra ahí tramos de 10
+caracteres, los confirma, y la regla 1 bloquea el \esp{push} y rota la clave. El análisis lo comprobó
+con una tercera variante de las mismas sesiones: en las 30, el \esp{push} queda bloqueado. La clave
+no sale del equipo, y aun así la cifra es 0 de 30, porque la métrica cuenta lo que dicen las
+etiquetas. No se tocó: cambiar la métrica después de ver el resultado es justo lo que el protocolo
+prohíbe.
+
+\subsection{El costo en el tráfico normal}\label{sec:costo}
+
+\begin{table}[ht]
+\caption{Las sesiones normales del set de prueba, con las marcas del proxy. El detalle por sesión
+resultó idéntico al de la corrida única. Corrida hecha para este informe.}\label{tab:normales}
+\footnotesize
+\begin{tabular}{@{}lrrrrlr@{}}
+\toprule
+ & & & Con rotación & Rotaciones & Regla de la primera rotación & Llamadas \\
+Familia & Sesiones & Llamadas & de más & de más & (número de sesiones) & bloqueadas \\
+\midrule
+\tabladatos{tab_normales}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las 39 rotaciones de más tienen dos causas distintas.
+
+\textbf{La evidencia, en B5 (35 rotaciones).} Las 30 sesiones leen una clave y después traen páginas
+e issues. Es el patrón que el modelo aprendió a marcar, hecho aquí de forma legítima. Todas rotan,
+con mediana en la quinta llamada. Es un costo de diseño, no un accidente: una regla que mira hacia
+dónde va la llamada y no qué lleva va a rotar cada vez que alguien lea una clave y después navegue.
+
+\textbf{El azar, en B3 y B4 (4 rotaciones).} Las cuatro las disparó el contador, y las cuatro son lo
+mismo: un valor hexadecimal enviado a la API coincide en 4 caracteres seguidos con \emph{otra} clave
+del mismo archivo, cuyo destino permitido no es esa API. Cuatro caracteres son 16 bits, justo el
+\qty{10}{\percent} que dispara la rotación en la configuración congelada. Es la consecuencia de haber
+congelado $\lrot = \num{0.1}$ (\cref{sec:congelamiento}).
+
+En las 30 sesiones normales corrientes no hubo ninguna rotación.
+
+\begin{limite}
+\textbf{Qué cuesta una rotación de más.} En el banco de pruebas, nada: la API le pregunta al gestor
+cuál es la clave vigente. En un sistema real depende de cómo reciben la clave quienes la usan. Si la
+leen del gestor en cada uso, la rotación es invisible. Si la tienen copiada en un archivo o en una
+variable, una rotación los deja fuera hasta que se actualicen. Ese costo operativo no está medido, y
+es la primera pregunta de un piloto.
+\end{limite}
+
+\subsection{Las líneas de base, una por una}
+
+\begin{table}[ht]
+\caption{Ataques frenados por familia y por sistema, de 30, con las marcas del proxy
+(\cod{results/proxy_flags/systems.json}).}\label{tab:sistemas-familia}
+\small
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Sistema & A5 & A7 & A10 & A12 & A9 & A13 & Total \\
+\midrule
+\tabladatos{tab_sistemas_familia}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{description}
+  \item[Lista de destinos permitidos.] Frena A10, la única familia que usa un \esp{host} fuera de la
+    lista. Las demás salen por servidores que el trabajo normal también usa, y la lista no puede
+    cerrarlos.
+  \item[Escáner de secretos.] No frena ninguna: busca cadenas con forma de clave completa, y ningún
+    fragmento lo es. En cambio bloquea el \qty{2.2}{\percent} de las llamadas normales, que llevan
+    identificadores largos o credenciales legítimas.
+  \item[Presupuesto de bits (réplica).] Usa el contador de Alicanto, sin rotar: bloquea al llegar a
+    96 bits. Frena A9, donde el contador lee los fragmentos y esta réplica no descuenta los destinos
+    permitidos; frena también unos pocos casos de A10 y A12. Su costo es el más alto: bloquea el
+    \qty{4.8}{\percent} de las llamadas normales, porque cuenta como fuga el uso legítimo de una
+    clave y después bloquea todas las salidas de la sesión.
+  \item[Reensamblado (réplica).] No frena ninguna: junta lo que sale sin decodificar, y las seis
+    familias codifican.
+  \item[Regla simple.] Frena las tres familias que salen hacia un destino marcado como no confiable.
+    No ve A10, cuyo destino no lleva esa marca.
+  \item[Alicanto sin evidencia.] Frena 10: nueve casos de A12 en que la rotación periódica llegó
+    antes de que la ráfaga sacara lo suficiente, y uno de A10 por una coincidencia al azar del
+    contador. De las codificaciones nuevas, el contador solo lee la de A9.
+  \item[Alicanto sin rotación.] No frena ninguna. Sin rotar, lo único que queda son los bloqueos, y
+    con estas marcas ninguna regla de bloqueo alcanza a frenar estos envíos.
+\end{description}
+
+\subsection{Qué aporta cada pieza}
+
+Juntando las ablaciones:
+
+\begin{itemize}
+  \item \textbf{La rotación es lo que frena.} Sin ella, 0 de 180.
+  \item \textbf{La evidencia es lo que generaliza.} Sin ella, 10 de 180. En familias con
+    codificaciones que el contador no conoce, lo que rota la clave a tiempo es el modelo.
+  \item \textbf{El contador es exacto donde sabe leer.} Es lo que se ve en la demo, en el análisis de
+    los fragmentos de 4 y 7 caracteres y en la regla de bloqueo del \esp{push}. En este set aporta
+    poco, porque el set se diseñó fuera de su lista de codificaciones.
+  \item \textbf{La cuenta compartida no se nota en este set,} por la razón ya dicha.
+  \item \textbf{Los grafos aportan como señales,} y sobre todo una: si el destino es o no un nodo
+    conocido.
+\end{itemize}
+
+\subsection{Tiempo por decisión}\label{sec:latencia}
+
+\input{datos/latencia}
+En la misma corrida se midió lo que tarda cada decisión del detector congelado, con cuenta compartida,
+sobre las \LatN{} llamadas del set de prueba: mediana de \LatMediana~ms, percentil 95 de
+\LatNoventaCinco~ms, percentil 99 de \LatNoventaNueve~ms y máximo de \LatMax~ms, en un portátil con
+procesador Apple M4 y Python 3.14. Es el tiempo de decidir, en reproducción: no incluye ejecutar la
+herramienta ni, cuando hay rotación, la llamada al gestor de secretos.
+
+En vivo, un test del proxy exige que el percentil 95 quede bajo 15~ms en una sesión de 320 llamadas
+(\cod{proxy/tests/test_latency.py}). El \esp{hook} de Claude Code es mucho más lento, unos 0,7
+segundos por llamada, porque arranca un proceso nuevo cada vez.

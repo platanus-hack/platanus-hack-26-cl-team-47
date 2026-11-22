@@ -1,0 +1,140 @@
+\section{Lo que se midió después}\label{sec:posteriores}
+
+La evaluación final deja preguntas que sus datos no pueden responder. Dos se midieron aparte, con el
+detector ya congelado y sin ajustar nada con lo que salió: qué pasa si el atacante reacciona a las
+rotaciones, y qué pasa con pedazos más cortos que los que el contador cuenta.
+
+\subsection{El atacante que se adapta}\label{sec:adaptativo}
+
+\paragraph{La pregunta.} Una grabación, después de una rotación, sigue enviando la clave vieja. Un
+atacante de verdad volvería a leer el archivo y seguiría con la nueva. La regla 5 del protocolo pedía
+medir eso por separado.
+
+\paragraph{El método.} \cod{python -m eval.final.adaptive} toma cada ataque grabado y lo reescribe
+mientras lo reproduce:
+\begin{itemize}
+  \item lleva el valor vigente de cada clave, que cambia cada vez que el detector rota;
+  \item antes de cada envío inserta una relectura del archivo de claves, con el valor vigente;
+  \item cada envío manda las mismas posiciones, por el mismo canal y con la misma codificación, pero
+    del valor \emph{vigente}.
+\end{itemize}
+La medición es exacta: por clave y por versión, las posiciones cuyos fragmentos salieron en llamadas
+que el detector permitió. El ataque triunfa si de alguna versión saca más de 96 bits. Los ataques que
+no se pueden reescribir de forma exacta se excluyen y se cuentan aparte; son los 10 de validación que
+usan una tabla de sustitución propia.
+
+\begin{table}[ht]
+\caption{Atacante que se adapta, simulado (\cod{results/adaptive/summary.json}). Usa las marcas de
+las grabaciones. «Escalado» es el porcentaje de ataques en que el detector llegó al tope de
+rotaciones y pasó a bloquear.}\label{tab:adaptativo}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}llrrlrrrr@{}}
+\toprule
+ & & & No & & \multicolumn{2}{c}{Bits} & Rotaciones & Escalado \\
+\cmidrule(lr){6-7}
+Set & Sistema & Reescritos & reescr. & Frenados & mediana & máximo & (mediana) & (\unit{\percent}) \\
+\midrule
+\tabladatos{tab_adaptativo}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{El mismo análisis sobre el set de prueba, por familia: ataques frenados de 30 y máximo de
+bits de una versión.}\label{tab:adaptativo-familia}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & \multicolumn{2}{c}{Alicanto} & \multicolumn{2}{c}{Sin evidencia} & \multicolumn{2}{c}{Sin rotación} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(l){6-7}
+Familia & frenados & máx. bits & frenados & máx. bits & frenados & máx. bits \\
+\midrule
+\tabladatos{tab_adaptativo_familia}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Qué dice.} Con las marcas de las grabaciones, 180 de 180 ataques que se adaptan no pasan
+de 96 bits de ninguna versión de la clave: el máximo observado es 64 y la mediana, 20.
+
+\paragraph{Cómo lo logra, y a qué costo.} No lo logra rotando sin fin. En todos los ataques del set
+de prueba el detector llega a su tope de tres rotaciones y entra en modo escalado: bloquea toda salida
+de esa clave hacia destinos que no son los suyos. En total bloquea 831 envíos después de escalar. Es
+una detención, no una rotación más, y tiene un costo: mientras dura, el agente no puede enviar nada
+hacia afuera que no sea a los destinos de la clave. Ese costo sobre trabajo normal no está medido.
+
+\begin{limite}
+\textbf{Tres salvedades.}
+\begin{itemize}
+  \item Es una simulación. El atacante es un guion que relee y reenvía; no busca caminos nuevos.
+  \item Usa las marcas de las grabaciones, igual que la corrida única. Con las marcas del proxy las
+    familias A9 y A13 se comportarían distinto; ese cruce no se midió.
+  \item En la ablación sin evidencia, la familia A9 queda exactamente en 96 bits y se cuenta como
+    frenada. El servidor del atacante de la demo, con 96 bits, daría la clave por completada
+    (\cref{sec:planteamiento}). No toca a las cifras de Alicanto.
+\end{itemize}
+\end{limite}
+
+\subsection{Pedazos más cortos que el mínimo}\label{sec:fragmentos}
+
+\paragraph{La pregunta.} La invariante de la \cref{sec:invariante} se demuestra para pedazos de 7
+caracteres. El contador no cuenta los de 1 a 3. ¿Qué pasa con ellos?
+
+\paragraph{El método.} \cod{python -m eval.final.short_fragments} construye sesiones sintéticas de
+600 llamadas: una lectura del archivo de claves y, después, un envío cada cierto número de llamadas,
+con pedazos que recorren la clave de corrido. Quien envía conoce las reglas y relee la clave en cuanto
+rota, de modo que cada versión se mide en el peor caso. Se cruzan cinco tamaños de pedazo (1, 2, 3, 4
+y 7 caracteres), tres ritmos (un envío en cada llamada, cada 8 y cada 51) y dos destinos, contra tres
+configuraciones: 90 combinaciones. Las marcas son las del proxy.
+
+\begin{table}[ht]
+\caption{Máximo de bits de una misma versión de la clave que salió en cada combinación
+(\cod{results/short_fragments/summary.json}). En negrita, las que pasan de 96. El destino no cambia
+ningún valor. El \apref{ap:fragmentos} trae la tabla completa.}\label{tab:fragmentos}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & Un envío & \multicolumn{5}{c}{Caracteres por envío} \\
+\cmidrule(l){3-7}
+Configuración & cada & 1 & 2 & 3 & 4 & 7 \\
+\midrule
+\tabladatos{tab_fragmentos_matriz}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Qué dice.}
+\begin{itemize}
+  \item \textbf{Pedazos de 4 y de 7, los que el contador cuenta.} Ninguna de las 36 combinaciones
+    pasa de 96 bits. El máximo, 84 bits, es el caso exacto de la invariante: 7 caracteres cada 51
+    llamadas, con la configuración de la demo.
+  \item \textbf{Pedazos de 1 a 3, con la configuración evaluada.} A lo más 12 bits. El contador no ve
+    nada, pero la evidencia rota en el primer envío y, tras tres rotaciones, el modo escalado bloquea:
+    al ritmo de un envío por llamada, de 590 envíos quedan bloqueados 587.
+  \item \textbf{Pedazos de 1 a 3, sin la evidencia.} Aquí está el hueco. Con los parámetros
+    congelados y sin modelo pasan de 96 bits 8 de 18 combinaciones; con la configuración de la demo y
+    del \esp{hook}, 10 de 18. Un carácter por llamada saca la clave entera antes de la primera
+    rotación periódica.
+\end{itemize}
+
+\begin{clave}
+\textbf{La consecuencia práctica.} Contra pedazos muy cortos lo que protege es la evidencia de
+comportamiento, no el contador ni la invariante. La configuración de la demo y la del \esp{hook} de
+Claude Code no la llevan. Por eso el informe dice que el \esp{hook}, tal como está, no cubre este
+caso.
+\end{clave}
+
+\subsection{Las ablaciones sobre validación}
+
+Después de la evaluación, una investigación midió sobre validación, sin tocar el detector y sin volver
+a usar el set de prueba, qué aporta cada componente. Sus conclusiones están en
+\cod{results/test/LECTURA.md} y las usamos en la \cref{sec:evidencia} y en la \cref{sec:no-conectado}:
+las señales de los grafos reducen las rotaciones en sesiones normales pero no cambian los ataques
+frenados; el modelo equivale a una regla simple; y la propagación de sospecha entre pasos lejanos no
+está conectada a las decisiones.
+
+\subsection{Los modelos reales}
+
+Las corridas con modelos reales están en la \cref{sec:llm}. Se resumen en una línea: en 21 corridas
+por brazo ningún modelo siguió la instrucción plantada, así que no hubo fuga que frenar.

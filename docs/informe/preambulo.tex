@@ -1,0 +1,185 @@
+% Preámbulo del informe técnico de Alicanto.
+% Compila con pdfLaTeX (también en Overleaf, con el compilador por defecto). No necesita shell-escape.
+
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noquoting,es-noshorthands,es-nolists,es-noindentfirst,es-nosectiondot]{babel}
+\usepackage[top=2.7cm,bottom=3cm,left=2.9cm,right=2.9cm,headsep=0.7cm,footskip=1.2cm]{geometry}
+
+% --- Tipografía -------------------------------------------------------------
+\usepackage[scaled=.98]{XCharter}
+\usepackage[scaled=0.95]{sourcesanspro}
+\usepackage[scaled=0.86,varqu,varl]{zi4}
+\usepackage{amsmath}
+\usepackage[charter,vvarbb,scaled=1.02]{newtxmath}
+\usepackage[final,tracking=smallcaps]{microtype}
+\linespread{1.06}
+
+% --- Color ------------------------------------------------------------------
+\usepackage[dvipsnames,table]{xcolor}
+\definecolor{tinta}{HTML}{17140F}      % texto
+\definecolor{oro}{HTML}{C8941F}        % acento (el oro de la demo, oscurecido para papel blanco)
+\definecolor{oroclaro}{HTML}{E8B23A}   % el oro de la demo, para rellenos
+\definecolor{oroscuro}{HTML}{8A6410}   % enlaces
+\definecolor{ceniza}{HTML}{6B665C}     % texto secundario
+\definecolor{cenizaclara}{HTML}{BDB8AD}
+\definecolor{humo}{HTML}{F4F1EA}       % fondos
+\definecolor{noche}{HTML}{0D0C0A}      % portada
+\definecolor{marfil}{HTML}{F3EFE4}
+\definecolor{rojoeq}{HTML}{D44E40}
+\definecolor{moradoeq}{HTML}{9267CF}
+\definecolor{azuleq}{HTML}{4B81DA}
+\color{tinta}
+
+% --- Tablas, listas, unidades ----------------------------------------------
+\usepackage{array,booktabs,tabularx,longtable,multirow}
+% Las filas generadas por hacer_datos.py se leen aquí, una vez, y se guardan como macros.
+% Dentro de una tabla no se puede leer un archivo (\input falla justo antes de \bottomrule).
+\usepackage{catchfile}
+\newcommand{\cargartabla}[1]{\expandafter\CatchFileDef\csname datos@#1\endcsname{datos/#1.tex}{}}
+\newcommand{\tabladatos}[1]{\csname datos@#1\endcsname}
+\cargartabla{tab_grafo}\cargartabla{tab_ell}\cargartabla{tab_busqueda_rot}\cargartabla{tab_busqueda_bits}
+\cargartabla{tab_cambios}\cargartabla{tab_sistemas}\cargartabla{tab_mecanismo}\cargartabla{tab_normales}
+\cargartabla{tab_sistemas_familia}\cargartabla{tab_adaptativo}\cargartabla{tab_adaptativo_familia}
+\cargartabla{tab_fragmentos_matriz}\cargartabla{tab_modelo}\cargartabla{tab_fragmentos}
+\usepackage{enumitem}
+\setlist{itemsep=0.25ex,topsep=0.6ex,parsep=0.3ex,leftmargin=1.5em}
+\setlist[description]{font=\normalfont\bfseries,leftmargin=1.5em,style=nextline}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,},group-separator={.},group-minimum-digits=4,group-digits=integer,
+         detect-weight=true,detect-family=true,mode=text,range-phrase={~a~}}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+% --- Figuras ----------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric,shapes.misc,
+                decorations.pathreplacing,matrix,babel}
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18,
+  every axis/.append style={
+    axis line style={ceniza!70}, tick style={ceniza!70}, tick align=outside,
+    label style={font=\small}, tick label style={font=\footnotesize},
+    title style={font=\small\sffamily\bfseries,yshift=-2pt},
+    legend style={draw=none,fill=none,font=\footnotesize,legend cell align=left},
+    /pgf/number format/use comma, /pgf/number format/1000 sep={.},
+  }}
+\tikzset{
+  >={Stealth[length=5pt]},
+  caja/.style={draw=tinta,line width=0.6pt,rounded corners=2pt,fill=white,align=center,
+               inner sep=5pt,font=\small\sffamily},
+  cajaoro/.style={caja,draw=oro,fill=oroclaro!18},
+  cajagris/.style={caja,draw=ceniza!70,fill=humo},
+  flecha/.style={->,line width=0.6pt,draw=tinta},
+  flechagris/.style={->,line width=0.6pt,draw=ceniza},
+  nota/.style={font=\footnotesize,text=ceniza,align=left},
+  decision/.style={draw=tinta,line width=0.6pt,diamond,aspect=2.4,fill=white,align=center,
+                   inner sep=1.5pt,font=\footnotesize\sffamily},
+  casilla frenado/.style={fill=tinta,draw=tinta,line width=0.3pt},
+  casilla escapa/.style={fill=oroclaro,draw=oro,line width=0.3pt},
+  casilla rotada/.style={fill=cenizaclara,draw=ceniza,line width=0.3pt},
+  casilla vacia/.style={fill=white,draw=ceniza!60,line width=0.3pt},
+}
+
+% --- Código y comandos -------------------------------------------------------
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{consola}{Verbatim}{fontsize=\small,breaklines=true,breakanywhere=true,
+  frame=leftline,framerule=1.4pt,framesep=8pt,rulecolor=\color{cenizaclara},xleftmargin=10pt,
+  breaksymbolleft={}}
+\usepackage[ruled,vlined,linesnumbered,spanish,onelanguage]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\sffamily}
+\SetAlCapNameFnt{\small}
+\SetKwComment{Com}{$\triangleright$\ }{}
+\SetCommentSty{textit}
+\DontPrintSemicolon
+
+% --- Recuadros ----------------------------------------------------------------
+\usepackage[most]{tcolorbox}
+\newtcolorbox{clave}[1][]{enhanced,breakable,frame hidden,boxrule=0pt,arc=0pt,
+  colback=oroclaro!13,borderline west={2.2pt}{0pt}{oro},left=10pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=0.9\baselineskip,after skip=0.9\baselineskip,fontupper=\small,#1}
+\newtcolorbox{limite}[1][]{enhanced,breakable,frame hidden,boxrule=0pt,arc=0pt,
+  colback=humo,borderline west={2.2pt}{0pt}{ceniza},left=10pt,right=8pt,top=6pt,bottom=6pt,
+  before skip=0.9\baselineskip,after skip=0.9\baselineskip,fontupper=\small,#1}
+
+% --- Encabezados y títulos ------------------------------------------------------
+\usepackage[automark,headsepline=0.4pt]{scrlayer-scrpage}
+\clearpairofpagestyles
+\ihead{\footnotesize\sffamily\color{ceniza}Alicanto \textperiodcentered\ informe final y explicación técnica}
+\ohead{\footnotesize\sffamily\color{ceniza}\leftmark}
+\cfoot{\footnotesize\sffamily\color{ceniza}\pagemark}
+\setkomafont{headsepline}{\color{cenizaclara}}
+\setkomafont{disposition}{\sffamily\bfseries\color{tinta}}
+\setkomafont{section}{\Large}
+\setkomafont{subsection}{\large}
+\setkomafont{subsubsection}{\normalsize}
+\setkomafont{paragraph}{\normalsize\sffamily\bfseries}
+\setkomafont{caption}{\small}
+\setkomafont{captionlabel}{\small\sffamily\bfseries}
+\setcapindent{0pt}
+\renewcommand*{\sectionformat}{\textcolor{oro}{\thesection}\enskip}
+\renewcommand*{\subsectionformat}{\textcolor{oro}{\thesubsection}\enskip}
+\renewcommand*{\subsubsectionformat}{\textcolor{oro}{\thesubsubsection}\enskip}
+\RedeclareSectionCommand[beforeskip=1.6\baselineskip,afterskip=0.6\baselineskip]{section}
+\RedeclareSectionCommand[beforeskip=1.2\baselineskip,afterskip=0.35\baselineskip]{subsection}
+\RedeclareSectionCommand[beforeskip=0.9\baselineskip,afterskip=0.2\baselineskip]{subsubsection}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% Portadilla de cada parte: una página propia, con una línea de qué trae.
+\newcommand{\parte}[3]{%
+  \clearpage\thispagestyle{empty}\refstepcounter{part}%
+  \addcontentsline{toc}{part}{Parte \thepart. #2}%
+  \vspace*{0.26\textheight}%
+  {\sffamily\color{oro}\large\textls[120]{PARTE #1}\par}\vspace{0.6em}%
+  {\sffamily\bfseries\fontsize{30}{34}\selectfont #2\par}\vspace{1.1em}%
+  {\color{oro}\rule{3.2cm}{1.6pt}\par}\vspace{1.3em}%
+  \begin{minipage}{0.78\textwidth}\raggedright\large\color{ceniza}#3\end{minipage}%
+  \clearpage}
+
+% --- Enlaces y referencias cruzadas ----------------------------------------------
+\PassOptionsToPackage{obeyspaces,spaces}{url}
+\usepackage{xurl}
+\usepackage[colorlinks=true,linkcolor=tinta,citecolor=oroscuro,urlcolor=oroscuro,
+            pdfauthor={team-47, Platanus Hack 26},
+            pdftitle={Alicanto: informe final y explicación técnica},
+            pdfsubject={Platanus Hack 26, track AI Security}]{hyperref}
+\usepackage[spanish,nameinlink,noabbrev]{cleveref}
+\crefname{algocf}{algoritmo}{algoritmos}
+\Crefname{algocf}{Algoritmo}{Algoritmos}
+\crefname{section}{sección}{secciones}
+\Crefname{section}{Sección}{Secciones}
+\crefname{table}{tabla}{tablas}
+\Crefname{table}{Tabla}{Tablas}
+\urlstyle{tt}
+
+% Cuadritos de leyenda que se pueden usar dentro de un \caption.
+\DeclareRobustCommand{\cuadro}[1]{\textcolor{#1}{\rule{0.62em}{0.62em}}}
+\DeclareRobustCommand{\cuadrovacio}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.4pt}%
+  \fcolorbox{ceniza}{white}{\rule{0pt}{0.54em}\rule{0.54em}{0pt}}}}
+
+% --- Atajos del texto ---------------------------------------------------------------
+\newcommand{\apref}[1]{apéndice~\ref{#1}}     % los apéndices se citan por su letra
+\newcommand{\cod}[1]{\nolinkurl{#1}}          % código y rutas: no hay que escapar _ ni /
+\newcommand{\esp}[1]{\emph{#1}}                % extranjerismos
+\newcommand{\bits}[1]{\num{#1}~bits}
+\DeclareMathOperator{\clip}{clip}
+\DeclareMathOperator{\diag}{diag}
+\newcommand{\lrot}{\lambda_{\mathrm{rot}}}
+\newcommand{\brot}{b_{\mathrm{rot}}}
+
+% Caracteres Unicode que aparecen en textos copiados del repositorio.
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\to}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{2032}{\ensuremath{'}}
+\DeclareUnicodeCharacter{00B7}{\ensuremath{\cdot}}
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03B2}{\ensuremath{\beta}}
+\DeclareUnicodeCharacter{2113}{\ensuremath{\ell}}

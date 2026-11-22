@@ -1,0 +1,128 @@
+\section{La cuenta compartida}\label{sec:compartida}
+
+\subsection{El problema que resuelve}
+
+Todo umbral por sesión tiene la misma debilidad: se puede repartir el envío. Si la regla es «rotar
+cuando una sesión sacó el \qty{30}{\percent}», basta con que cinco agentes saquen un
+\qty{20}{\percent} cada uno. Ningún agente llega al umbral y entre todos sacan la clave entera. Los
+equipos que trabajan con varios agentes a la vez tienen exactamente esa forma.
+
+La respuesta de Alicanto es que la cuenta no pertenece a la sesión: pertenece a la clave.
+
+\subsection{Qué se comparte y qué no}
+
+Con una cuenta compartida (\cod{engine/detector/ledger.py}, clase \cod{SharedLedger}), varios
+detectores, uno por agente o por sesión, usan un solo contador de bits. Lo que un agente envía se suma
+en los mismos conjuntos $K$ y $C$ de cada clave que lo que envían los demás.
+
+\begin{table}[ht]
+\caption{Qué es de la clave y qué es de la sesión cuando hay cuenta compartida.}\label{tab:compartido}
+\small
+\begin{tabularx}{\textwidth}{@{}LL@{}}
+\toprule
+Compartido entre todos los agentes & Propio de cada sesión \\
+\midrule
+Las posiciones confirmadas y candidatas de cada clave & La evidencia acumulada $S_t$ \\
+Qué claves están expuestas: si un agente la leyó, lo está para todos & El grafo de llamadas y sus
+  etiquetas \\
+La versión de cada clave y el historial de sus rotaciones & El camino que explica cada decisión \\
+El reloj: llamadas vistas por todo el grupo & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+La consecuencia es que las tres condiciones de la regla de rotación cambian de sentido. La fracción
+filtrada es la del grupo. El período $T$ se cuenta en llamadas del grupo. Y el tope de tres rotaciones
+es por clave, sin importar qué agente las pidió.
+
+Cada detector, al empezar una decisión, avanza el reloj común y revisa si otro detector rotó alguna
+clave desde su última llamada. Si es así, adopta el valor nuevo y reinicia lo suyo para esa clave.
+
+\subsection{Entre procesos}
+
+Dentro de un proceso basta con compartir el objeto. Pero cada agente suele tener su propio proceso del
+proxy. Para ese caso la cuenta se guarda en un archivo (\cod{LEDGER_PATH}), y cada decisión sigue un
+protocolo bajo un cerrojo (\cod{proxy/live.py}):
+
+\begin{enumerate}
+  \item \textbf{Tomar el cerrojo.} Es un archivo creado de forma exclusiva junto al de la cuenta. Se
+    reintenta cada 10~ms hasta 2 segundos. Un cerrojo con más de 10 segundos se considera abandonado
+    y se quita.
+  \item \textbf{Cargar y sincronizar.} Se lee la cuenta. Si la versión guardada de una clave es mayor
+    que la que este proceso conoce, otro proceso la rotó: se le pide al gestor el valor vigente y el
+    contador pasa a medir contra él.
+  \item \textbf{Decidir.}
+  \item \textbf{Guardar} y soltar el cerrojo.
+\end{enumerate}
+
+Si el cerrojo no se puede tomar a tiempo, se aplica el fallo cerrado de la \cref{sec:fallo-cerrado}:
+los sumideros se bloquean y las lecturas pasan.
+
+\begin{clave}
+\textbf{El archivo no contiene claves.} Guarda posiciones, versiones, qué claves están expuestas, en
+qué pasos rotó cada una y los relojes. Con esas posiciones no se puede reconstruir ningún valor. Al
+cargarlo se compara la versión guardada con la del gestor: si no coinciden, la cuenta guardada de esa
+clave se descarta, porque era de otro valor.
+\end{clave}
+
+Como vive en un archivo, la cuenta también sobrevive entre sesiones: un goteo repartido en el tiempo,
+en sesiones distintas del mismo agente, se suma igual que uno repartido entre agentes.
+
+\subsection{Lo que muestra la demo}
+
+La \cref{fig:enjambre} es la corrida grabada de la demo con cinco agentes
+(\cod{demo/viz/fixtures/swarm_left.jsonl} y \cod{swarm_right.jsonl}). Son 90 llamadas en total. Desde
+la llamada 16, cada 8 llamadas, un agente distinto envía 4 caracteres de la clave: dos envíos por
+agente, diez en total. Los dos paneles usan los mismos parámetros, los de la demo; lo único que cambia
+es de quién es la cuenta.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1,horizontal sep=1.5cm},
+  width=7.6cm,height=5.0cm,xmin=0,xmax=91,ymin=0,ymax=58,
+  xlabel={llamada del grupo},ytick={0,16,32,48},
+  axis x line=bottom,axis y line=left,
+  extra y ticks={48},extra y tick labels={},
+  extra y tick style={grid=major,grid style={oro,dashed,line width=0.6pt}}]
+\nextgroupplot[title={Una cuenta por agente},ylabel={bits contados}]
+  \foreach \a/\o in {a1/100,a2/82,a3/64,a4/46,a5/30} {
+    \edef\temp{\noexpand\addplot[tinta!\o!white,line width=0.8pt,const plot] table[x=t,y=\a] {datos/demo_enjambre.dat};}
+    \temp
+  }
+  \node[anchor=south west,font=\scriptsize,text=oroscuro] at (axis cs:1,48.6) {umbral de rotación: 48 bits};
+  \node[anchor=north west,font=\scriptsize,text=ceniza,align=left] at (axis cs:2,44)
+    {ningún agente pasa de 32;\\entre todos salen 160};
+\nextgroupplot[title={Una cuenta por clave}]
+  \addplot[tinta,line width=0.9pt,const plot] table[x=t,y=compartida] {datos/demo_enjambre.dat};
+  \draw[oro,line width=1pt] (axis cs:32,0) -- (axis cs:32,54);
+  \node[anchor=south west,font=\scriptsize,text=oroscuro] at (axis cs:33,49.5) {rota en la llamada 32};
+  \node[anchor=north west,font=\scriptsize,text=ceniza,align=left] at (axis cs:36,30)
+    {lo que sigue saliendo es\\de la clave vieja};
+\end{groupplot}
+\end{tikzpicture}
+\caption{El mismo goteo repartido entre cinco agentes, con dos formas de contar. A la izquierda, cada
+agente tiene su propia cuenta: la más alta llega a 32 bits, nunca rota, y el atacante reúne los 160
+bits y recibe un 200. A la derecha, la cuenta es de la clave: al tercer envío suma 48 bits, rota, y el
+atacante recibe un 401.}
+\label{fig:enjambre}
+\end{figure}
+
+La demo del pitch lleva el mismo experimento a 20 agentes y deja que el público elija entre cuántos se
+reparte la clave (\cref{sec:demo}).
+
+\subsection{Lo que no muestra, y sus límites}
+
+\begin{itemize}
+  \item \textbf{En el set de prueba la cuenta compartida no se distingue.} La familia que reparte el
+    envío entre tres sesiones se frena igual con una cuenta por sesión (120 de 180 en los dos casos,
+    \cref{tab:sistemas}), porque la evidencia rota antes de que el contador llegue a nada. El valor
+    de la cuenta por clave se ve cuando decide el contador: en la demo, no en esa tabla.
+  \item \textbf{Una máquina.} El cerrojo es un archivo local. Agentes en máquinas distintas no
+    comparten cuenta. Haría falta un servicio, o llevar la cuenta al gestor de secretos.
+  \item \textbf{Un hilo.} Dentro de un proceso no hay cerrojos: los detectores se turnan.
+  \item \textbf{La exposición compartida es conservadora.} Si un agente leyó una clave, la evidencia de
+    cualquier otro agente del grupo puede rotarla. Es lo que se quiere contra un envío repartido, y es
+    también una fuente posible de rotaciones de más que no medimos.
+\end{itemize}

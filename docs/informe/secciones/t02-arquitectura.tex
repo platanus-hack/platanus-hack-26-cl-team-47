@@ -1,0 +1,206 @@
+\section{Arquitectura: el camino de una llamada}\label{sec:arquitectura}
+
+\subsection{Vista general}
+
+Alicanto es un servidor MCP. El agente lo ve como el proveedor de sus herramientas y no sabe que hay
+algo más: no se modifica el agente ni el modelo. Cada vez que el agente usa una herramienta, la
+llamada pasa por cuatro pasos (\cref{fig:arquitectura}).
+
+\begin{figure}[ht]
+\centering
+\input{figuras/arquitectura}
+\caption{Por dónde pasa una llamada. La decisión se toma antes de ejecutar, con lo que la llamada
+quiere enviar; el resultado se mira después, para saber qué leyó la sesión. La rotación la ejecuta el
+gestor de secretos, que es también quien le dice a la API protegida si una clave sigue vigente.}
+\label{fig:arquitectura}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Arma la llamada.} El proxy numera la llamada dentro de la sesión y le calcula los
+    recursos que toca y las dos marcas (\cod{proxy/core.py}, \cod{Proxy.handle}).
+  \item \textbf{Decide.} Le pasa la llamada al detector, que responde una de cuatro acciones:
+    \cod{allow}, \cod{block}, \cod{rotate+allow} o \cod{rotate+block}. Si la acción trae una
+    rotación, ocurre aquí, dentro de la decisión.
+  \item \textbf{Ejecuta o bloquea.} Si la acción termina en \cod{allow}, el proxy ejecuta la
+    herramienta, le entrega el resultado al agente y se lo muestra también al detector. Si termina en
+    \cod{block}, no ejecuta nada y el agente recibe el texto «BLOQUEADA por el proxy:» seguido del
+    motivo.
+  \item \textbf{Registra.} Cada llamada deja dos eventos (la llamada y la decisión) y, si hubo
+    rotación, un tercero.
+\end{enumerate}
+
+El orden importa. La decisión se toma con los \emph{argumentos}, que es lo que saldría hacia afuera.
+El \emph{resultado} llega después, cuando la herramienta ya corrió, y sirve para las llamadas
+siguientes: es como el detector se entera de que la sesión leyó una clave.
+
+\subsection{Los contratos compartidos}\label{sec:contratos}
+
+Tres tipos, definidos con \esp{pydantic} en \cod{contracts/models.py}, son la interfaz entre todas las
+piezas. Se congelaron en la segunda hora del evento y solo los cambia el líder. Rechazan cualquier
+campo que no esté declarado.
+
+\begin{table}[ht]
+\caption{Los tres contratos (\cod{contracts/models.py}).}\label{tab:contratos}
+\small
+\begin{tabularx}{\textwidth}{@{}P{1.9cm}LL@{}}
+\toprule
+Tipo & Campos & Para qué \\
+\midrule
+\cod{ToolCall} & \cod{id}, \cod{t} (desde 1), \cod{tool}, \cod{args}, \cod{output}, \cod{resources},
+  \cod{is_sink}, \cod{untrusted}, \cod{session_id}, \cod{label} & Una llamada. \cod{output} es nulo
+  al decidir. \cod{label} (\cod{benign} o \cod{attack}) solo existe en las grabaciones \\
+\cod{Decision} & \cod{action}, \cod{S}, \cod{R_plus}, \cod{leak}, \cod{path}, \cod{reason},
+  \cod{latency_ms} & La respuesta del detector. \cod{leak} da, por clave, los bits y la fracción que
+  ya salieron. \cod{reason} es una frase en castellano con la regla que se disparó \\
+\cod{Event} & \cod{ts}, \cod{session_id}, \cod{source}, \cod{kind}, \cod{call_id}, \cod{data} & Una
+  línea del registro. \cod{source} es \cod{proxy}, \cod{agent} o \cod{attacker} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El tipo de evento se valida contra su origen: el proxy escribe \cod{tool_call}, \cod{decision} y
+\cod{rotation}; el agente, \cod{message}, \cod{tool_use} y \cod{tool_result}; el servidor del
+atacante, \cod{received}. Cada origen escribe en su propio archivo (\cod{proxy.jsonl},
+\cod{agent.jsonl}, \cod{attacker.jsonl}), en la carpeta que indica \cod{LOG_DIR}, un evento por línea. Toda la evaluación se calcula leyendo esos archivos.
+
+Que el detector sea una función \cod{decide(ToolCall) -> Decision} tiene una consecuencia práctica:
+cualquier defensa que cumpla esa firma se puede medir con los mismos datos y el mismo arnés. Así se
+midieron las líneas de base, y así puede medir la suya un tercero con \cod{python -m eval.bench}.
+
+\subsection{Las seis herramientas y sus marcas}\label{sec:marcas}
+
+\begin{table}[ht]
+\caption{Las herramientas que ofrece el proxy y cómo marca cada llamada (\cod{proxy/core.py},
+funciones \cod{is_sink} y \cod{untrusted}).}\label{tab:herramientas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.3cm}LLP{2.6cm}@{}}
+\toprule
+Herramienta & ¿Saca datos? & ¿Resultado no confiable? & Recurso \\
+\midrule
+\cod{read_file(path)} & No & No & La ruta \\
+\cod{list_dir(path)} & No & No & La ruta \\
+\cod{http_request(...)} & Sí & Solo si el \esp{host} es \cod{github.test} o \cod{web.test} & El
+  \esp{host} \\
+\cod{git(args)} & Solo \cod{push}, \cod{fetch} y \cod{pull} & No & \cod{git} \\
+\cod{github_issue(...)} & Sí & Sí & \cod{github.test} \\
+\cod{github_comment(...)} & Sí & Sí & \cod{github.test} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Dos cosas de esta tabla explican buena parte de los resultados.
+
+\begin{itemize}
+  \item \textbf{«No confiable» habla del resultado, no del destino.} Una petición a
+    \cod{attacker.test} saca datos, pero su respuesta no se considera contenido plantado. Por eso el
+    proxy no la marca como no confiable, y una regla que solo mire esa marca no la ve.
+  \item \textbf{Un \cod{git commit} no saca datos.} Lo que sale es el \cod{push}. Una familia del set
+    de prueba pone los fragmentos en los mensajes de \esp{commit}, y las grabaciones marcaban cada
+    \esp{commit} como sumidero.
+\end{itemize}
+
+Estas funciones son la única fuente de las marcas: las usan el proxy en vivo y el análisis
+\cod{eval.final.proxy_flags}, que rehace la evaluación con ellas (\cref{sec:hallazgo-marcas}).
+
+\subsection{Qué puede hacer cada herramienta}
+
+Las herramientas son funciones puras en \cod{proxy/tools.py}. Cada una tiene su propio cerco, que no
+depende del detector.
+
+\begin{description}
+  \item[Archivos.] Las rutas se resuelven dentro del repositorio de trabajo. Una ruta que salga de él
+    se rechaza.
+  \item[HTTP.] Solo se puede llamar a los \esp{hosts} del mapa \cod{contracts/hosts.json}, que en el
+    banco de pruebas son cinco nombres \cod{.test} que apuntan a puertos locales. Cualquier otro se
+    rechaza sin hacer la petición. Nada del banco de pruebas sale a internet.
+  \item[git.] Se admite una lista de 20 subcomandos. Se rechazan, en cualquier posición, las
+    opciones que ejecutan código, cambian la configuración o escriben fuera del repositorio
+    (\cod{-c}, \cod{-C}, \cod{--ext-diff}, \cod{--textconv}, \cod{--output}, \cod{--git-dir},
+    \cod{--work-tree}, \cod{--upload-pack}, \cod{--receive-pack}, entre otras). El proceso corre sin
+    la configuración global ni la del sistema, y si el repositorio define un alias no se ejecuta
+    nada. Los subcomandos de red se simulan. Este cerco se agregó tras una auditoría, antes del
+    congelamiento.
+\end{description}
+
+\paragraph{Inspección del \esp{push}.} Cuando la llamada es un \cod{git push}, el proxy agrega a los
+argumentos que ve el detector un campo \cod{outgoing} con lo que realmente subiría: los mensajes y los
+\esp{diff} de los \esp{commits} salientes (\cod{<upstream>..HEAD}, o los últimos 50 si no hay rama
+remota), hasta \num{200000} caracteres. El comando que se ejecuta no cambia. Así una clave escondida
+en un mensaje de \esp{commit} se mide en el momento en que sale.
+
+\subsection{La rotación y el fallo cerrado}\label{sec:fallo-cerrado}
+
+En vivo (\cod{proxy/live.py}), rotar una clave es pedírselo al gestor de secretos:
+\cod{POST /v1/secrets/<id>/rotate} y después \cod{GET /v1/secrets/<id>} para conocer el valor nuevo.
+Ese valor viaja solo al detector, que lo necesita para seguir midiendo. No se escribe en el
+repositorio ni en el registro: el evento de rotación guarda el identificador de la clave y su número
+de versión.
+
+Si el gestor no responde, la clave vieja sigue viva y Alicanto no puede cumplir lo que decidió. El
+proxy envuelve al detector en una función que falla cerrado (\cref{tab:fallo}).
+
+\begin{table}[ht]
+\caption{Qué hace el proxy cuando no puede decidir o no puede rotar (\cod{proxy/live.py},
+\cod{fail_safe}).}\label{tab:fallo}
+\small
+\begin{tabularx}{\textwidth}{@{}LLL@{}}
+\toprule
+Qué falló & Si la llamada saca datos & Si no saca datos \\
+\midrule
+El gestor no pudo rotar & Bloquea & Permite, y deja anotada la rotación pendiente \\
+No se pudo tomar la cuenta compartida & Bloquea & Permite \\
+Cualquier otro error del detector & Bloquea & Bloquea \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las lecturas se dejan pasar cuando el gestor está caído porque no sacan nada, y porque bloquearlas
+dejaría el proxy inservible: el detector vuelve a pedir la rotación en cada llamada. Tras una falla,
+el proxy no vuelve a llamar al gestor por esa clave durante 5 segundos, para no pagar el tiempo de
+espera (2 segundos) en cada llamada.
+
+\subsection{Configuraciones}\label{sec:configuraciones}
+
+El mismo código corre con dos configuraciones, y conviene tenerlas separadas porque dan cifras
+distintas (\cref{tab:params} las compara parámetro por parámetro).
+
+\begin{description}
+  \item[La de la demo.] Parámetros por defecto y sin modelo de evidencia: el detector usa solo el
+    contador de bits y rota cuando salió el \qty{30}{\percent} de una clave. Es la que arranca con
+    \cod{PROXY_MODE=live}, y la que usa el \esp{hook} de Claude Code.
+  \item[La evaluada.] La configuración congelada (\cod{models/search/frozen.json}), con el modelo de
+    evidencia: rota al \qty{10}{\percent} o cuando la evidencia acumulada pasa de 2. Se elige con
+    \cod{PROXY_CONFIG=frozen}. Antes de arrancar comprueba que el modelo en disco sea el congelado,
+    comparando su sha256.
+\end{description}
+
+\begin{table}[ht]
+\caption{Variables de entorno del servidor (\cod{proxy/server.py}, \cod{proxy/live.py}).}\label{tab:entorno}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.6cm}L@{}}
+\toprule
+Variable & Efecto \\
+\midrule
+\cod{PROXY_MODE=live} & Detector real y rotación en el gestor. Sin ella, el proxy lo permite todo
+  (sirve para grabar tráfico normal) \\
+\cod{PROXY_CONFIG} & \cod{frozen} usa la configuración evaluada; sin valor, la de la demo \\
+\cod{LEDGER_PATH} & Archivo de la cuenta compartida entre procesos (\cref{sec:compartida}) \\
+\cod{SECRETS_MANIFEST} & Manifiesto de claves; por defecto \cod{demo/secrets_manifest.json} \\
+\cod{AGENT_WORKSPACE} & Repositorio de trabajo; por defecto \cod{demo/repo} \\
+\cod{LOG_DIR} & Carpeta del registro; por defecto \cod{logs} \\
+\cod{PROXY_RECORD=1} & Graba cada sesión como una traza reproducible \\
+\cod{VAULT_TIMEOUT} & Segundos de espera al gestor; por defecto 2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Grabar y reproducir}\label{sec:reproducir}
+
+Con \cod{PROXY_RECORD=1}, el proxy guarda cada sesión en un archivo: una llamada por línea, con su
+resultado ya completado. Ese es exactamente el formato que lee el arnés de reproducción
+(\cod{eval/replay/core.py}), que vuelve a pasar las llamadas por una función \cod{decide} sin modelo y
+sin ejecutar herramientas. Todos los sets de datos tienen ese formato, y toda la evaluación es
+reproducción: por eso es determinista y se puede repetir en minutos.
+
+La reproducción tiene un límite que conviene tener presente al leer los resultados: una grabación no
+reacciona. Después de una rotación, la sesión grabada sigue enviando pedazos de la clave vieja.

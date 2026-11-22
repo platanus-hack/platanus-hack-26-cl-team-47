@@ -1,0 +1,62 @@
+\section*{Cómo leer este documento}
+\addcontentsline{toc}{section}{Cómo leer este documento}
+\markboth{Cómo leer este documento}{Cómo leer este documento}
+
+Este documento tiene cuatro partes. Se pueden leer por separado.
+
+\begin{description}
+  \item[Parte I. El informe.] Es el informe final del equipo, tal como está en el repositorio
+    (\cod{docs/INFORME_FINAL.md}): qué es Alicanto, qué quedó hecho, cómo se midió, el resultado, sus
+    límites y cómo trabajamos. Son unas doce páginas y no suponen conocimientos previos.
+  \item[Parte II. Cómo funciona por dentro.] Explica cada pieza con el detalle del código: qué recibe,
+    qué calcula, con qué fórmula y con qué parámetros. Es para quien quiera revisar el algoritmo o
+    reimplementarlo.
+  \item[Parte III. Cómo se midió.] Describe los datos, el protocolo de los tres equipos, las métricas y
+    las pruebas estadísticas, y da los resultados completos, incluido el motivo por el que cada familia
+    de ataques se frena o se escapa.
+  \item[Parte IV. Apéndices.] Tablas de parámetros, el modelo ajustado, formatos de archivo, el mapa
+    del repositorio y los comandos para repetir cada cifra.
+\end{description}
+
+\subsection*{De dónde salen las cifras}
+
+\begin{itemize}
+  \item \textbf{Las tablas y figuras con datos no se escribieron a mano.} Las genera el script
+    \cod{docs/informe/hacer_datos.py} a partir de los archivos versionados (\cod{results/},
+    \cod{models/}, \cod{redteam/} y las corridas grabadas de la demo). Con \cod{--check}, el script
+    vuelve a generarlas y avisa si dejaron de coincidir con el repositorio.
+  \item \textbf{Parte del detalle es nuevo.} El repositorio guarda los totales de la medición con las
+    marcas del proxy, pero no el detalle llamada a llamada. Para este informe se volvió a correr el
+    detector congelado sobre el set de prueba, por el mismo camino de código, guardando además la
+    evidencia de cada llamada y la regla de cada rotación. El script comprueba que esa corrida
+    reproduce los totales publicados. No se ajustó nada con ella: el set ya estaba abierto y el
+    detector, congelado.
+  \item \textbf{Cada cifra del texto dice de qué archivo sale,} y el \apref{ap:repetir} trae el comando
+    que la repite.
+\end{itemize}
+
+\subsection*{Palabras que usamos con un sentido preciso}
+
+\begin{description}
+  \item[Frenado.] Un ataque está frenado (en el código, \cod{prevented}) si el atacante no llegó a
+    sacar más de 96 de los 160 bits de una misma versión de la clave. No significa que no haya salido
+    nada: significa que lo que salió no alcanza.
+  \item[Marcas.] Cada llamada lleva dos marcas: si saca datos hacia afuera (\cod{is_sink}) y si su
+    resultado es contenido no confiable (\cod{untrusted}). Los documentos del repositorio las llaman
+    «banderas». Importan porque el resultado principal cambia según quién las calcula
+    (\cref{sec:hallazgo-marcas}).
+  \item[Sumidero.] Llamada que saca datos hacia afuera: una petición HTTP, un issue o un comentario
+    en GitHub, o un \cod{git push}.
+  \item[Equipos rojo, azul y morado.] Son tres papeles con reglas escritas, no tres grupos de
+    personas. El rojo fue una sesión de agente aparte, con la regla de no abrir el detector.
+\end{description}
+
+\begin{limite}
+\textbf{Dos cifras que no se deben confundir.} Con las marcas que traían las grabaciones, Alicanto
+frenó 180 de 180 ataques. Con las marcas que calcula el proxy en vivo, que es como funcionaría
+instalado, frenó 120 de 180. La cifra que decimos es la segunda. La primera solo aparece en este
+documento junto a esta explicación.
+\end{limite}
+
+Los números van con coma decimal y punto de miles. Las horas son de Santiago.
+\clearpage
