@@ -8,7 +8,7 @@
   "redirects": [
     { "source": "/", "destination": "/home.html", "permanent": false },
     { "source": "/pitch", "destination": "/pitch/index.html", "permanent": false },
-    { "source": "/terminales", "destination": "/escena/terminales.html?autoplay=1", "permanent": false },
+    { "source": "/terminales", "destination": "/escena/terminales.html", "permanent": false },
     { "source": "/pruebas", "destination": "/escena/pruebas.html", "permanent": false },
     { "source": "/informe", "destination": "/escena/informe.pdf", "permanent": false },
     { "source": "/demo/viz/:path*", "destination": "/:path*", "permanent": false }

@@ -35,3 +35,6 @@ demo/out/
 # Copia de las láminas que hace el build de Vercel (vercel.json); no se versiona
 demo/viz/pitch/
 demo/viz/escena/
+
+# Salida de la suite cuando no pasa entera (hacer_pruebas.py --suite); no se versiona
+demo/alternativas/03-enjambre-juanpedro/suite_fallida.txt

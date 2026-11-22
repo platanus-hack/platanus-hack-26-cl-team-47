@@ -41,6 +41,8 @@ Dónde mirar abajo en cada momento:
 
 Si la barra dice «Grabación de una corrida real», el servidor no está corriendo o no pudo levantar los procesos. La demo sigue, pero no digas que es en vivo.
 
+Muy rara vez (menos de 1 de cada 100 corridas) una línea del proxy, después de rotar, marca 16 bits y debajo dice «4 caracteres coinciden por azar con la clave nueva». Es eso: un pedazo de la clave vieja calzó por casualidad con la nueva. Si alguien lo nota, dilo tal cual. El cobro igual recibe 401.
+
 ## La línea de tiempo
 
 Tiempos medidos en un ensayo a velocidad real, con el texto de abajo dicho a 150 palabras por minuto. El ensayo terminó en 2:53.

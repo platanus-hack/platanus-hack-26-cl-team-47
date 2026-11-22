@@ -69,7 +69,7 @@ Cómo funciona, con `servidor.py` corriendo:
 1. **Se levantan los procesos.** Al entrar a un mundo, `vivo.py` arranca cuatro procesos en puertos libres de este computador: el gestor de secretos (`services/vault`), la API que exige la clave (`services/api`), el servidor del atacante (`services/attacker`) y el GitHub simulado con el issue plantado (`services/github_sim`). Arma además un proxy real por asistente (`proxy.core.Proxy` con el `Detector` del repositorio y los parámetros del enjambre de la demo). En «Sin Alicanto» cada proxy lleva su propia cuenta. En «Con Alicanto» los 20 comparten una sola (`SharedLedger`).
 2. **La escena marca el paso.** La escena deja en su `<body>` el mundo y la llamada en que va. `terminales.js` lo observa y le pide al servidor que ejecute las llamadas que faltan hasta esa (`/api/vivo/paso`). Cada llamada pasa por el proxy de su asistente.
 3. **Lo que sale, sale de verdad.** Cada envío viaja por HTTP al servidor del atacante, que es otro proceso. La rotación es un `POST` al gestor de secretos. Al final el servidor del atacante arma la clave con lo que recibió y llama a la API, que le pregunta al gestor y responde 200 o 401.
-4. **Se compara con la escena.** El servidor compara cada decisión en vivo (la acción y los bits) con la de la corrida que dibuja la escena. La barra lo va diciendo: «88 de 88 decisiones iguales a las de la escena». Si una difiere, su línea queda marcada «≠ escena».
+4. **Se compara con la escena.** El servidor compara cada decisión en vivo con la de la corrida que dibuja la escena: la acción siempre, y los bits mientras las dos cuentan contra la misma clave. La barra lo va diciendo: «88 de 88 decisiones iguales a las de la escena». Si una difiere, su línea queda marcada «≠ escena».
 
 | Terminal | Qué proceso es | Qué muestra |
 |---|---|---|
@@ -81,7 +81,7 @@ Con la sesión de la escena el resultado es el mismo que arriba. Sin Alicanto na
 
 En el pitch, si el público elige otro reparto, las terminales corren ese reparto: la escena deja los valores elegidos y `terminales.js` abre una corrida nueva con ellos.
 
-**Sin `servidor.py` (así queda en la web).** No hay procesos que levantar, y la página lo dice: «Grabación de una corrida real», con su fecha. Las terminales muestran, al paso de la escena, lo que escribieron los procesos en una corrida real guardada en `grabaciones/terminales.json`. Se rehace con `python demo/alternativas/03-enjambre-juanpedro/vivo.py --grabar`; un test repite la corrida y la compara con la guardada.
+**Sin `servidor.py` (así queda en la web).** No hay procesos que levantar, y la página lo dice: «Grabación de una corrida real», con su fecha. Las terminales muestran, al paso de la escena, lo que escribieron los procesos en una corrida real guardada en `grabaciones/terminales.json`. Se rehace con `python demo/alternativas/03-enjambre-juanpedro/vivo.py --grabar`; un test repite la corrida y la compara con la guardada. Si justo en esa corrida hay una coincidencia de azar con la clave nueva (ver más abajo), el comando no la guarda y pide repetirla, porque la escena grabada no la tiene.
 
 **En terminales de verdad.** `python demo/alternativas/03-enjambre-juanpedro/terminal.py proxy` (o `gestor`, `atacante`, `todo`) imprime las mismas líneas en una ventana de terminal, pedidas al mismo servidor. Sirve para poner ventanas de terminal debajo del navegador en vez de la franja de la página. `python demo/alternativas/03-enjambre-juanpedro/vivo.py` corre los dos mundos de punta a punta sin navegador.
 
@@ -91,6 +91,7 @@ Lo que hay que decir de esta parte:
 
 - **El agente sigue siendo un guion.** Las llamadas las hace `vivo.py` con la sesión de `hacer_corrida.py`, no un modelo. Lo real es todo lo que pasa después: el proxy, la cuenta, la rotación, los envíos y el cobro.
 - **Arriba y abajo son dos ejecuciones de la misma sesión.** Coinciden porque el motor es determinista, y la barra lo comprueba llamada por llamada en vez de darlo por hecho.
+- **Lo único al azar es la clave nueva.** Al rotar, el gestor de secretos elige una clave nueva, distinta en cada ejecución. Hasta la rotación se comparan la acción y los bits. Después se compara la acción. En menos de 1 de cada 100 corridas, un pedazo de la clave vieja coincide en 4 caracteres con la clave nueva, y la cuenta marca 16 bits donde lo normal es 0. No es una diferencia del proxy, y la línea lo dice: «4 caracteres coinciden por azar con la clave nueva». El cobro igual recibe 401. Medido con 250 corridas por configuración: 1 o 2 con coincidencia.
 - **Todo corre en un computador.** Los nombres `attacker.test`, `vault.test` y `api.empresa.test` apuntan a procesos locales. Nada sale a internet.
 - **La etiqueta del asistente en la terminal del atacante («a15») la pone la demo** para poder seguirlo con la vista. Ese proceso solo ve una petición.
 - **Los milisegundos son de la máquina donde corre.** En la versión grabada son los del computador que hizo la grabación.
@@ -119,7 +120,7 @@ El sitio publica `demo/viz`. Antes del build, `vercel.json` corre `publicar.sh`,
 
 | Dirección en el sitio | Qué abre |
 |---|---|
-| `/terminales` | La escena con las terminales debajo, corriendo sola (`/escena/terminales.html?autoplay=1`) |
+| `/terminales` | La escena con las terminales debajo (`/escena/terminales.html`). En el sitio parte sola; con parámetros (`?w=b`, `?pitch=1`) hace lo que se le pida |
 | `/pruebas` | El tablero con los datos de las pruebas (`/escena/pruebas.html`) |
 | `/informe` | El informe técnico en PDF |
 | `/escena/enjambre.html` | La escena sola |

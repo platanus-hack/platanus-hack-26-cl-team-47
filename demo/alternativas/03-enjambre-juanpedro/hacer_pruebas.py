@@ -147,12 +147,16 @@ def texto(datos: dict) -> str:
 
 def correr_suite() -> dict:
     """Corre la suite completa del repositorio y anota cuántos tests pasaron."""
-    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=ROOT,
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE", "--tb=short"], cwd=ROOT,
                        capture_output=True, text=True)
-    cola = (r.stdout.strip().splitlines() or [""])[-1]
+    lineas = r.stdout.strip().splitlines() or [""]
+    cola = lineas[-1]
     m = re.search(r"(\d+) passed", cola)
     if not m or r.returncode != 0 or "failed" in cola or "error" in cola:
-        raise SystemExit(f"La suite no pasó entera: {cola or r.stderr[-300:]}")
+        (HERE / "suite_fallida.txt").write_text(r.stdout + r.stderr, encoding="utf-8")     # no se versiona
+        cuales = [l for l in lineas if l.startswith(("FAILED", "ERROR"))]
+        raise SystemExit("La suite no pasó entera: " + (cola or r.stderr[-300:]) + "\n" + "\n".join(cuales)
+                         + f"\nSalida completa en {HERE / 'suite_fallida.txt'}")
     seg = re.search(r"in ([\d.]+)s", cola)
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     out = {"tests": int(m.group(1)), "segundos": float(seg.group(1)) if seg else None,
