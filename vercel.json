@@ -2,12 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "mkdir -p demo/viz/pitch && cp pitch/index.html pitch/slides.js pitch/style.css demo/viz/pitch/",
-  "installCommand": "",
+  "installCommand": "sh demo/alternativas/03-enjambre-juanpedro/publicar.sh",
   "outputDirectory": "demo/viz",
   "cleanUrls": false,
   "redirects": [
     { "source": "/", "destination": "/home.html", "permanent": false },
     { "source": "/pitch", "destination": "/pitch/index.html", "permanent": false },
+    { "source": "/terminales", "destination": "/escena/terminales.html?autoplay=1", "permanent": false },
+    { "source": "/pruebas", "destination": "/escena/pruebas.html", "permanent": false },
+    { "source": "/informe", "destination": "/escena/informe.pdf", "permanent": false },
     { "source": "/demo/viz/:path*", "destination": "/:path*", "permanent": false }
   ]
 }

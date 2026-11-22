@@ -34,3 +34,4 @@ demo/out/
 
 # Copia de las láminas que hace el build de Vercel (vercel.json); no se versiona
 demo/viz/pitch/
+demo/viz/escena/
