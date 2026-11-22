@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alicanto · cómo lo probamos</title>
+  <link rel="stylesheet" href="pruebas.css">
+</head>
+<body>
+  <!-- Ninguna cifra de esta página está escrita aquí ni en pruebas.js: todas se leen de
+       pruebas.json, que hacer_pruebas.py arma desde results/ y docs/informe/datos/. -->
+  <header id="tope">
+    <a class="marca" href="terminales.html">Alicanto</a>
+    <nav aria-label="Secciones del sitio">
+      <a href="terminales.html">La demo, con sus terminales</a>
+      <a href="pruebas.html" aria-current="page">Cómo lo probamos</a>
+      <a id="pdf" href="informe.pdf" hidden>Informe técnico (PDF)</a>
+    </nav>
+  </header>
+
+  <main id="tablero" aria-busy="true">
+    <!-- 1. La cifra, y lo que cuesta -->
+    <section id="cifra" aria-labelledby="cifra-t">
+      <div class="heroe">
+        <p class="rotulo" id="cifra-t">Ataques frenados, tal como los ve el proxy instalado</p>
+        <p class="grande"><b id="h-n"></b> <span id="h-de"></span></p>
+        <p class="bajada" id="h-bajada"></p>
+      </div>
+      <dl class="fichas">
+        <div><dt>Llamadas normales bloqueadas</dt><dd id="f-bloq"></dd><dd class="nota" id="f-bloq-n"></dd></div>
+        <div><dt>Sesiones normales difíciles con una rotación de más</dt><dd id="f-rot"></dd><dd class="nota" id="f-rot-n"></dd></div>
+        <div><dt>Tests automáticos que pasan</dt><dd id="f-tests"></dd><dd class="nota" id="f-tests-n"></dd></div>
+      </dl>
+    </section>
+
+    <!-- 2. El set entero -->
+    <section id="set" aria-labelledby="set-t">
+      <h2 id="set-t">El set de prueba, entero</h2>
+      <p class="entrada" id="set-e"></p>
+      <ul class="leyenda" aria-label="Qué significa cada casilla">
+        <li><i class="c stop"></i>ataque frenado</li>
+        <li><i class="c out"></i>ataque no frenado</li>
+        <li><i class="c rot"></i>sesión normal en que rotó una clave de más</li>
+        <li><i class="c calm"></i>sesión normal sin nada que decir</li>
+      </ul>
+      <div class="tabla" role="table" id="rejilla" aria-label="Una fila por familia del set de prueba"></div>
+      <p class="pie" id="set-pie"></p>
+    </section>
+
+    <!-- 3. Los otros guardias -->
+    <section id="otros" aria-labelledby="otros-t">
+      <h2 id="otros-t">La misma medición con otros guardias</h2>
+      <p class="entrada" id="otros-e"></p>
+      <ul class="leyenda" aria-label="Qué significa cada marca">
+        <li><i class="barra-k"></i>frenados con las marcas que calcula el proxy</li>
+        <li><i class="tic-k"></i>frenados con las marcas que traían las grabaciones</li>
+      </ul>
+      <div class="desliza"><table id="sistemas">
+        <thead>
+          <tr>
+            <th scope="col">Guardia</th>
+            <th scope="col" class="eje"></th>
+            <th scope="col" class="num">Frenados</th>
+            <th scope="col" class="num">Normales bloqueadas</th>
+            <th scope="col" class="num">Rotaciones de más por 1.000</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table></div>
+      <p class="pie" id="otros-pie"></p>
+    </section>
+
+    <!-- 4. El protocolo -->
+    <section id="protocolo" aria-labelledby="proto-t">
+      <h2 id="proto-t">El orden de los hechos, con sus huellas</h2>
+      <p class="entrada">Tres papeles con reglas escritas antes de empezar. No son tres grupos de personas: el rojo fue una sesión de agente aparte, con la regla de no abrir el detector.</p>
+      <ol id="tiempo"></ol>
+      <p class="pie" id="sello" role="status"></p>
+    </section>
+
+    <!-- 5. Después -->
+    <section id="despues" aria-labelledby="desp-t">
+      <h2 id="desp-t">Lo que se midió después, con el detector ya congelado</h2>
+      <div class="dos">
+        <article aria-labelledby="ad-t">
+          <h3 id="ad-t">Si el atacante se adapta</h3>
+          <p class="entrada" id="ad-e"></p>
+          <div class="desliza"><table id="adaptativo">
+            <thead><tr><th scope="col">Defensa</th><th scope="col" class="eje"></th><th scope="col" class="num">Frenados</th><th scope="col" class="num">Máximo de bits</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+          <p class="pie" id="ad-pie"></p>
+        </article>
+        <article aria-labelledby="fr-t">
+          <h3 id="fr-t">Si los pedazos son más cortos que el mínimo</h3>
+          <p class="entrada" id="fr-e"></p>
+          <div class="desliza"><table id="fragmentos">
+            <thead></thead>
+            <tbody></tbody>
+          </table></div>
+          <p class="pie" id="fr-pie"></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 6. Lo que no dice -->
+    <section id="limites" aria-labelledby="lim-t">
+      <h2 id="lim-t">Lo que este resultado no dice</h2>
+      <ul id="lim-l"></ul>
+    </section>
+
+    <!-- 7. Repetirlo -->
+    <section id="repetir" aria-labelledby="rep-t">
+      <h2 id="rep-t">Cómo repetirlo</h2>
+      <p class="entrada">Desde la raíz del repositorio, con Python 3.11 o superior.</p>
+      <pre id="comandos"></pre>
+      <p class="pie" id="fuente"></p>
+    </section>
+  </main>
+
+  <div id="tip" role="tooltip" hidden></div>
+  <script src="pruebas.js"></script>
+</body>
+</html>

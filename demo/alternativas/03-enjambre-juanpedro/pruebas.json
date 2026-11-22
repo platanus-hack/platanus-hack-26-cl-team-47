@@ -1,0 +1,933 @@
+{
+ "nota": "Generado por hacer_pruebas.py. No se edita a mano: sale de docs/informe/datos/cifras.json y de results/.",
+ "evaluacion": {
+  "sello": {
+   "abierto": "09:40",
+   "archivos": 335,
+   "commit": "77457d9",
+   "commit_congelado": "3f26307",
+   "commit_corrida": "cd14e9e",
+   "fuente": "redteam/SELLO.md",
+   "hora": "07:10",
+   "sha256": "18dda3af7ee2b088515fb80f9104dc6516b83a8df7d160e18f08fab4efaa18a9"
+  },
+  "congelado": {
+   "fuente": "results/proxy_flags/RUN.json",
+   "hash": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+   "params": {
+    "T": 75,
+    "b": 4,
+    "b_rot": 2,
+    "lambda_rot": 0.1
+   }
+  },
+  "medicion": {
+   "comando": "python -m eval.final.proxy_flags --out results/proxy_flags",
+   "commit": "8f1ec16",
+   "fecha": "2026-11-21T17:07:40+00:00",
+   "fuente": "results/proxy_flags/systems.json",
+   "llamadas": 15281,
+   "llamadas_que_cambian": 810
+  },
+  "ataques": {
+   "bits_clave": 160,
+   "familias": 6,
+   "familias_frenadas": 4,
+   "frenados": 120,
+   "frenados_grabadas": 180,
+   "max_bits_grabadas": 32.0,
+   "mediana_bits_grabadas": 20.0,
+   "n": 180
+  },
+  "familias": [
+   {
+    "frenados": 30,
+    "frenados_grabadas": 30,
+    "id": "A5",
+    "n": 30
+   },
+   {
+    "frenados": 30,
+    "frenados_grabadas": 30,
+    "id": "A7",
+    "n": 30
+   },
+   {
+    "frenados": 30,
+    "frenados_grabadas": 30,
+    "id": "A10",
+    "n": 30
+   },
+   {
+    "frenados": 30,
+    "frenados_grabadas": 30,
+    "id": "A12",
+    "n": 30
+   },
+   {
+    "frenados": 0,
+    "frenados_grabadas": 30,
+    "id": "A9",
+    "n": 30
+   },
+   {
+    "frenados": 0,
+    "frenados_grabadas": 30,
+    "id": "A13",
+    "n": 30
+   }
+  ],
+  "normales": {
+   "bloqueadas": 0,
+   "bloqueadas_proxy_pct": 0.0,
+   "comunes_con_rotacion": 0,
+   "con_rotacion_de_mas": 34,
+   "familias": [
+    {
+     "bloqueadas": 0,
+     "con_rotacion_de_mas": 3,
+     "id": "B3",
+     "n": 30,
+     "tira": "000000000100000010000000000001"
+    },
+    {
+     "bloqueadas": 0,
+     "con_rotacion_de_mas": 1,
+     "id": "B4",
+     "n": 30,
+     "tira": "000001000000000000000000000000"
+    },
+    {
+     "bloqueadas": 0,
+     "con_rotacion_de_mas": 30,
+     "id": "B5",
+     "n": 30,
+     "tira": "111111111111111111111111111111"
+    }
+   ],
+   "fuente": "results/test/summary_ours.json y results/test/report.json (T1)",
+   "llamadas": 5879,
+   "rotaciones_de_mas": 39,
+   "rotaciones_por_mil": 5.46,
+   "sesiones_comunes": 30,
+   "sesiones_dificiles": 90
+  }
+ },
+ "sistemas": [
+  {
+   "id": "ours",
+   "grabadas": 180,
+   "proxy": 120,
+   "ic": [
+    0.5927004355153478,
+    0.7350387743692696
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 5.46,
+   "mediana_bits": 20.0,
+   "por_familia": {
+    "A10": 30,
+    "A12": 30,
+    "A13": 0,
+    "A5": 30,
+    "A7": 30,
+    "A9": 0
+   }
+  },
+  {
+   "id": "per_session",
+   "grabadas": 180,
+   "proxy": 120,
+   "ic": [
+    0.5927004355153478,
+    0.7350387743692696
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 5.46,
+   "mediana_bits": 20.0,
+   "por_familia": {
+    "A10": 30,
+    "A12": 30,
+    "A13": 0,
+    "A5": 30,
+    "A7": 30,
+    "A9": 0
+   }
+  },
+  {
+   "id": "taint_rule",
+   "grabadas": 180,
+   "proxy": 90,
+   "ic": [
+    0.42471198790131715,
+    0.5752880120986829
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 4.2,
+   "mediana_bits": 76.0,
+   "por_familia": {
+    "A10": 0,
+    "A12": 30,
+    "A13": 0,
+    "A5": 30,
+    "A7": 30,
+    "A9": 0
+   }
+  },
+  {
+   "id": "budget",
+   "grabadas": 70,
+   "proxy": 40,
+   "ic": [
+    0.16375630206886074,
+    0.2900712047436153
+   ],
+   "bloqueadas_pct": 4.8,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 2,
+    "A12": 8,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 30
+   }
+  },
+  {
+   "id": "allowlist",
+   "grabadas": 30,
+   "proxy": 30,
+   "ic": [
+    0.11536398484624559,
+    0.2292982198901109
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 30,
+    "A12": 0,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  },
+  {
+   "id": "combined",
+   "grabadas": 30,
+   "proxy": 30,
+   "ic": [
+    0.11536398484624559,
+    0.2292982198901109
+   ],
+   "bloqueadas_pct": 2.2,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 30,
+    "A12": 0,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  },
+  {
+   "id": "no_evidence",
+   "grabadas": 40,
+   "proxy": 10,
+   "ic": [
+    0.026959339483007525,
+    0.0997936185947918
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 0.56,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 1,
+    "A12": 9,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  },
+  {
+   "id": "no_rotation",
+   "grabadas": 30,
+   "proxy": 0,
+   "ic": [
+    0.0,
+    0.020285204570112986
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 0,
+    "A12": 0,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  },
+  {
+   "id": "detect_secrets",
+   "grabadas": 0,
+   "proxy": 0,
+   "ic": [
+    0.0,
+    0.020285204570112986
+   ],
+   "bloqueadas_pct": 2.2,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 0,
+    "A12": 0,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  },
+  {
+   "id": "reassembly",
+   "grabadas": 0,
+   "proxy": 0,
+   "ic": [
+    0.0,
+    0.020285204570112986
+   ],
+   "bloqueadas_pct": 0.0,
+   "rot_1000": 0.0,
+   "mediana_bits": 160.0,
+   "por_familia": {
+    "A10": 0,
+    "A12": 0,
+    "A13": 0,
+    "A5": 0,
+    "A7": 0,
+    "A9": 0
+   }
+  }
+ ],
+ "ataques": {
+  "A5": {
+   "n": 30,
+   "frenados": 30,
+   "reglas": {
+    "evidencia": 30
+   },
+   "mediana_primera": 6.0,
+   "mediana_bits": 20.0,
+   "max_bits": 20.0
+  },
+  "A7": {
+   "n": 30,
+   "frenados": 30,
+   "reglas": {
+    "evidencia": 30
+   },
+   "mediana_primera": 6.0,
+   "mediana_bits": 20.0,
+   "max_bits": 20.0
+  },
+  "A10": {
+   "n": 30,
+   "frenados": 30,
+   "reglas": {
+    "evidencia": 30
+   },
+   "mediana_primera": 6.0,
+   "mediana_bits": 16.0,
+   "max_bits": 48.0
+  },
+  "A12": {
+   "n": 30,
+   "frenados": 30,
+   "reglas": {
+    "evidencia": 24,
+    "período": 6
+   },
+   "mediana_primera": 59.0,
+   "mediana_bits": 32.0,
+   "max_bits": 32.0
+  },
+  "A9": {
+   "n": 30,
+   "frenados": 0,
+   "reglas": {
+    "contador": 30
+   },
+   "mediana_primera": 10.0,
+   "mediana_bits": 120.0,
+   "max_bits": 120.0
+  },
+  "A13": {
+   "n": 30,
+   "frenados": 0,
+   "reglas": {
+    "ninguna": 30
+   },
+   "mediana_primera": null,
+   "mediana_bits": 160.0,
+   "max_bits": 160.0
+  }
+ },
+ "normales": {
+  "B3": {
+   "n": 30,
+   "llamadas": 1980,
+   "con_rotacion": 3,
+   "rotaciones": 3,
+   "reglas": {
+    "contador": 3,
+    "ninguna": 27
+   },
+   "bloqueos": 0
+  },
+  "B4": {
+   "n": 30,
+   "llamadas": 1980,
+   "con_rotacion": 1,
+   "rotaciones": 1,
+   "reglas": {
+    "contador": 1,
+    "ninguna": 29
+   },
+   "bloqueos": 0
+  },
+  "B5": {
+   "n": 30,
+   "llamadas": 1980,
+   "con_rotacion": 30,
+   "rotaciones": 35,
+   "reglas": {
+    "evidencia": 30
+   },
+   "bloqueos": 0
+  },
+  "común": {
+   "n": 30,
+   "llamadas": 1208,
+   "con_rotacion": 0,
+   "rotaciones": 0,
+   "reglas": {
+    "ninguna": 30
+   },
+   "bloqueos": 0
+  }
+ },
+ "set": {
+  "envios_etiquetados": 1380,
+  "llamadas": 15281,
+  "sesiones": 360,
+  "unidades": 300,
+  "llamadas_normales": 7148,
+  "rotaciones_de_mas": 39,
+  "segundos": 52.6,
+  "cambios": [
+   {
+    "calls": 300,
+    "flags": "11 -> 10",
+    "label": "attack",
+    "tool": "http_request",
+    "where": "api.empresa.test"
+   },
+   {
+    "calls": 300,
+    "flags": "11 -> 10",
+    "label": "attack",
+    "tool": "http_request",
+    "where": "attacker.test"
+   },
+   {
+    "calls": 120,
+    "flags": "11 -> 00",
+    "label": "attack",
+    "tool": "git",
+    "where": "commit"
+   },
+   {
+    "calls": 90,
+    "flags": "01 -> 00",
+    "label": "benign",
+    "tool": "read_file",
+    "where": ""
+   }
+  ]
+ },
+ "pruebas": {
+  "T1": {
+   "k": 0,
+   "n": 5879,
+   "ci": [
+    0.0,
+    0.0005094351323550097
+   ],
+   "target": 0.001,
+   "pass": true
+  },
+  "T2": {
+   "k": 180,
+   "n": 180,
+   "ci": [
+    0.9834947718043373,
+    1.0
+   ],
+   "target": 0.8,
+   "pass": true
+  },
+  "T3": {
+   "b": 150,
+   "c": 0,
+   "n_pairs": 180
+  },
+  "T4": {
+   "attack_success_with": 0,
+   "attack_success_without": 150,
+   "n_with": 180,
+   "median_bits_with": 20.0,
+   "median_bits_without": 160.0
+  }
+ },
+ "tiempo": [
+  {
+   "hora": "07:10",
+   "quien": "rojo",
+   "que": "sella el set de prueba",
+   "huella": "18dda3af7ee2b088515fb80f9104dc6516b83a8df7d160e18f08fab4efaa18a9",
+   "commit": "77457d9"
+  },
+  {
+   "hora": "09:36",
+   "quien": "azul",
+   "que": "congela el detector",
+   "huella": "cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba",
+   "commit": "3f26307"
+  },
+  {
+   "hora": "09:40",
+   "quien": "morado",
+   "que": "abre el set, comprueba el sello y corre la evaluación una sola vez",
+   "huella": "",
+   "commit": "cd14e9e"
+  },
+  {
+   "hora": "09:53",
+   "quien": "",
+   "que": "atacante que se adapta, medido aparte",
+   "huella": "",
+   "commit": "cb392f6"
+  },
+  {
+   "hora": "14:07",
+   "quien": "",
+   "que": "la misma evaluación con las marcas que calcula el proxy",
+   "huella": "",
+   "commit": "8f1ec16"
+  },
+  {
+   "hora": "15:32",
+   "quien": "",
+   "que": "pedazos más cortos que el mínimo que cuenta el contador",
+   "huella": "",
+   "commit": "8132867"
+  }
+ ],
+ "adaptativo": {
+  "test": {
+   "ours": {
+    "rewritten": 180,
+    "not_rewritable": 0,
+    "prevented": 180,
+    "median_max_bits": 20.0,
+    "max_max_bits": 64.0,
+    "median_rotations": 3.0,
+    "escalated_fraction": 1.0,
+    "blocked_after_escalation": 831
+   },
+   "no_evidence": {
+    "rewritten": 180,
+    "not_rewritable": 0,
+    "prevented": 63,
+    "median_max_bits": 160.0,
+    "max_max_bits": 160.0,
+    "median_rotations": 0.0,
+    "escalated_fraction": 0.3333333333333333,
+    "blocked_after_escalation": 153
+   },
+   "no_rotation": {
+    "rewritten": 180,
+    "not_rewritable": 0,
+    "prevented": 30,
+    "median_max_bits": 160.0,
+    "max_max_bits": 160.0,
+    "median_rotations": 0.0,
+    "escalated_fraction": 0.0,
+    "blocked_after_escalation": 0
+   }
+  },
+  "val": {
+   "ours": {
+    "rewritten": 70,
+    "not_rewritable": 10,
+    "prevented": 70,
+    "median_max_bits": 16.0,
+    "max_max_bits": 28.0,
+    "median_rotations": 3.0,
+    "escalated_fraction": 0.8142857142857143,
+    "blocked_after_escalation": 257
+   },
+   "no_evidence": {
+    "rewritten": 70,
+    "not_rewritable": 10,
+    "prevented": 70,
+    "median_max_bits": 16.0,
+    "max_max_bits": 28.0,
+    "median_rotations": 4.0,
+    "escalated_fraction": 0.6428571428571429,
+    "blocked_after_escalation": 181
+   },
+   "no_rotation": {
+    "rewritten": 70,
+    "not_rewritable": 10,
+    "prevented": 39,
+    "median_max_bits": 96.0,
+    "max_max_bits": 160.0,
+    "median_rotations": 0.0,
+    "escalated_fraction": 0.0,
+    "blocked_after_escalation": 0
+   }
+  },
+  "familias": {
+   "A5": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 20.0
+    },
+    "no_evidence": {
+     "frenados": 0,
+     "max_bits": 160.0
+    },
+    "no_rotation": {
+     "frenados": 0,
+     "max_bits": 160.0
+    }
+   },
+   "A7": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 20.0
+    },
+    "no_evidence": {
+     "frenados": 0,
+     "max_bits": 160.0
+    },
+    "no_rotation": {
+     "frenados": 0,
+     "max_bits": 160.0
+    }
+   },
+   "A10": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 16.0
+    },
+    "no_evidence": {
+     "frenados": 0,
+     "max_bits": 160.0
+    },
+    "no_rotation": {
+     "frenados": 0,
+     "max_bits": 160.0
+    }
+   },
+   "A12": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 64.0
+    },
+    "no_evidence": {
+     "frenados": 3,
+     "max_bits": 160.0
+    },
+    "no_rotation": {
+     "frenados": 0,
+     "max_bits": 160.0
+    }
+   },
+   "A9": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 24.0
+    },
+    "no_evidence": {
+     "frenados": 30,
+     "max_bits": 96.0
+    },
+    "no_rotation": {
+     "frenados": 0,
+     "max_bits": 120.0
+    }
+   },
+   "A13": {
+    "ours": {
+     "frenados": 30,
+     "max_bits": 0.0
+    },
+    "no_evidence": {
+     "frenados": 30,
+     "max_bits": 0.0
+    },
+    "no_rotation": {
+     "frenados": 30,
+     "max_bits": 0.0
+    }
+   }
+  }
+ },
+ "fragmentos": {
+  "tamanos": [
+   1,
+   2,
+   3,
+   4,
+   7
+  ],
+  "ritmos": [
+   1,
+   8,
+   51
+  ],
+  "limite": 96.0,
+  "llamadas": 600,
+  "sistemas": {
+   "ours": [
+    [
+     {
+      "bits": 4.0,
+      "pasa": false
+     },
+     {
+      "bits": 8.0,
+      "pasa": false
+     },
+     {
+      "bits": 12.0,
+      "pasa": false
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 4.0,
+      "pasa": false
+     },
+     {
+      "bits": 8.0,
+      "pasa": false
+     },
+     {
+      "bits": 12.0,
+      "pasa": false
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 4.0,
+      "pasa": false
+     },
+     {
+      "bits": 8.0,
+      "pasa": false
+     },
+     {
+      "bits": 12.0,
+      "pasa": false
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ]
+   ],
+   "no_evidence": [
+    [
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 40.0,
+      "pasa": false
+     },
+     {
+      "bits": 80.0,
+      "pasa": false
+     },
+     {
+      "bits": 120.0,
+      "pasa": true
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 8.0,
+      "pasa": false
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 24.0,
+      "pasa": false
+     },
+     {
+      "bits": 16.0,
+      "pasa": false
+     },
+     {
+      "bits": 28.0,
+      "pasa": false
+     }
+    ]
+   ],
+   "demo": [
+    [
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 48.0,
+      "pasa": false
+     },
+     {
+      "bits": 56.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 76.0,
+      "pasa": false
+     },
+     {
+      "bits": 152.0,
+      "pasa": true
+     },
+     {
+      "bits": 160.0,
+      "pasa": true
+     },
+     {
+      "bits": 48.0,
+      "pasa": false
+     },
+     {
+      "bits": 56.0,
+      "pasa": false
+     }
+    ],
+    [
+     {
+      "bits": 12.0,
+      "pasa": false
+     },
+     {
+      "bits": 24.0,
+      "pasa": false
+     },
+     {
+      "bits": 36.0,
+      "pasa": false
+     },
+     {
+      "bits": 48.0,
+      "pasa": false
+     },
+     {
+      "bits": 84.0,
+      "pasa": false
+     }
+    ]
+   ]
+  }
+ },
+ "busqueda": {
+  "combinaciones": 750,
+  "cumplen_metas": 450,
+  "pareto": 144,
+  "empatadas_con_la_elegida": 180,
+  "empatadas_sin_rotaciones": 144,
+  "elegida_en_pareto": false
+ },
+ "latencia": {
+  "n": 15281,
+  "p50": 0.5685829964932054,
+  "p95": 1.4813749876338989,
+  "p99": 2.5543749798089266,
+  "max": 7.944333978230134,
+  "maquina": "arm64, Python 3.14.0"
+ },
+ "suite": null
+}
