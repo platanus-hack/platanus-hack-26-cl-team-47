@@ -929,5 +929,13 @@
   "max": 7.944333978230134,
   "maquina": "arm64, Python 3.14.0"
  },
- "suite": null
+ "suite": {
+  "tests": 931,
+  "segundos": 334.78,
+  "saltados": 0,
+  "commit": "0f3c322",
+  "fecha": "2026-11-22T00:59-03:00",
+  "comando": "python -m pytest -q",
+  "cuando": "22 de noviembre a las 00:59"
+ }
 }

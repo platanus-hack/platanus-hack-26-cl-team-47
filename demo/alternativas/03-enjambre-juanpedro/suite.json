@@ -1,0 +1,8 @@
+{
+ "tests": 931,
+ "segundos": 334.78,
+ "saltados": 0,
+ "commit": "0f3c322",
+ "fecha": "2026-11-22T00:59-03:00",
+ "comando": "python -m pytest -q"
+}
