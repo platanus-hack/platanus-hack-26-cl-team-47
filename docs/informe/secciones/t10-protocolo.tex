@@ -1,0 +1,315 @@
+\section{El protocolo: rojo, azul y morado}\label{sec:protocolo}
+
+Quien construye un detector y además lo evalúa tiene un incentivo permanente a ajustarlo hasta que
+pase. El protocolo existe para que ese ajuste no sea posible, y para que quede evidencia de que no
+ocurrió. Esta sección describe sus reglas, lo que se hizo en cada paso y lo que alguien de afuera
+puede verificar.
+
+\subsection{Las seis reglas}
+
+Están escritas en \cod{docs/PLAN.md} desde antes de empezar. Las copiamos tal cual.
+
+\begin{enumerate}
+  \item «El rojo no mira el código del detector antes de H20. El agente del área Rojo no abre
+    \cod{engine/} hasta entonces.»
+  \item «El set de prueba lo genera el rojo, guarda su hash y queda sellado hasta H20. Sus familias no
+    aparecen en entrenamiento.»
+  \item «Revisiones de 15 minutos en H6, H12 y H17, solo sobre fallas de entrenamiento y validación.»
+  \item «El azul puede corregir errores y ajustar parámetros en validación. No puede agregar reglas
+    para un ataque concreto. Si lo hace, se anota.»
+  \item «En H20 se congela. El rojo recibe la configuración completa y tiene 2 horas de ataque
+    adaptativo, que se reporta aparte y no se usa para reajustar.»
+  \item «Bitácora con hora y motivo de cada cambio al detector.»
+\end{enumerate}
+
+H20 es la hora 20 del evento, las 19:00 del sábado. El líder decidió adelantar el congelamiento a
+las 09:40. Adelantarlo no relaja ninguna regla: el orden entre sellar, congelar y abrir es el mismo.
+
+\subsection{Quién es cada equipo}
+
+No son tres grupos de personas. Son tres papeles.
+
+\begin{description}
+  \item[Rojo.] Una sesión de agente aparte, que escribió los generadores de ataques y de sesiones
+    normales difíciles. Su instrucción de trabajo incluye no abrir \cod{engine/}. Eligió las familias
+    del set de prueba a partir de técnicas documentadas en fuentes públicas, no de lo que el detector
+    pudiera ver.
+  \item[Azul.] Los agentes que construyeron el detector, ajustaron el modelo y buscaron los
+    parámetros, con entrenamiento y validación.
+  \item[Morado.] Las reglas de arriba y los mecanismos que las hacen cumplir: el sello, el
+    congelamiento con hash, el candado de la corrida única y la bitácora.
+\end{description}
+
+\begin{limite}
+\textbf{Lo que no se puede comprobar desde fuera.} Que la sesión del rojo no abrió el detector es una
+regla de trabajo. No hay un mecanismo técnico que lo demuestre. Lo que sí es comprobable es todo lo
+demás: el orden de los hechos, los hashes y que el comando de evaluación no se puede repetir.
+\end{limite}
+
+\subsection{La bitácora}
+
+\cod{docs/BITACORA_DETECTOR.md} lista cada cambio al detector con hora, qué cambió y por qué. Entre la
+construcción inicial y el congelamiento hay nueve entradas. Tres importan para leer los resultados.
+
+\begin{itemize}
+  \item \textbf{04:05.} El período $T$ baja de 200 a 150 y se agregan la invariante, el tope de tres
+    rotaciones y el modo escalado. Motivo: un goteo de 7 caracteres sacaba hasta 112 bits.
+  \item \textbf{06:30.} Se agrega la cuenta compartida. Motivo: con cinco agentes salían los 160 bits.
+    Es una capacidad general.
+  \item \textbf{07:30.} El contador pasa a leer base64 corto. La bitácora lo marca como el único cambio
+    que \emph{sí} responde a un ataque concreto: una familia de entrenamiento y la demo interactiva.
+    Es lo que la regla 4 pide anotar, y está anotado.
+\end{itemize}
+
+\subsection{El ajuste y la búsqueda}\label{sec:congelamiento}
+
+El detector tiene dos partes que salen de datos: el modelo de evidencia y cuatro umbrales.
+
+\paragraph{El modelo.} Se ajusta solo con entrenamiento (\cref{sec:modelo-ajustado}).
+
+\paragraph{Los umbrales.} Se eligen solo con validación, con \cod{python -m eval.search}. La búsqueda
+recorre una grilla de 750 combinaciones:
+\begin{gather*}
+  b \in \{4;\ 6;\ 8;\ 9{,}2;\ 11;\ 13\}, \qquad
+  \brot \in \{2;\ 3;\ 4;\ 5;\ 6\}, \\
+  \lrot \in \{0{,}1;\ 0{,}2;\ 0{,}3;\ 0{,}4;\ 0{,}5\}, \qquad
+  T \in \{25;\ 50;\ 75;\ 100;\ 150\} .
+\end{gather*}
+Para cada una reproduce el set de validación (50 sesiones normales y 80 ataques) y calcula cuatro
+métricas: falsas alarmas, rotaciones en sesiones normales por cada \num{1000} llamadas, ataques
+frenados y mediana de bits filtrados.
+
+La elección sigue un criterio de Neyman--Pearson: primero se fija el costo tolerable y después se
+minimiza el daño.
+
+\begin{enumerate}
+  \item Quedan las combinaciones con falsas alarmas $\leq \num{0.001}$ y rotaciones en sesiones
+    normales $\leq 5$ por cada \num{1000} llamadas. Cumplen 450 de las 750.
+  \item Entre esas, se elige la de menor mediana de bits filtrados y, en caso de empate, la de más
+    ataques frenados.
+\end{enumerate}
+
+El resultado fue $b = 4$, $\brot = 2$, $\lrot = \num{0.1}$, $T = 75$: cero falsas alarmas, 0,47
+rotaciones por cada \num{1000} llamadas normales, todos los ataques de validación frenados y una
+mediana de 16 bits.
+
+\paragraph{Qué tan determinados quedaron.} Las \cref{tab:busqueda-rot,tab:busqueda-bits} resumen las
+750 filas de \cod{models/search/rows.json}, y muestran algo que conviene decir con claridad.
+
+\begin{table}[ht]
+\caption{Rotaciones en sesiones normales por cada \num{1000} llamadas, en validación, según $T$ y
+$\brot$ (rango sobre los demás parámetros). La meta era 5 o menos.}\label{tab:busqueda-rot}
+\small
+\begin{tabular}{@{}rccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{$\brot$} \\
+\cmidrule(l){2-6}
+$T$ & 2 & 3 & 4 & 5 & 6 \\
+\midrule
+\tabladatos{tab_busqueda_rot}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Mediana de bits filtrados en los ataques de validación, según $\lrot$ y $\brot$ (rango sobre
+los demás parámetros), y porcentaje de ataques frenados según $\brot$.}\label{tab:busqueda-bits}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{$\brot$} \\
+\cmidrule(l){2-6}
+$\lrot$ & 2 & 3 & 4 & 5 & 6 \\
+\midrule
+\tabladatos{tab_busqueda_bits}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{El período decide el costo.} Con $T$ de 25 o 50 hay demasiadas rotaciones periódicas
+    en sesiones normales; desde 75 casi desaparecen.
+  \item \textbf{$\brot$ tiene dos regímenes.} Con $\brot \leq 3$, una sola llamada marcada rota, y se
+    frenan todos los ataques de validación con 16 bits de mediana. Con $\brot \geq 4$ hacen falta dos
+    llamadas marcadas seguidas, y algunos ataques se escapan. Es la consecuencia directa de un modelo
+    cuyo incremento vale $+3$ o $-3$.
+  \item \textbf{$b$ no cambia nada.} Ninguna de las cuatro métricas se mueve al variar el umbral de
+    bloqueo por evidencia: la regla 3 no se disparó nunca en validación.
+  \item \textbf{La combinación elegida no es única.} Hay 180 combinaciones que empatan con ella en
+    los dos criterios de la elección (16 bits de mediana y todos los ataques frenados). El criterio se
+    queda con la primera en el orden de la grilla, y por eso salieron los valores más bajos de $b$,
+    $\brot$ y $\lrot$ y el menor $T$ que cumple la meta.
+  \item \textbf{Y no es la mejor en validación.} De esas 180, 144 no rotaron nunca en una sesión
+    normal; la elegida rotó una vez (0,47 por cada \num{1000} llamadas). Las 144 son exactamente la
+    frontera de Pareto que guarda \cod{models/search/pareto.json}, y la configuración congelada no
+    está en ella. La diferencia es $\lrot$: \num{0.1} es el único valor de la grilla con el que hubo
+    una rotación de más, porque con 16 bits de umbral basta una coincidencia de 4 caracteres por azar
+    (\cref{sec:contador-limites}). El criterio de elección no mira las rotaciones una vez que están
+    bajo la meta, y por eso no lo distinguió.
+\end{itemize}
+
+\begin{limite}
+\textbf{Cómo leer la elección.} Validación tiene las mismas cinco familias que entrenamiento,
+generadas por el mismo programa con otra semilla. Sus cifras son una cota optimista y no separan
+bien las configuraciones. De los cuatro umbrales, los datos determinan dos decisiones gruesas
+($T \geq 75$ y $\brot \leq 3$). El valor de $b$ quedó puesto por el orden de la grilla, y el de
+$\lrot$ también, aunque un valor mayor habría rotado menos en validación. Esto se vio al escribir
+este informe, con el detector ya congelado y evaluado: no se cambió nada, y no se midió otra
+configuración sobre el set de prueba, porque eso sería ajustar mirando la prueba. La cifra que vale
+es la del set de prueba, con la configuración que se congeló.
+\end{limite}
+
+\subsection{El congelamiento}
+
+Congelar es escribir \cod{models/search/frozen.json}, que contiene:
+
+\begin{itemize}
+  \item los cuatro umbrales;
+  \item el sha256 del archivo del modelo (\cod{993976e7}…);
+  \item un sha256 de las carpetas de datos usadas;
+  \item la fecha y la hora;
+  \item y un \emph{hash} de todo lo anterior: \cod{cf56ce20bb718b1c3a3297cf4984ae76c839779acb01a6d47df687fc08bc50ba}.
+\end{itemize}
+
+El detector evaluado se construye siempre con \cod{make_frozen}, que antes de nada vuelve a calcular el
+sha256 del modelo en disco y se niega a continuar si no es el congelado. Cada resultado guarda en su
+\cod{RUN.json} el hash con que corrió: los cinco conjuntos de resultados del repositorio llevan el
+mismo.
+
+\subsection{La corrida única}
+
+La evaluación sobre el set de prueba es un solo comando,
+\cod{python -m eval.final.run --split test --out results/test}, con un candado: lo primero que hace es
+escribir \cod{results/test/RUN.json} con el estado «en curso», y si ese archivo ya existe se niega a
+correr. No tiene opción para forzarlo. Como el archivo se escribe al empezar, ni siquiera una corrida
+interrumpida se puede repetir sin borrarlo a mano, a sabiendas.
+
+La corrida empezó a las 09:40:26 y terminó a las 09:41:19, en el commit \cod{cd14e9e}: 360 sesiones,
+300 unidades y nueve sistemas en 52,6 segundos.
+
+\begin{table}[ht]
+\caption{La secuencia verificable del sábado 21 de noviembre. Los commits están en el historial del
+repositorio.}\label{tab:secuencia}
+\small
+\begin{tabularx}{\textwidth}{@{}P{1.4cm}LP{4.6cm}@{}}
+\toprule
+Hora & Hecho & Cómo se comprueba \\
+\midrule
+07:10 & El rojo publica el sello del set de prueba & \cod{redteam/SELLO.md}; commit \cod{77457d9} \\
+09:36 & El azul congela la configuración & \cod{frozen.json}; commit \cod{3f26307}, etiqueta
+  \cod{congelamiento} \\
+09:40 & Se abre el set y el sello coincide & El comando de \cod{SELLO.md} \\
+09:40 & La evaluación corre una sola vez & \cod{results/test/RUN.json}; commit \cod{cd14e9e} \\
+09:53 & Análisis del atacante que se adapta & \cod{results/adaptive/RUN.json} \\
+14:07 & Análisis con las marcas del proxy & \cod{results/proxy_flags/RUN.json}; commit \cod{8f1ec16} \\
+15:32 & Análisis de los fragmentos cortos & \cod{results/short_fragments/RUN.json} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Los tres análisis posteriores usan el detector congelado, se reportan aparte y no cambiaron nada.
+
+\subsection{Unidades y sistemas}
+
+\paragraph{Unidades.} La unidad de evaluación no es siempre la sesión. En la familia A7 un ataque son
+tres sesiones que comparten una clave; contarlas por separado sería contar tres ataques fallidos donde
+hubo uno. Las sesiones cuyas etiquetas comparten un grupo forman una \emph{unidad}: se reproducen en
+orden y, antes de medir, se funden en una sola sesión lógica. Toda otra sesión es una unidad por sí
+misma.
+
+\paragraph{Sistemas.} Además de Alicanto se miden tres ablaciones suyas y seis líneas de base, todas
+sobre las mismas unidades y con la misma métrica (\cref{tab:que-sistemas}).
+
+\begin{table}[ht]
+\caption{Los sistemas que se comparan. Las líneas de base están en \cod{eval/baselines/}.}\label{tab:que-sistemas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{4.6cm}L@{}}
+\toprule
+Sistema & Qué es \\
+\midrule
+Alicanto (congelado) & El detector congelado. Por unidad, una cuenta compartida nueva y un detector
+  por sesión \\
+Con una cuenta por sesión & El mismo detector, sin cuenta compartida \\
+Sin evidencia & Los mismos parámetros y la misma cuenta, sin el modelo de evidencia \\
+Sin rotación & Ninguna regla rota; los bloqueos siguen \\
+\midrule
+Regla simple & «La sesión leyó una clave (su valor completo en un resultado) y esta llamada saca
+  datos hacia un destino no confiable»: rota lo leído; nunca bloquea \\
+Lista de destinos permitidos & Bloquea todo sumidero hacia un \esp{host} fuera de una lista de cinco \\
+Escáner de secretos & La biblioteca \cod{detect-secrets}, con sus detectores por defecto, sobre los
+  argumentos de cada sumidero. No conoce las claves \\
+Lista más escáner & Bloquea si cualquiera de las dos anteriores bloquea \\
+Presupuesto de bits (réplica) & El mismo contador de Alicanto, por sesión y sin rotación: al llegar a
+  96 bits bloquea esa llamada y todos los sumideros siguientes \\
+Reensamblado (réplica) & Junta lo que sale por cada campo a lo largo de la sesión, sin decodificar, y
+  bloquea al ver 16 caracteres seguidos de una clave \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las dos réplicas son versiones simplificadas que hicimos a partir de documentación pública de
+herramientas que ya juntan fragmentos entre llamadas. No son esos productos ni su código, y sus cifras
+no dicen nada de ellos. Están para tener, al menos, una referencia de las dos ideas más cercanas a la
+nuestra.
+
+\subsection{Las métricas}\label{sec:metricas}
+
+Todas se calculan desde el registro de eventos y las etiquetas (\cod{eval/metrics/metrics.py}).
+
+\begin{description}
+  \item[Llamada expuesta.] Una llamada es expuesta si saca datos, o si ocurre desde que la sesión leyó
+    por primera vez una clave o contenido no confiable. Son las llamadas en que un bloqueo erróneo es
+    posible; las demás no cuentan en el denominador.
+  \item[Falsa alarma.] Un \emph{bloqueo} de una llamada expuesta en una sesión normal. La tasa es el
+    número de falsas alarmas dividido por el de llamadas expuestas de las sesiones normales. Una
+    rotación no es una falsa alarma: no interrumpe nada.
+  \item[Rotaciones en sesiones normales.] Decisiones con rotación en sesiones normales, por cada
+    \num{1000} llamadas normales. Es el costo propio de Alicanto y se informa aparte.
+  \item[Bits que salieron.] Para cada clave de la unidad se acumulan las posiciones que las etiquetas
+    dicen que salieron, \emph{solo} en llamadas que el detector dejó pasar. Cuando el detector rota la
+    clave, el acumulado vuelve a cero. El valor que se informa es el máximo del acumulado a lo largo de
+    la unidad, por 4 bits.
+  \item[Ataque frenado.] Para toda clave de la unidad, ese máximo no pasa de $H - \beta = 96$ bits.
+\end{description}
+
+\paragraph{Por contenido.} Hay un punto fino en cómo se cuenta después de una rotación. La grabación
+sigue enviando pedazos de la clave original, que ya no es la vigente. La regla principal es contar
+\emph{por contenido}: un pedazo suma solo si es de la clave vigente, así que después de la primera
+rotación los envíos de la grabación no suman. Es lo correcto para un atacante que no se adapta, y hay
+que leerlo así: mide cuánto de una clave útil salió.
+
+Se informa además una \emph{cota pesimista}: tras rotar, los envíos siguientes cuentan contra la clave
+nueva si la sesión volvió a leer el archivo de claves. Es el caso en que el atacante podría haber
+obtenido el valor nuevo. En el set de prueba las dos cuentas dan lo mismo.
+
+\subsection{Las pruebas estadísticas}
+
+La evaluación final incluye cuatro pruebas, corregidas por Holm~\cite{holm}
+(\cod{eval/final/tests_h.py}).
+
+\begin{table}[ht]
+\caption{Las pruebas de la evaluación final. T5 y T6, previstas en el diseño, no se calcularon.}\label{tab:pruebas-def}
+\small
+\begin{tabularx}{\textwidth}{@{}P{0.8cm}LL@{}}
+\toprule
+ & Qué afirma & Cómo se prueba \\
+\midrule
+T1 & La tasa de falsas alarmas es menor que \num{0.001} & Cota superior unilateral al
+  \qty{95}{\percent} de Clopper--Pearson~\cite{clopper}. Con cero alarmas hacen falta unas
+  \num{3000} llamadas expuestas para pasar \\
+T2 & Se frena más del \qty{80}{\percent} de los ataques & Cota inferior unilateral al
+  \qty{95}{\percent} de Clopper--Pearson \\
+T3 & Alicanto frena ataques que la línea de base no frena & Prueba exacta de McNemar~\cite{mcnemar}
+  sobre los pares de unidades, contra «lista más escáner» \\
+T4 & La rotación reduce el éxito del ataque & Prueba exacta de Fisher sobre el éxito con y sin
+  rotación; Mann--Whitney sobre los bits \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{limite}
+\textbf{Los valores p exageran.} Las pruebas tratan las 180 unidades como independientes, y son 30
+réplicas de seis plantillas. Un intervalo de confianza estrecho alrededor de «120 de 180» no dice
+que el sistema frenaría esa fracción de ataques nuevos: dice que frena esas familias de forma
+consistente. El resultado se lee por familias.
+\end{limite}

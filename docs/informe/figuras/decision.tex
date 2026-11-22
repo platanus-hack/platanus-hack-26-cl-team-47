@@ -1,0 +1,28 @@
+% La regla de decisión, en el orden en que se evalúa.
+\begin{tikzpicture}[font=\footnotesize\sffamily,
+    preg/.style={caja,minimum width=7.9cm,text width=7.5cm,align=left,inner sep=5pt},
+    res/.style={caja,minimum width=4.0cm,text width=3.7cm,align=left,inner sep=5pt}]
+  \node[preg] (r1) at (0,0)
+    {\textbf{1.} ¿La llamada saca datos, subieron los bits \emph{confirmados} de una clave y el destino
+     no es uno de los suyos?};
+  \node[preg,below=5mm of r1] (r2)
+    {\textbf{2.} Para cada clave \emph{expuesta}: ¿salió una fracción $\geq \lrot$, o la evidencia es
+     $S \geq \brot$, o pasaron $T$ llamadas desde su última rotación?};
+  \node[preg,below=5mm of r2] (r3)
+    {\textbf{3.} ¿La evidencia es $S > b$ y hay un camino de contenido: no confiable, clave leída,
+     sumidero?};
+  \node[preg,below=5mm of r3] (r4)
+    {\textbf{4.} ¿Alguna clave que hay que rotar ya rotó 3 veces en las últimas 200 llamadas?};
+  \node[caja,below=5mm of r4,minimum width=7.9cm] (ok) {Si nada de lo anterior: \textbf{permitir}};
+
+  \node[res,draw=tinta,fill=tinta,text=white,right=9mm of r1] (a1) {\textbf{Bloquear} y rotar esa clave};
+  \node[res,cajaoro,text width=3.7cm,align=left,right=9mm of r2] (a2) {\textbf{Rotar} la clave y dejar pasar la llamada};
+  \node[res,draw=tinta,fill=tinta,text=white,right=9mm of r3] (a3) {\textbf{Bloquear}};
+  \node[res,cajagris,text width=3.7cm,align=left,right=9mm of r4] (a4) {No rotar más: \textbf{modo escalado}, se bloquean sus salidas};
+
+  \foreach \a/\b in {r1/a1,r2/a2,r3/a3,r4/a4} {\draw[flecha] (\a.east) -- node[above,font=\scriptsize] {sí} (\b.west);}
+  \draw[flecha] (r1) -- node[right,font=\scriptsize] {no} (r2);
+  \draw[flecha] (r2) -- (r3);
+  \draw[flecha] (r3) -- (r4);
+  \draw[flecha] (r4) -- (ok);
+\end{tikzpicture}

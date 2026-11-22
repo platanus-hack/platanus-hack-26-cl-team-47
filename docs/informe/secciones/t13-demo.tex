@@ -1,0 +1,110 @@
+\section{Las demos, por dentro}\label{sec:demo}
+
+Una demo de un sistema de seguridad invita a una duda razonable: cuánto de lo que se ve está
+calculado y cuánto está dibujado. Esta sección responde para cada demo.
+
+\subsection{La demo oficial}
+
+\cod{python demo/run_split.py} reproduce una misma sesión dos veces y escribe los dos registros que
+después dibuja la página.
+
+\begin{itemize}
+  \item \textbf{La sesión.} Es \cod{demo/sessions/goteo.jsonl}, de 88 llamadas. En la segunda, el
+    agente lee un issue con una instrucción plantada. En la tercera lee el archivo de claves. Desde la
+    octava, cada 8 llamadas, envía 4 caracteres de la clave en claro: 10 envíos. El resto son
+    llamadas de trabajo.
+  \item \textbf{El panel sin protección.} El detector en modo de solo medición: cuenta todo y no hace
+    nada.
+  \item \textbf{El panel con Alicanto.} El detector con la configuración de la demo. Cuando decide
+    rotar, el guion rota la clave en el gestor de secretos, que corre dentro del mismo proceso.
+  \item \textbf{El cobro.} Al final, el servidor del atacante arma la clave solo con los fragmentos de
+    las llamadas permitidas, los cuenta con su propio código y prueba el resultado contra la API.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=13.4cm,height=5.6cm,xmin=0,xmax=89,ymin=0,ymax=172,
+  xlabel={llamada},ylabel={bits que ya salieron},
+  ytick={0,48,96,160},axis x line=bottom,axis y line=left,
+  extra y ticks={48,96},extra y tick labels={},
+  extra y tick style={grid=major,grid style={ceniza!70,dashed,line width=0.4pt}},
+  legend columns=2,legend style={at={(0.5,1.04)},anchor=south,/tikz/every even column/.append style={column sep=1.2em}}]
+  \addplot[cenizaclara,line width=1.3pt,const plot] table[x=t,y=sin] {datos/demo_goteo.dat};
+  \addlegendentry{sin protección: bits de la clave original}
+  \addplot[tinta,line width=1.1pt,const plot] table[x=t,y=con] {datos/demo_goteo.dat};
+  \addlegendentry{con Alicanto: bits de la clave vigente}
+  \draw[oro,line width=1pt] (axis cs:24,0) -- (axis cs:24,150);
+  \node[anchor=west,font=\scriptsize,text=oroscuro] at (axis cs:25,24) {rota en la llamada 24, con 48 bits};
+  \node[anchor=north east,font=\scriptsize,text=ceniza] at (axis cs:88,95) {96 bits: sobre esto, el ataque triunfa};
+  \node[anchor=east,font=\scriptsize,text=ceniza] at (axis cs:88,151) {200};
+  \node[anchor=east,font=\scriptsize,text=tinta] at (axis cs:88,9) {401};
+\end{axis}
+\end{tikzpicture}
+\caption{La corrida grabada de la demo oficial (\cod{demo/viz/fixtures/real_left.jsonl} y
+\cod{real_right.jsonl}). Sin protección la cuenta llega a 160 bits y la API responde 200. Con
+Alicanto llega a 48 bits, el \qty{30}{\percent}, en la llamada 24; la clave rota, la cuenta de la
+clave nueva queda en cero y la API responde 401, aunque el atacante siga recibiendo pedazos de la
+vieja.}
+\label{fig:goteo}
+\end{figure}
+
+Los tests fijan esa corrida: rota en la llamada 24, con 48 bits, y el cobro da 401
+(\cod{demo/tests/test_run_split.py}).
+
+La página (\cod{demo/viz/}) es un sitio estático, sin compilación: lee los registros y los dibuja. No
+calcula ninguna decisión. Se publica a mano con la herramienta de línea de comandos de Vercel en
+\href{https://alicanto.vercel.app}{alicanto.vercel.app}. La versión del enjambre es la de la
+\cref{fig:enjambre}.
+
+\subsection{La demo del pitch}
+
+La alternativa 03 (\cod{demo/alternativas/03-enjambre-juanpedro/}) cuenta la misma historia con 20
+agentes de una clínica ficticia y agrega dos partes que corren en el momento.
+
+\paragraph{La corrida grabada.} \cod{hacer_corrida.py} arma una sesión de 88 llamadas repartida entre
+20 agentes y la pasa dos veces por el motor: con un detector por agente y con la cuenta compartida. Lo
+que se ve en pantalla, llamada por llamada, sale de esos dos registros.
+
+\paragraph{La parte en vivo.} La página se sirve con \cod{servidor.py}, un servidor mínimo con tres
+rutas.
+\begin{itemize}
+  \item \cod{/api/correr} recibe lo que eligió el público: entre cuántos agentes se reparte la clave
+    (1, 2, 5 o 10), cómo se disfraza cada pedazo (en claro, base64 o invertido) y un número cualquiera,
+    que hace de semilla. Arma esa sesión, la pasa por el motor y devuelve los registros. Tarda unos
+    200~ms.
+  \item \cod{/api/sello} recalcula el sello del set de prueba sobre los archivos de ese momento. La
+    página lo compara con el publicado y muestra si coincide.
+  \item \cod{/api/salud} dice si el servidor está vivo. Sin servidor, la página lo avisa y sigue con
+    la corrida grabada.
+\end{itemize}
+
+\paragraph{La escena «Cómo lo probamos».} Es la \cref{fig:rejilla} animada: primero el set sellado,
+con su hash; después las casillas, que se llenan; después los límites; después el pedido. Ninguna
+cifra está escrita en la página. Las lee de \cod{evaluacion.json}, que \cod{hacer_evaluacion.py} copia
+de \cod{results/} y de \cod{redteam/SELLO.md}. Un test regenera ese archivo y lo compara con el
+guardado, y otro revisa que ni los textos ni el código de la escena traigan las cifras a mano. La
+carpeta tiene 64 tests.
+
+\subsection{Qué es real y qué es maqueta}
+
+\begin{table}[ht]
+\caption{Qué se calcula y qué se dibuja en las demos.}\label{tab:real}
+\small
+\begin{tabularx}{\textwidth}{@{}LL@{}}
+\toprule
+Se calcula & Se dibuja \\
+\midrule
+Cada decisión del detector, con su motivo & La pantalla de la clínica y sus fichas \\
+La cuenta de bits de cada clave, llamada a llamada & El texto que «escribe» el asistente \\
+La rotación en el gestor de secretos & El agente: es un guion, no un modelo \\
+Lo que el atacante reunió, contado con su propio código & Los nombres, los pacientes y la clínica \\
+La respuesta de la API al cobro: 200 o 401 & \\
+El sello del set de prueba, recalculado en vivo & \\
+Las cifras de la evaluación, leídas de \cod{results/} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Lo que ninguna demo muestra es a Alicanto frenando a un modelo real. No se mostró porque no ocurrió:
+ningún modelo siguió la instrucción plantada.

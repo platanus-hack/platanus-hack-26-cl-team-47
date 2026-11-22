@@ -1,0 +1,56 @@
+% Alicanto: informe final y explicación técnica.
+%
+%   pdflatex informe && pdflatex informe && pdflatex informe      (o latexmk -pdf informe)
+%
+% Las tablas y figuras de datos/ las escribe hacer_datos.py desde results/, models/ y redteam/.
+% No se editan a mano: si cambian los resultados, se vuelve a correr el script.
+\documentclass[11pt,letterpaper,parskip=half-,numbers=noenddot,captions=tableheading,
+               toc=flat,listof=flat]{scrartcl}
+\input{preambulo}
+
+\begin{document}
+
+\input{secciones/00-portada}
+
+\pagenumbering{roman}
+\input{secciones/01-como-leer}
+{\small\tableofcontents}
+\clearpage
+\pagenumbering{arabic}
+
+% ---------------------------------------------------------------------------------------
+\parte{I}{El informe}{Qué es Alicanto, qué quedó hecho, cómo se midió y qué resultado dio.
+Reproduce el informe final del equipo, \cod{docs/INFORME_FINAL.md}, sin cambiarle cifras ni salvedades.}
+\input{secciones/i-informe}
+
+% ---------------------------------------------------------------------------------------
+\parte{II}{Cómo funciona por dentro}{El proxy, el contador de bits, la evidencia de comportamiento,
+la regla de decisión y la cuenta compartida, con las fórmulas y los parámetros tal como están en el código.}
+\input{secciones/t01-planteamiento}
+\input{secciones/t02-arquitectura}
+\input{secciones/t03-contador}
+\input{secciones/t04-grafos}
+\input{secciones/t05-evidencia}
+\input{secciones/t06-decision}
+\input{secciones/t07-compartida}
+\input{secciones/t08-entorno}
+
+% ---------------------------------------------------------------------------------------
+\parte{III}{Cómo se midió}{Los datos, el protocolo de los tres equipos, las métricas y las pruebas
+estadísticas, y los resultados con el detalle que no cabe en el informe: por qué se frena o se escapa
+cada familia, qué cuesta y qué no quedó medido.}
+\input{secciones/t09-datos}
+\input{secciones/t10-protocolo}
+\input{secciones/t11-resultados}
+\input{secciones/t12-posteriores}
+\input{secciones/t13-demo}
+\input{secciones/t14-limites}
+
+% ---------------------------------------------------------------------------------------
+\appendix
+\parte{IV}{Apéndices}{Parámetros y constantes, el modelo ajustado caja por caja, la tabla completa de
+los fragmentos cortos, los formatos de archivo, el mapa del repositorio, cómo repetir cada cifra y las
+referencias.}
+\input{secciones/ap-apendices}
+
+\end{document}

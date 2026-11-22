@@ -1,0 +1,565 @@
+% Parte I: copia de docs/INFORME_FINAL.md. Mismo texto y mismas cifras; solo se agregan
+% referencias cruzadas a las partes II y III.
+
+\section{Resumen}\label{sec:resumen}
+
+\begin{itemize}
+  \item \textbf{Qué es.} Alicanto es un proxy que se pone entre un agente de código y sus herramientas.
+    En cada llamada mide cuántos bits de cada clave ya salieron, aunque salgan de a cuatro caracteres o
+    codificados, y le pide al gestor de secretos que cambie la clave antes de que el atacante la
+    complete. No modifica el agente y ningún LLM decide.
+  \item \textbf{Qué quedó hecho.} El producto corre completo en local: proxy, motor de medición, gestor
+    de secretos con rotación, API protegida y servidor del atacante. Tiene un \esp{hook} para Claude
+    Code, una demo desplegada en \href{https://alicanto.vercel.app}{alicanto.vercel.app}, tres demos
+    alternativas y un pitch de 3 minutos con una parte que corre en vivo. Hay más de 800 tests
+    automáticos.
+  \item \textbf{Cómo se midió.} Con tres roles separados. El equipo rojo escribió los ataques sin abrir
+    el detector y selló el set de prueba con un hash. El equipo azul congeló el detector antes de que
+    el set se abriera. Las reglas del equipo morado prohibían ajustar mirando la prueba, y la
+    evaluación se corrió una sola vez.
+  \item \textbf{El resultado.} De 180 ataques grabados, de seis familias que el detector no había
+    visto, Alicanto frenó 120 tal como los ve el proxy en vivo: cuatro de las seis familias. No bloqueó
+    ninguna de \num{5879} llamadas normales.
+  \item \textbf{Lo que cuesta y lo que no cubre.} Rotó una clave de más en 34 de 90 sesiones normales
+    difíciles. Dos familias se escapan: la clave enviada a su propio destino permitido y la fuga por
+    \esp{commits} de git. Las dos están publicadas, con el comando para repetir la medición. Son
+    ataques grabados y tráfico sintético, no un atacante que se adapta ni tráfico de producción.
+  \item \textbf{Lo que se pide.} Dos equipos que trabajen con agentes de código, para un piloto.
+\end{itemize}
+
+\section{El problema y la idea}\label{sec:problema}
+
+Un agente de código puede sacar una clave del repositorio en pedazos tan chicos que ninguna llamada
+parece un robo. Alicanto mide cuánta clave ya salió y la cambia antes de que el atacante la complete.
+
+\begin{itemize}
+  \item \textbf{Por qué pasa.} Los agentes leen texto que escribe cualquiera: issues, páginas,
+    documentación. Una instrucción plantada ahí puede pedirles que envíen una clave de a cuatro
+    caracteres, entre decenas de llamadas normales.
+  \item \textbf{Por qué no basta lo habitual.} Un guardia que mira cada llamada por separado, o cada
+    agente por separado, no ve la suma. Si el atacante reparte la clave entre varios agentes, cada uno
+    queda bajo su propio umbral.
+  \item \textbf{La idea.} No adivinamos la intención. Contamos en bits cuánto de cada clave ya salió,
+    sumando entre llamadas, codificaciones y agentes, y la rotamos en el gestor de secretos antes de
+    que se complete.
+  \item \textbf{Por qué rotar y no bloquear.} Bloquear interrumpe trabajo legítimo cuando el guardia se
+    equivoca. Rotar no detiene a nadie: deja sin valor lo que ya salió.
+  \item \textbf{Un precedente público.} En 2025, CamoLeak~\cite{camoleak} sacó secretos de
+    repositorios privados a través de GitHub Copilot Chat, carácter por carácter. Es un caso parecido,
+    no el mismo escenario de nuestra demo.
+\end{itemize}
+
+\section{Lo que construimos}\label{sec:construimos}
+
+Alicanto se instala donde ya pasan las llamadas del agente. Es un servidor MCP que le ofrece al agente
+sus herramientas (leer archivos, listar carpetas, peticiones HTTP, git, issues y comentarios de GitHub)
+y decide sobre cada llamada antes de dejarla salir.
+
+\begin{table}[ht]
+\caption{Las piezas de Alicanto. La parte II explica cada una.}\label{tab:piezas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.1cm}LP{3.6cm}@{}}
+\toprule
+Pieza & Qué hace & Dónde está \\
+\midrule
+Proxy MCP & Ofrece seis herramientas al agente y pasa cada llamada por el detector. Si el gestor de
+  secretos no responde, bloquea las salidas & \cod{proxy/} \\
+Contador de bits & Lleva la cuenta de cuántos bits de cada clave ya salieron. Lee fragmentos desde 4
+  caracteres, en claro, base64, hexadecimal, URL, ROT13, invertidos y separados & \cod{engine/bits/} \\
+Evidencia de comportamiento & Un modelo simple (histogramas y una suma acumulada) sobre señales de
+  cada llamada: si la sesión leyó un secreto, hacia dónde sale la llamada & \cod{engine/evidence/} \\
+Decisión & Permite, bloquea o rota. Tiene un tope de tres rotaciones cada 200 llamadas; después
+  bloquea las salidas de esa clave y avisa a una persona & \cod{engine/detector/} \\
+Cuenta compartida & Una sola cuenta por clave para todos los agentes de una misma máquina: una fuga
+  repartida entre varios agentes se suma & \cod{engine/detector/ledger.py} \\
+Servicios & Gestor de secretos con rotación, API protegida que responde 200 o 401, servidor del
+  atacante que cuenta lo que recibió, y GitHub y web simulados & \cod{services/} \\
+\esp{Hook} de Claude Code & Pasa \cod{Bash}, \cod{WebFetch} y \cod{Read} por el contador, sin cambiar
+  las herramientas del agente & \cod{integrations/claude_code/} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Dos decisiones de diseño explican el resto.
+
+\textbf{Medir en vez de adivinar intenciones.} Los guardias habituales miran cada llamada por separado
+y deciden si parece un robo. Cuatro caracteres por llamada nunca lo parecen. Alicanto no juzga la
+llamada: suma lo que ya salió de cada clave.
+
+\textbf{Rotar en vez de bloquear.} Cuando la cuenta llega al umbral, la clave se cambia en el gestor de
+secretos. Lo que el atacante juntó es de una clave que ya no sirve, y el agente sigue trabajando. Un
+falso positivo cuesta una rotación, no una tarea interrumpida.
+
+La clave de las pruebas tiene 160 bits y el ataque triunfa si saca más de 96. Hay dos configuraciones,
+y conviene no confundirlas. La demo rota cuando salió el \qty{30}{\percent} de la clave (48 bits) y
+corre solo con el contador de bits, para que se vea el goteo. La evaluación usa la configuración
+congelada, que rota al \qty{10}{\percent} y suma la evidencia de comportamiento.
+
+\section{Cómo lo evaluamos: equipo rojo, azul y morado}\label{sec:evaluamos}
+
+El riesgo de evaluar un detector que uno mismo construye es ajustarlo hasta que pase su propia prueba.
+Para evitarlo separamos tres roles. No son tres grupos de personas: son tres papeles, con reglas
+escritas antes de empezar (\cod{docs/PLAN.md}).
+
+\begin{table}[ht]
+\caption{Los tres roles de la evaluación.}\label{tab:roles}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.4cm}LL@{}}
+\toprule
+Rol & Qué hizo & Qué lo ata \\
+\midrule
+\textcolor{rojoeq}{\rule{0.55em}{0.55em}}\ Equipo rojo & Escribió los ataques y el tráfico normal
+  difícil, en una sesión de agente aparte & No abre el código del detector hasta el congelamiento \\
+\textcolor{azuleq}{\rule{0.55em}{0.55em}}\ Equipo azul & Construyó el detector y eligió sus parámetros
+  con los sets de entrenamiento y validación & No agrega reglas para un ataque concreto. Cada cambio
+  queda en una bitácora, con hora y motivo \\
+\textcolor{moradoeq}{\rule{0.55em}{0.55em}}\ Equipo morado & Puso las reglas y las hizo cumplir & El
+  set de prueba se sella con hash, el detector se congela con hash y la evaluación se corre una sola
+  vez \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Los tres sets}
+
+\begin{table}[ht]
+\caption{Los tres sets de datos.}\label{tab:sets}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.2cm}R{1.5cm}R{3.2cm}L@{}}
+\toprule
+Set & Ataques & Sesiones normales difíciles & Familias \\
+\midrule
+Entrenamiento & 80 & 20 & A1, A2, A3, A4, A5$'$; B1, B2 \\
+Validación & 80 & 20 & Las mismas \\
+Prueba (sellado) & 180 & 90 & A5, A7, A9, A10, A12, A13; B3, B4, B5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las familias del set de prueba no aparecen en los otros dos: usan canales y codificaciones nuevos.
+Cada familia tiene 30 casos generados a partir de una misma plantilla; en A7, cada caso es un grupo de
+tres sesiones.
+
+\subsection{La secuencia del sábado 21 de noviembre}
+
+\begin{enumerate}
+  \item \textbf{07:10.} El rojo sella el set de prueba: publica el sha256 de todos sus archivos,
+    \cod{18dda3af}…, en \cod{redteam/SELLO.md}. El set queda en una rama aparte.
+  \item \textbf{Antes de abrir.} El azul congela el detector. Parámetros y modelo quedan fijados con el
+    hash \cod{cf56ce20}… (commit \cod{3f26307}, etiqueta \cod{congelamiento}).
+  \item \textbf{09:40.} Se abre el set. El sello se recalcula y coincide. La evaluación se corre una
+    sola vez (commit \cod{cd14e9e}); el comando se niega a correr de nuevo.
+  \item \textbf{Después.} Los análisis posteriores (el atacante que se adapta, los fragmentos cortos,
+    las marcas del proxy) se hicieron con el detector congelado y se reportan aparte. Nada se ajustó
+    después de ver los resultados.
+\end{enumerate}
+
+\subsection{Qué puede comprobar alguien de afuera}
+
+\begin{itemize}
+  \item \textbf{El sello.} El comando de \cod{redteam/SELLO.md} vuelve a calcular el hash sobre los
+    archivos de hoy, y coincide. La demo del pitch lo recalcula en vivo.
+  \item \textbf{El orden.} El sello se publicó antes del congelamiento y de la corrida; los commits
+    están en el historial.
+  \item \textbf{Las cifras.} \cod{python -m eval.final.proxy_flags --out /tmp/pf} repite la medición en
+    unos tres minutos. La repetimos el 21 de noviembre a las 19:20 y dio las mismas cifras.
+\end{itemize}
+
+Lo que no puede comprobar es que el rojo no abrió el detector. Es una regla de trabajo del equipo, y lo
+decimos así.
+
+\section{Resultados}\label{sec:resultados}
+
+\subsection{La cifra principal: 120 de 180}
+
+La evaluación se corrió primero con las marcas que traían las grabaciones. Cada llamada lleva dos: si
+saca datos y si su contenido es no confiable. Las había escrito el generador de ataques, y con ellas
+Alicanto previno 180 de 180. Horas después el equipo encontró que el proxy en vivo calcula esas marcas
+de otra forma en 810 de \num{15281} llamadas. Con las marcas del proxy, que es como funcionaría
+instalado, la cifra es 120 de 180. Esa es la que decimos.
+
+\begin{table}[ht]
+\caption{Ataques frenados por familia, con las marcas del proxy (\cod{results/proxy_flags/systems.md}).
+El detalle de por qué se frena o se escapa cada una está en la \cref{sec:por-familia}.}\label{tab:familias-i}
+\small
+\begin{tabularx}{\textwidth}{@{}P{1.4cm}LR{2.6cm}@{}}
+\toprule
+Familia & Cómo saca la clave & Frenados, de 30 \\
+\midrule
+A5 & Por un canal de confianza del propio entorno, en base32 & 30 \\
+A7 & Repartida entre tres agentes; ninguno saca más de un tercio & 30 \\
+A10 & Ofuscada con XOR y una clave por sesión & 30 \\
+A12 & Goteo lento: decenas de llamadas normales y después una ráfaga & 30 \\
+A9 & Hacia su propio destino permitido, en una cabecera & 0 \\
+A13 & En mensajes de \esp{commits} de git, y después un \esp{push} & 0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Cada familia son 30 réplicas de una misma plantilla. El resultado se lee como «cuatro de seis
+familias», no como 180 casos independientes.
+
+\textbf{Por qué se escapan dos.} En A9 la clave viaja a un destino que tiene permitido: para el proxy
+ese envío es legítimo y no lo cuenta como fuga. En A13 el \cod{git commit} no es una salida; la salida
+es el \cod{push}. El proxy en vivo inspecciona el \esp{push}, rota y lo bloquea en las 30 sesiones,
+pero el set marca la fuga en cada \esp{commit}, así que la métrica da 0 de 30. La métrica no se tocó.
+
+\subsection{El tráfico normal}
+
+Ninguna de \num{5879} llamadas normales fue bloqueada. El costo está en las rotaciones: en 34 de las
+90 sesiones normales difíciles Alicanto rotó una clave sin necesidad (39 rotaciones en total). Casi
+todas son de una sola familia.
+
+\begin{table}[ht]
+\caption{Sesiones normales difíciles en que Alicanto rotó una clave sin necesidad
+(\cod{results/test/summary_ours.json}).}\label{tab:normales-i}
+\small
+\begin{tabularx}{\textwidth}{@{}LR{4.2cm}@{}}
+\toprule
+Sesiones normales difíciles & Con una rotación de más, de 30 \\
+\midrule
+B3: identificadores que parecen claves (SHA, UUID, tokens) & 3 \\
+B4: despliegue y rotación legítimos & 1 \\
+B5: contenido no confiable lleno de claves de ejemplo & 30 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+B5 hace, de forma legítima, lo mismo que un ataque: lee un secreto y después habla con un destino no
+confiable. En las 30 sesiones normales corrientes no rotó nunca.
+
+\subsection{La misma medición con otros guardias}
+
+Con las marcas del proxy, sobre los mismos 180 ataques:
+
+\begin{table}[ht]
+\caption{La misma medición con otros sistemas (\cod{results/proxy_flags/systems.md}). La
+\cref{tab:sistemas} trae los intervalos y las demás columnas.}\label{tab:guardias-i}
+\small
+\begin{tabularx}{\textwidth}{@{}LR{2.6cm}R{3.4cm}@{}}
+\toprule
+Sistema & Ataques frenados & Llamadas normales bloqueadas \\
+\midrule
+Alicanto & 120 & 0 \\
+Regla simple: «leyó un secreto y sale a un destino no confiable» & 90 & 0 \\
+Presupuesto de bits por sesión (réplica nuestra, simplificada) & 40 & \qty{4.8}{\percent} \\
+Lista de destinos permitidos & 30 & 0 \\
+Lista de destinos más escáner de secretos & 30 & \qty{2.2}{\percent} \\
+Alicanto sin evidencia de comportamiento & 10 & 0 \\
+Alicanto sin rotación & 0 & 0 \\
+Escáner de secretos (regex y entropía) & 0 & \qty{2.2}{\percent} \\
+Reensamblado por sesión (réplica nuestra, simplificada) & 0 & 0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las dos réplicas son versiones simplificadas que hicimos a partir de documentación pública. Sus cifras
+no son las de ningún producto.
+
+\subsection{Mediciones posteriores, con el detector congelado}
+
+\begin{itemize}
+  \item \textbf{Atacante que se adapta.} Es una simulación, con las marcas de las grabaciones: el
+    atacante relee la clave nueva después de cada rotación. Ninguno de los 180 pasa de 96 bits de una
+    versión de la clave. En todos los casos Alicanto llega a su tope de tres rotaciones y bloquea las
+    salidas de esa clave.
+  \item \textbf{Fragmentos cortos.} Con pedazos de 4 y 7 caracteres, ninguna de 36 combinaciones pasa
+    de 96 bits. Los pedazos de 1 a 3 caracteres el contador no los cuenta: la configuración evaluada
+    los frena por la evidencia de comportamiento (máximo 12 bits), pero la de la demo y del
+    \esp{hook}, sin ese modelo, deja salir la clave entera en 10 de 18 combinaciones.
+  \item \textbf{Modelos reales.} Un agente con Claude Haiku~5.5, Sonnet~5.5 y Opus~5.5 trabajó a
+    través del proxy. En 21 corridas con la nota plantada ninguno la siguió, así que no hubo fuga que
+    frenar. Lo que estas corridas muestran es que un agente con un modelo real trabaja a través del
+    proxy; en una de ellas Alicanto rotó de más.
+\end{itemize}
+
+\section{Límites}\label{sec:limites-i}
+
+Van aquí, juntos, para que nadie tenga que buscarlos. La \cref{sec:limites} los amplía con el detalle
+técnico.
+
+\begin{itemize}
+  \item \textbf{Son ataques grabados.} Las sesiones del set son guiones: después de una rotación
+    siguen enviando la clave vieja. El atacante que se adapta se midió aparte, y en simulación.
+  \item \textbf{Todo el tráfico es sintético.} Ataques y sesiones normales los generó el equipo. No
+    hay tráfico de producción.
+  \item \textbf{Dos familias no se cubren:} la clave enviada a su propio destino permitido (A9) y la
+    fuga por \esp{commits} de git (A13).
+  \item \textbf{Lo que frena los ataques nuevos es la evidencia de comportamiento, no el contador.}
+    Solo con el contador de bits se frenan 10 de 180. El contador es exacto para las codificaciones
+    que conoce y no detecta las que no conoce.
+  \item \textbf{El modelo de evidencia equivale, en estos datos, a una regla simple:} «la sesión leyó
+    un secreto y esta llamada sale a un destino no confiable». Con las marcas de las grabaciones esa
+    regla empata con Alicanto. Con las del proxy, Alicanto frena 120 y la regla 90.
+  \item \textbf{Rotar de más tiene un costo que no cumple nuestra propia meta:} 5,46 rotaciones por
+    cada \num{1000} llamadas normales, cuando la meta era 5.
+  \item \textbf{El contador no cuenta pedazos de menos de 4 caracteres.}
+  \item \textbf{La cuenta compartida cubre varios agentes en una misma máquina,} no varias máquinas.
+  \item \textbf{Rotar no impide el intento.} Hace que lo robado no sirva.
+  \item \textbf{El agente de las demos es un guion.} No mostramos a Alicanto frenando a un modelo real,
+    porque ningún modelo siguió la nota plantada.
+  \item \textbf{El \esp{hook} de Claude Code ve lo que el modelo escribe en los comandos,} no lo que
+    un comando hace por dentro. Se probó en una sesión real; el contador con un modelo real no quedó
+    probado.
+  \item \textbf{No hay evidencia de demanda todavía.} Ningún equipo externo lo ha usado. Por eso el
+    pedido es un piloto.
+\end{itemize}
+
+\section{La demo y el pitch}\label{sec:demo-i}
+
+\subsection{La demo oficial}
+
+Está en \cod{demo/viz/} y publicada en \href{https://alicanto.vercel.app}{alicanto.vercel.app}.
+Muestra el mismo ataque dos veces. Sin protección, el atacante arma la clave y recibe 200. Con
+Alicanto, la clave rota en la llamada 24, con 48 bits filtrados, y recibe 401. Una segunda versión
+reparte la fuga entre cinco agentes: con una cuenta por agente nadie la ve; con la cuenta por clave,
+rota.
+
+\subsection{Las demos alternativas}
+
+Son tres exploraciones en \cod{demo/alternativas/}, hechas sobre corridas reales del motor.
+
+\begin{table}[ht]
+\caption{Las demos alternativas.}\label{tab:alternativas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{4.6cm}L@{}}
+\toprule
+Alternativa & Qué muestra \\
+\midrule
+01, «El botín» & El ataque visto desde el servidor del atacante: la clave se arma de a cuatro
+  caracteres y, con Alicanto, lo que había juntado se vuelve ceniza \\
+02, «El juez es el atacante» & Una página para el teléfono de alguien del jurado, que recibe la clave
+  pedazo a pedazo y la prueba \\
+03, «20 agentes, una clave» & Una clínica ficticia, sus 20 asistentes de código y una nota plantada.
+  Es la que lleva el pitch de 3 minutos \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{El pitch de 3 minutos}
+
+Con \cod{?pitch=1}, la alternativa 03 lleva los 3 minutos completos en una sola página, con reloj.
+
+\begin{table}[ht]
+\caption{El pitch de 3 minutos, por tramos.}\label{tab:pitch}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.2cm}LP{3.9cm}@{}}
+\toprule
+Reloj & Qué pasa & De dónde sale \\
+\midrule
+0:00 a 0:40 & Apertura: qué es Alicanto y por qué importa & Texto \\
+0:40 a 1:23 & El ataque. Una nota plantada en un issue; diez asistentes mandan cuatro caracteres cada
+  uno; ningún monitor por agente ve más de 16 de 160 bits; el atacante arma la clave y abre una ficha
+  & Corrida grabada del motor \\
+1:23 a 1:51 & El público hace de atacante: elige entre cuántos asistentes reparte la clave, cómo
+  esconde cada pedazo y un número cualquiera & El motor corre en ese momento, en unos 200~ms \\
+1:51 a 2:21 & Con Alicanto, frente al ataque que eligieron: la cuenta llega a 48 bits, la clave rota,
+  el atacante recibe 401 y ningún asistente queda bloqueado & Esa misma corrida \\
+2:21 a 2:53 & Cómo lo probamos: los tres equipos, el set sellado, 120 de 180, sus límites y el pedido
+  & Cifras de \cod{results/}; el sello se recalcula en vivo \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Los tiempos son de un ensayo a velocidad real, con el guion dicho a 150 palabras por minuto. Terminó
+en 2:53.
+
+\textbf{La última escena} responde a «¿y esto funciona de verdad?». Dibuja el set de prueba entero
+como una grilla: una fila por familia y una casilla por ataque o por sesión normal. Primero aparece
+sellado, con su hash. Después se abre y las casillas se llenan: claras las de los ataques frenados, en
+oro las de las dos familias que se escapan y en gris las sesiones normales en que rotó de más. Un paso
+más, para las preguntas, muestra la misma medición con otros guardias. La página no trae ninguna cifra
+escrita: las lee de un archivo que un script copia de \cod{results/}, y un test falla si dejan de
+coincidir. La \cref{fig:rejilla} de este documento es esa misma grilla.
+
+\textbf{Qué es real y qué no.} El motor, sus decisiones, la rotación y el resultado del cobro son
+reales. La pantalla de la clínica, la tarea que se escribe y la ficha son maquetas, y la página lo
+dice. El agente es un guion.
+
+El guion (\cod{GUION_3_MIN.md}) es un borrador. Lo tiene que reescribir, con su voz, quien presente.
+
+\section{Cómo trabajamos}\label{sec:trabajamos}
+
+Cinco personas, cada una con su agente de código, durante 36 horas. El trabajo se repartió por áreas
+con dueño, y los agentes se coordinaron entre sí por escrito.
+
+\begin{table}[ht]
+\caption{Las áreas del equipo, según \cod{AGENTS.md}.}\label{tab:areas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.3cm}LP{2.9cm}P{3.9cm}@{}}
+\toprule
+Área & Qué cubre & Dueño & Carpetas \\
+\midrule
+Líder y orquestador & Plan, reglas, contratos compartidos y reparto de tareas & \cod{jplira2} &
+  \cod{docs/PLAN.md}, \cod{AGENTS.md}, \cod{contracts/} \\
+Proxy & Proxy MCP, herramientas y grafos & \cod{jcbasulto} & \cod{proxy/}, \cod{engine/graph/} \\
+Análisis & Motor de bits, evidencia, búsqueda de parámetros y evaluación & \cod{matix3000} &
+  \cod{engine/}, \cod{eval/} \\
+Servicios & Gestor de secretos, API protegida, servidor del atacante y líneas de base &
+  \cod{terdmannsdorffer} & \cod{services/}, \cod{eval/baselines/} \\
+Rojo & Ataques, set sellado, GitHub y web simulados & \cod{jplira2} & \cod{redteam/} \\
+Demo & Demo, agente mínimo, visualización y pitch & \cod{VictoriaGuerriero} & \cod{demo/},
+  \cod{pitch/} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Las áreas son las de \cod{AGENTS.md}. Durante el evento el líder movió trabajo entre personas más de
+una vez; el detalle está en \cod{docs/INFORME_TURNOS.md}.
+
+\subsection{Cómo se coordinaron los agentes}
+
+\begin{itemize}
+  \item \textbf{Un tablero para agentes.} Un issue fijado de GitHub hace de tablero. Cada agente
+    publica en una línea qué cambió, qué contrato tocó y qué necesita de quién, y lee lo de los demás
+    antes de cada commit (\cod{tools/board}).
+  \item \textbf{Un orquestador.} Un agente del líder reparte el plan como tareas. Cada tarea es un
+    issue con objetivo, archivos, contrato y un comando de aceptación. Nadie reporta «listo» sin haber
+    visto pasar ese comando.
+  \item \textbf{Un PR por tarea.} Ramas cortas, commits solo con archivos propios, y aviso en el
+    tablero cuando un merge cambia algo de lo que dependen otros.
+  \item \textbf{Contratos compartidos.} Los tipos comunes (\cod{ToolCall}, \cod{Decision}, el registro
+    de eventos) viven en \cod{contracts/} y solo los cambia el líder.
+  \item \textbf{Reglas contra el sobreajuste,} descritas más arriba, y una bitácora de cada cambio al
+    detector.
+\end{itemize}
+
+En números, en la rama principal al sábado 21 a las 17:40: 167 commits, 109 PR mergeados, 83 issues
+cerrados y más de 800 tests automáticos.
+
+\subsection{La línea de tiempo}
+
+\begin{table}[ht]
+\caption{La línea de tiempo del evento.}\label{tab:tiempo}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.6cm}L@{}}
+\toprule
+Cuándo & Qué pasó \\
+\midrule
+Viernes 20, 23:00 & Parte el hackathon \\
+Sábado, 02:00 a 04:00 & Producto base en la rama principal y primera demo de punta a punta: 200 sin
+  protección, 401 con Alicanto \\
+04:00 a 06:00 & Escenario, ataques de entrenamiento y validación, primer nombre (Cuentagotas) \\
+06:00 a 08:00 & Cuenta compartida entre agentes. El rojo sella el set de prueba (07:10) \\
+08:00 a 09:30 & Auditoría del código contra lo que afirmábamos \\
+09:40 & Congelamiento del detector y evaluación final, una sola vez \\
+09:55 a 11:00 & Atacante que se adapta, medido aparte. Demo desplegada \\
+11:30 & El proyecto pasa a llamarse Alicanto. Corridas con modelos reales \\
+13:00 a 14:00 & Hallazgo de las marcas: la cifra pasa de 180 a 120 \\
+14:00 a 16:25 & \esp{Hook} de Claude Code, fragmentos cortos, demos alternativas 01 y 02 \\
+Tarde y noche & Alternativa 03, pitch de 3 minutos con la parte en vivo y la escena «Cómo lo
+  probamos» \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Lo que corregimos en el camino}
+
+Varias de las cosas más útiles del proyecto salieron de buscarle fallas.
+
+\begin{itemize}
+  \item \textbf{El motor no veía fragmentos de cuatro caracteres en base64.} Se encontró y se
+    corrigió antes de congelar.
+  \item \textbf{Dos afirmaciones nuestras eran falsas.} Decíamos que nadie juntaba fragmentos entre
+    llamadas; una investigación del estado del arte mostró que ya hay herramientas que lo hacen. Se
+    corrigieron la descripción y el pitch.
+  \item \textbf{La evaluación contaba mal las rotaciones} y la herramienta \cod{git} del proxy tenía
+    un hueco de seguridad. Los encontró una auditoría del código; los dos se corrigieron antes del
+    congelamiento.
+  \item \textbf{El 180 de 180 dependía de marcas que escribió el generador de ataques.} Lo encontró
+    una revisión crítica contra la rúbrica. La decisión del líder fue recalcular y publicar la cifra
+    con las marcas del proxy (120), en vez de solo agregar una salvedad. Hoy hay tests que vigilan que
+    ningún texto público diga «180 de 180» sin su explicación.
+  \item \textbf{La frase de los equipos separados} pasó a decir solo lo que se puede sostener: una
+    sesión aparte con una regla de trabajo, no algo comprobable desde fuera.
+\end{itemize}
+
+\section{Qué queda pendiente}\label{sec:pendiente}
+
+\subsection{Antes de la entrega del domingo a las 09:30}
+
+\begin{itemize}
+  \item \textbf{Elegir la demo del pitch.} La oficial o la alternativa 03 con su guion de 3 minutos.
+    Lo decide el líder.
+  \item \textbf{Reescribir y ensayar el guion.} Es un borrador. Quien presente lo dice con su voz y lo
+    pasa con reloj, en el proyector de verdad: tiene que terminar antes de 2:55.
+  \item \textbf{Revisar \cod{README.md} y \cod{project-description.md}.} Los preparó un agente; una
+    persona del equipo los reescribe y los revisa antes de entregar. El PR \#178, con la descripción
+    reescrita, espera al líder.
+  \item \textbf{Si se elige la alternativa 03,} llevarla al sitio publicado y redesplegar. Hoy se abre
+    solo en local.
+\end{itemize}
+
+\subsection{Lo que no alcanzamos a medir}
+
+\begin{itemize}
+  \item \textbf{Un atacante real que se adapta.} Lo medido es una simulación con un guion que relee y
+    reenvía.
+  \item \textbf{El costo del modo escalado sobre tráfico normal.} Cuando Alicanto llega a su tope de
+    rotaciones y bloquea las salidas de una clave, no sabemos cuánto molesta a un equipo que trabaja.
+  \item \textbf{Tráfico de producción.} Para eso es el piloto.
+  \item \textbf{Varias máquinas.} La cuenta compartida funciona entre agentes de una misma máquina.
+\end{itemize}
+
+\subsection{Qué haríamos después, si hay piloto}
+
+\begin{itemize}
+  \item Cubrir las dos familias que hoy se escapan: la clave que viaja a su propio destino permitido
+    y la fuga por \esp{commits} de git.
+  \item Bajar las rotaciones de más en sesiones que leen contenido no confiable.
+  \item Probarlo con dos equipos que usen agentes de código y tengan claves en sus repositorios, y
+    medir con su tráfico.
+\end{itemize}
+
+\section{Dónde está cada cosa}\label{sec:donde}
+
+Todo está en el repositorio del equipo, \cod{platanus-hack/platanus-hack-26-cl-team-47}.
+
+\begin{table}[ht]
+\caption{Dónde está cada cosa en el repositorio. El \apref{ap:mapa} trae el mapa completo.}\label{tab:donde}
+\small
+\begin{tabularx}{\textwidth}{@{}LP{7.4cm}@{}}
+\toprule
+Qué & Dónde \\
+\midrule
+Qué es el proyecto y cómo correrlo & \cod{README.md}, \cod{docs/QUICKSTART.md} \\
+El plan y las reglas del equipo & \cod{docs/PLAN.md}, \cod{AGENTS.md} \\
+La historia, turno por turno & \cod{docs/INFORME_TURNOS.md}, \cod{docs/ESTADO.md} \\
+Cómo leer los resultados y qué frases respaldan & \cod{results/test/LECTURA.md} \\
+La cifra con las marcas del proxy & \cod{results/proxy_flags/systems.md} \\
+El sello del set de prueba & \cod{redteam/SELLO.md} \\
+Las familias de ataque y sus fuentes & \cod{redteam/README.md}, \cod{redteam/test/FAMILIAS.md} \\
+Cada cambio al detector, con hora y motivo & \cod{docs/BITACORA_DETECTOR.md} \\
+El atacante que se adapta y los fragmentos cortos & \cod{results/adaptive/}, \cod{results/short_fragments/} \\
+Las corridas con modelos reales & \cod{docs/LLM_EN_VIVO.md} \\
+El \esp{hook} de Claude Code & \cod{integrations/claude_code/README.md} \\
+La demo oficial y su despliegue & \cod{demo/viz/}, \cod{demo/DEPLOY.md} \\
+Las demos alternativas & \cod{demo/alternativas/} \\
+El pitch de 3 minutos con la parte en vivo & \cod{demo/alternativas/03-enjambre-juanpedro/GUION_3_MIN.md} \\
+El pitch oficial y las preguntas del jurado & \cod{pitch/GUION.md}, \cod{pitch/PREGUNTAS.md} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Comandos para comprobar lo principal}
+
+Desde la raíz del repositorio, con Python 3.11 o superior:
+
+\begin{consola}
+pip install -r requirements.txt
+
+# La suite completa
+python -m pytest -q
+
+# La demo, desde cero: 200 sin protección y 401 con Alicanto
+python demo/run_split.py --out-dir demo/out
+
+# El sello del set de prueba, recalculado sobre los archivos de hoy
+python demo/alternativas/03-enjambre-juanpedro/hacer_evaluacion.py --sello
+
+# La medición: 120 de 180 (unos 3 minutos)
+python -m eval.final.proxy_flags --out /tmp/pf
+
+# El pitch, con la parte en vivo
+python demo/alternativas/03-enjambre-juanpedro/servidor.py
+\end{consola}

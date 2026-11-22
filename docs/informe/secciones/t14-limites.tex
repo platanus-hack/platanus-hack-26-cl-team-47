@@ -1,0 +1,90 @@
+\section{Límites técnicos y lo que haríamos después}\label{sec:limites}
+
+La parte I lista los límites en palabras simples. Aquí van todos, con su causa en el código o en los
+datos, incluidos los que aparecieron al escribir este documento. Están agrupados por dónde nacen.
+
+\subsection{De la medición}
+
+\begin{description}
+  \item[Son grabaciones.] Una sesión grabada no reacciona. La reacción se midió aparte, en una
+    simulación y con las marcas de las grabaciones (\cref{sec:adaptativo}).
+  \item[Todo es sintético.] Los ataques, las sesiones normales, el repositorio y los servidores son
+    del equipo. No hay una sola llamada de tráfico real.
+  \item[Seis plantillas.] Cada familia son 30 réplicas. El set mide cuántas familias se frenan, no
+    cuántos ataques distintos. Los intervalos y los valores p tratan las réplicas como independientes
+    y por eso exageran.
+  \item[La meta de detección no se cumple con las marcas del proxy.] La prueba T2 pedía frenar más del
+    \qty{80}{\percent}; con las marcas del proxy son dos tercios. Las pruebas no se recalcularon con
+    esas marcas.
+  \item[La meta de rotaciones tampoco.] 5,46 rotaciones de más por cada \num{1000} llamadas normales,
+    contra una meta de 5.
+  \item[Las etiquetas definen la fuga.] En A13 la métrica cuenta la fuga en el \esp{commit}, y el
+    sistema la frena en el \esp{push}. La cifra queda en 0 de 30 aunque la clave no salga.
+  \item[Un solo tipo de clave.] 40 caracteres hexadecimales. Con claves más cortas o de otro alfabeto,
+    los umbrales en bits significan otra cosa, y las coincidencias por azar cambian.
+  \item[Ningún modelo real siguió la instrucción.] No hay una sola medición de Alicanto frenando una
+    fuga producida por un modelo.
+  \item[Un borde sin resolver.] Con exactamente 96 bits, la métrica cuenta el ataque como frenado y
+    el servidor del atacante da la clave por completada.
+\end{description}
+
+\subsection{Del detector}
+
+\begin{description}
+  \item[El contador da una cota inferior.] No cuenta pedazos de menos de 4 caracteres, ni
+    codificaciones fuera de su lista, ni encadenamientos de más de dos pasos (\cref{sec:contador-limites}).
+  \item[La evidencia quedó saturada.] Da $+3$ o $-3$. Se comporta como la regla «petición HTTP hacia un
+    destino que no es de ninguna clave», y hereda sus dos defectos: no ve lo que sale por un destino
+    conocido y rota cada vez que una sesión normal lee una clave y después navega.
+  \item[El destino permitido es un hueco.] Lo que va al destino de una clave no se cuenta para esa
+    clave, vaya en la cabecera de autorización o en cualquier otra parte, entero o a pedazos (A9).
+  \item[Los parámetros congelados no son los mejores de validación.] Hay 144 combinaciones con las
+    mismas cifras y sin la rotación de más que tuvo la elegida. El umbral de bloqueo $b$ no quedó
+    determinado por ningún dato (\cref{sec:congelamiento}).
+  \item[Con el umbral del \qty{10}{\percent}, una coincidencia de 4 caracteres por azar rota.] Pasó
+    cuatro veces en el set de prueba.
+  \item[El modo escalado no está medido sobre trabajo normal.] Es lo que frena al atacante que se
+    adapta, y no sabemos cuánto molesta. El «aviso a una persona» es un texto en el motivo de la
+    decisión.
+  \item[Parte del diseño no decide nada.] La medida $R^{+}$, las aristas de sospecha y la explicación
+    por dominadores están implementadas y probadas, y ninguna regla las lee. El parámetro \cod{alpha}
+    existe y no se usa.
+  \item[El detector confía en las marcas.] Si una herramienta nueva saca datos y no se marca como
+    sumidero, el contador no la mira.
+\end{description}
+
+\subsection{De la implementación}
+
+\begin{description}
+  \item[Solo ve sus propias herramientas.] El proxy protege lo que pasa por él. Un agente con otras
+    herramientas necesita el \esp{hook}, que mira el texto de los comandos y tres herramientas.
+  \item[Una máquina.] La cuenta compartida es un archivo con un cerrojo local.
+  \item[El banco de pruebas no es un despliegue.] Servicios sin autenticación, gestor que entrega
+    cualquier valor, manifiesto con las claves en texto.
+  \item[Rotar tiene un costo que depende de quién usa la clave.] En el banco de pruebas es invisible.
+    En producción no lo sabemos.
+  \item[Nada sale a internet.] Las peticiones solo llegan a cinco nombres locales y la red de git está
+    simulada. Nunca se probó contra un servicio real.
+\end{description}
+
+\subsection{Lo que haríamos después}
+
+Son propuestas, no decisiones. Las ordena el tamaño del problema que resuelven.
+
+\begin{enumerate}
+  \item \textbf{Cerrar el hueco del destino permitido.} Descontar una clave enviada a su destino solo
+    cuando viaja entera y en el lugar donde se espera una credencial. Lo demás, contarlo. Es la
+    familia A9.
+  \item \textbf{Contar los \esp{commits}.} Medir el mensaje y el \esp{diff} en el momento del
+    \esp{commit} cuando el repositorio tiene un remoto, o al menos dejar la clave marcada. Es la
+    familia A13.
+  \item \textbf{Reemplazar el modelo por lo que resultó ser.} Una regla explícita es más fácil de
+    auditar que nueve histogramas que la aproximan, y permite decidir a propósito qué hacer con las
+    sesiones que leen una clave y después navegan.
+  \item \textbf{Elegir el umbral de rotación mirando el azar.} Exigir dos candidatas en posiciones
+    distintas, o un umbral que dependa del largo y del alfabeto de la clave.
+  \item \textbf{Decidir qué hacer con $R^{+}$:} conectarlo con datos que permitan medirlo, o quitarlo.
+  \item \textbf{Llevar la cuenta a un servicio,} para cubrir varias máquinas.
+  \item \textbf{Medir con tráfico real.} Las rotaciones de más, el modo escalado y el costo de rotar
+    solo se conocen de verdad con un equipo trabajando. Para eso es el piloto.
+\end{enumerate}

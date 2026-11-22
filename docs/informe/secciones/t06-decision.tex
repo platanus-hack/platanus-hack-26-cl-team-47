@@ -1,0 +1,200 @@
+\section{La regla de decisión}\label{sec:decision}
+
+El detector (\cod{engine/detector/detector.py}) junta las piezas anteriores y responde, para cada
+llamada, una acción. No aprende nada: es un conjunto fijo de reglas con siete parámetros. Esta
+sección las da completas, porque es aquí donde se decide qué cuesta un error en cada dirección.
+
+\subsection{Qué pasa dentro de una decisión}
+
+Para cada llamada, en este orden:
+
+\begin{enumerate}
+  \item El grafo de archivos calcula $m$, $m_{\mathrm{sd}}$ y \cod{jump} para los recursos de la
+    llamada.
+  \item El grafo de llamadas agrega la llamada, busca sus aristas de contenido y devuelve sus
+    etiquetas $U$ y $S$ y, si corresponde, un camino.
+  \item El contador de bits observa la llamada. Si el destino es un destino permitido de una clave,
+    lo que el contador sumó para esa clave en esta llamada se deshace.
+  \item Se arman las nueve señales, el modelo calcula $\ell_t$ y la suma acumulada pasa a $S_t$.
+  \item Se actualiza qué claves están expuestas.
+  \item Se aplican las reglas.
+  \item Si alguna regla pide rotar, se rota: se le pide el valor nuevo al gestor y se reinician la
+    cuenta y la exposición de esa clave.
+\end{enumerate}
+
+\subsection{Cuándo una clave está expuesta}
+
+Una clave está \emph{expuesta} si la sesión pudo haberla leído: una llamada tocó su archivo, o el
+resultado de una llamada contiene 8 caracteres seguidos de su valor vigente. Las tres causas de
+rotación exigen que la clave esté expuesta. Tiene sentido: no se rota una clave que nadie leyó, por
+mucho que una llamada se parezca a un envío.
+
+Rotar una clave le quita la exposición. El valor nuevo no lo ha leído nadie, y hasta que la sesión no
+vuelva a leerlo no hay nada que proteger.
+
+\subsection{Las reglas}
+
+La \cref{fig:decision} las resume y el \cref{alg:decide} las da con precisión.
+
+\begin{figure}[ht]
+\centering
+\input{figuras/decision}
+\caption{La regla de decisión. Las reglas 2 y 3 se evalúan solo si la regla 1 no bloqueó. Si se
+cumplen a la vez una rotación y un bloqueo, la acción es \cod{rotate+block}.}
+\label{fig:decision}
+\end{figure}
+
+\begin{description}
+  \item[Regla 1: bloqueo determinista.] La llamada es un sumidero, los bits \emph{confirmados} de una
+    clave subieron en esta llamada y el destino no es uno de los permitidos de esa clave (o no se
+    pudo identificar). Se bloquea la llamada y se rota la clave. Es la única regla que no exige
+    exposición ni evidencia: un tramo de 8 o más caracteres seguidos de una clave, saliendo hacia
+    donde no debe, no admite otra lectura. Las candidatas nunca disparan esta regla.
+  \item[Regla 2: rotar.] Para cada clave expuesta, la primera de estas condiciones que se cumpla:
+    \begin{itemize}
+      \item \emph{por el contador:} la fracción filtrada, sumando confirmados y candidatos, es
+        $\geq \lrot$;
+      \item \emph{por la evidencia:} $S_t \geq \brot$;
+      \item \emph{por el período:} pasaron $T$ llamadas desde la última rotación de esa clave.
+    \end{itemize}
+    La clave rota y la llamada \emph{se deja pasar}. Si la regla la dispara la evidencia, rotan todas
+    las claves expuestas en ese momento, porque la evidencia es de la sesión y no de una clave.
+  \item[Regla 3: bloqueo por evidencia.] $S_t > b$ y el grafo de llamadas entregó un camino de
+    contenido. Se bloquea.
+  \item[Regla 4.] Si nada de lo anterior se cumple, se permite.
+\end{description}
+
+\begin{algorithm}[ht]
+\caption{La regla de decisión (\cod{Detector.decide}), después de medir.}\label{alg:decide}
+\KwIn{la llamada $c$, su destino $d$, la evidencia $S$, el camino $\pi$ del grafo de llamadas; por cada
+clave $s$: bits confirmados antes y después, fracción $\lambda(s)$, exposición, llamadas $e(s)$ desde su
+última rotación}
+$\mathit{rotar} \leftarrow \emptyset$; $\mathit{bloquear} \leftarrow$ falso\;
+\If(\Com*[f]{regla 1}){$c$ saca datos}{
+  \ForEach{clave $s$ cuyos bits confirmados subieron y $d \notin \mathit{permitidos}(s)$}{
+    $\mathit{bloquear} \leftarrow$ verdadero; agregar $s$ a $\mathit{rotar}$\;
+  }
+}
+\If{no $\mathit{bloquear}$}{
+  \ForEach(\Com*[f]{regla 2}){clave $s$ expuesta}{
+    \lIf{$\lambda(s) \geq \lrot$ \textbf{o} $S \geq \brot$ \textbf{o} $e(s) \geq T$}{agregar $s$ a $\mathit{rotar}$}
+  }
+  \lIf(\Com*[f]{regla 3}){$S > b$ \textbf{y} $\pi \neq \emptyset$}{$\mathit{bloquear} \leftarrow$ verdadero}
+}
+\ForEach(\Com*[f]{tope de rotaciones}){$s \in \mathit{rotar}$}{
+  \lIf{$s$ ya rotó $3$ veces en las últimas $200$ llamadas}{quitar $s$ de $\mathit{rotar}$; $s$ pasa a modo escalado}
+}
+\If{$c$ saca datos \textbf{y} hay una clave $s$ en modo escalado con $d \notin \mathit{permitidos}(s)$}{
+  $\mathit{bloquear} \leftarrow$ verdadero\;
+}
+\Return \cod{rotate+} si $\mathit{rotar} \neq \emptyset$, seguido de \cod{block} si $\mathit{bloquear}$ y de \cod{allow} si no\;
+\end{algorithm}
+
+\subsection{El tope de rotaciones y el modo escalado}\label{sec:escalado}
+
+Rotar no puede ser la respuesta indefinida. Un atacante que relee la clave después de cada rotación
+obligaría a rotar sin fin, y cada rotación le deja sacar un poco de la versión nueva. Por eso una clave
+puede rotar a lo más 3 veces dentro de una ventana de 200 llamadas.
+
+Al cuarto pedido la clave no rota: entra en \emph{modo escalado}. Desde ahí se bloquea todo sumidero
+hacia un destino que no sea uno de sus permitidos, con el motivo «demasiadas rotaciones: se bloquean
+las salidas y se avisa a una persona». La clave sale del modo escalado cuando pasan 200 llamadas sin
+que ninguna regla pida rotarla.
+
+Es el único momento en que Alicanto deja de preferir la rotación al bloqueo, y lo hace a propósito:
+contra un adversario persistente, termina deteniendo las salidas. El aviso a una persona es hoy el
+texto del motivo; no hay un canal de notificación implementado. El costo de este modo sobre el trabajo
+normal no está medido.
+
+\subsection{La invariante que acota el período}\label{sec:invariante}
+
+El período $T$ no se puede elegir libremente. Hay un adversario que conoce las reglas del contador y
+juega contra ellas:
+
+\begin{itemize}
+  \item envía pedazos de $k - 1 = 7$ caracteres, el más largo que no se confirma;
+  \item espera $W + 1 = 51$ llamadas entre un pedazo y el siguiente, para que cada candidata caduque
+    antes de que llegue la próxima.
+\end{itemize}
+
+Así el contador nunca ve más de un pedazo a la vez: 28 bits, bajo el umbral del \qty{30}{\percent} de
+la demo. Lo único que lo detiene es la rotación periódica. Entre dos rotaciones periódicas alcanza a
+hacer $\lceil T / (W+1) \rceil$ envíos, de modo que la configuración solo es segura si
+\begin{equation}
+  \left\lceil \frac{T}{W + 1} \right\rceil \cdot (k - 1) \cdot \log_2 |A_s| \;\leq\; H - \beta .
+  \label{eq:invariante}
+\end{equation}
+Con claves hexadecimales de 160 bits, el lado izquierdo vale 112 con $T = 200$, 84 con $T = 150$ y 56
+con $T = 75$, contra un límite de 96. El valor inicial del diseño era 200 y no cumplía: ese adversario
+sacaba 112 bits. Se bajó a 150 durante la construcción, y la condición quedó escrita en el código
+(\cod{Params.check}): un detector con parámetros que la violan no arranca, y la búsqueda de parámetros
+descarta esas combinaciones antes de evaluarlas.
+
+\begin{limite}
+\textbf{La invariante no cubre los pedazos de menos de 4 caracteres.} El contador no los cuenta, así
+que para ellos el argumento no aplica. Sin el modelo de evidencia, un carácter por llamada saca la
+clave entera antes de la primera rotación periódica. La \cref{sec:fragmentos} lo mide.
+\end{limite}
+
+Con la configuración evaluada la invariante importa menos: como $\lrot = \num{0.1}$ equivale a 16 bits,
+cualquier pedazo que el contador cuente (4 caracteres o más) ya dispara la rotación.
+
+\subsection{Los parámetros}\label{sec:parametros}
+
+\begin{table}[ht]
+\caption{Los parámetros de la regla, en las dos configuraciones. El \apref{ap:parametros} agrega las
+constantes del contador y de los grafos.}\label{tab:params}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.6cm}R{1.6cm}R{1.9cm}L@{}}
+\toprule
+Parámetro & Demo & Evaluada & Qué controla \\
+\midrule
+$\lrot$ (\cod{lambda_rot}) & \num{0.3} & \num{0.1} & Fracción filtrada que dispara la rotación: 48 o
+  16 de 160 bits \\
+$\brot$ (\cod{b_rot}) & \num{4.0} & \num{2} & Evidencia acumulada que dispara la rotación \\
+$b$ & \num{9.2} & \num{4} & Evidencia acumulada que, con un camino de contenido, bloquea \\
+$T$ & 150 & 75 & Llamadas entre rotaciones periódicas de una clave expuesta \\
+$\beta$ (\cod{beta_bits}) & 64 & 64 & Seguridad residual exigida \\
+\cod{max_rotations} & 3 & 3 & Rotaciones de una misma clave dentro de la ventana \\
+\cod{rotation_window} & 200 & 200 & Largo de la ventana, en llamadas \\
+Modelo de evidencia & no & sí & Sin modelo, $\ell_t = 0$ y $S_t = 0$ siempre \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+La configuración de la demo no carga el modelo de evidencia. Con $S_t = 0$ siempre, la condición por
+evidencia de la regla 2 y la regla 3 no se disparan nunca: quedan el contador, el período y el bloqueo
+determinista. Es lo que se quiere mostrar en una demo (el goteo sube el medidor hasta que rota), y es
+también la configuración del \esp{hook} de Claude Code.
+
+Con la configuración evaluada y el modelo saturado de la \cref{sec:evidencia}, los umbrales se leen
+así: como $\ell$ vale $+3$ o $-3$, $\brot = 2$ se cruza con \emph{una sola} llamada marcada, y $b = 4$
+exige dos seguidas. La \cref{sec:congelamiento} cuenta cómo se eligieron y qué tan determinados
+quedaron por los datos.
+
+\subsection{Modos de medición}
+
+El mismo detector corre en tres variantes que usa la evaluación.
+
+\begin{description}
+  \item[Solo medición] (\cod{enforce=False}). Mide todo igual, pero la acción es siempre
+    \cod{allow} y no rota. Es el panel «sin protección» de la demo, y el modo con que se extraen las
+    señales para ajustar el modelo.
+  \item[Sin rotación] (\cod{rotation_enabled=False}). Ninguna regla rota; los bloqueos siguen. Es la
+    ablación que mide cuánto aporta rotar.
+  \item[Sin evidencia] (\cod{model=None}). Los mismos parámetros, sin modelo. Es la ablación que mide
+    cuánto aporta la evidencia.
+\end{description}
+
+\subsection{Lo que dice cada decisión}
+
+Cada decisión lleva lo necesario para explicarla sin abrir el código:
+
+\begin{itemize}
+  \item \cod{reason}: una frase con la regla y sus números, por ejemplo «Rotación de SECRET\_1:
+    fracción filtrada 0.30 $\geq$ 0.3» o «Rotación de SECRET\_1: expuesto y evidencia S=3.00 $\geq$ 2».
+  \item \cod{leak}: por clave, los bits y la fracción que habían salido \emph{antes} de rotar.
+  \item \cod{path}: las llamadas que explican la decisión, en orden: la primera lectura de la clave,
+    los envíos que aportaron bits y la llamada actual.
+  \item \cod{S} y \cod{latency_ms}: la evidencia acumulada y lo que tardó decidir.
+\end{itemize}

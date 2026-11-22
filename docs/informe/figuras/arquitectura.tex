@@ -1,0 +1,41 @@
+% Vista general: por dónde pasa una llamada.
+\begin{tikzpicture}[font=\small\sffamily]
+  % --- agente
+  \node[caja,minimum width=2.5cm,minimum height=1.5cm] (agente) at (0,0.2)
+    {Agente de código\\[-1pt]{\footnotesize modelo y cliente MCP}};
+
+  % --- proxy
+  \node[cajaoro,minimum width=5.7cm,minimum height=6.5cm,anchor=west] (proxy) at (3.15,-0.55) {};
+  \node[anchor=north,font=\small\sffamily\bfseries] at ($(proxy.north)+(0,-0.12)$) {Alicanto (proxy MCP)};
+  \node[caja,minimum width=5.0cm] (p1) at ($(proxy.north)+(0,-1.2)$)
+    {1. Arma la llamada\\[-1pt]{\footnotesize recursos, ¿saca datos?, ¿no confiable?}};
+  \node[caja,minimum width=5.0cm,below=3.5mm of p1] (p2)
+    {2. Decide\\[-1pt]{\footnotesize contador de bits, evidencia y regla}};
+  \node[caja,minimum width=5.0cm,below=3.5mm of p2] (p3)
+    {3. Ejecuta o bloquea\\[-1pt]{\footnotesize y aprende del resultado}};
+  \node[caja,minimum width=5.0cm,below=3.5mm of p3] (p4)
+    {4. Registra\\[-1pt]{\footnotesize un evento por línea (JSONL)}};
+
+  % --- mundo
+  \node[caja,minimum width=3.3cm] (repo) at (11.5,2.0) {Repositorio\\[-1pt]{\footnotesize archivos y git}};
+  \node[caja,minimum width=3.3cm] (api) at (11.5,0.55) {API protegida\\[-1pt]{\footnotesize\ttfamily api.empresa.test}};
+  \node[caja,minimum width=3.3cm] (web) at (11.5,-0.9) {GitHub y web\\[-1pt]{\footnotesize no confiable}};
+  \node[caja,minimum width=3.3cm] (otro) at (11.5,-2.35) {Cualquier otro destino\\[-1pt]{\footnotesize\ttfamily attacker.test}};
+
+  % --- gestor y cuenta
+  \node[cajagris,minimum width=3.3cm] (vault) at (11.5,-4.75) {Gestor de secretos\\[-1pt]{\footnotesize\ttfamily vault.test}};
+  \node[cajagris,minimum width=2.5cm] (ledger) at (0,-3.0) {Cuenta compartida\\[-1pt]{\footnotesize\ttfamily ledger.json}};
+
+  % --- flechas
+  \draw[flecha] ($(agente.east)+(0,0.22)$) -- node[above,font=\footnotesize] {llamada} ($(agente.east -| proxy.west)+(0,0.22)$);
+  \draw[flecha] ($(agente.east -| proxy.west)+(0,-0.22)$) -- node[below,font=\footnotesize] {resultado} ($(agente.east)+(0,-0.22)$);
+  \draw[flecha] (p1) -- (p2);
+  \draw[flecha] (p2) -- (p3);
+  \draw[flecha] (p3) -- (p4);
+  \foreach \d in {repo,api,web,otro} {\draw[flecha] (p3.east) -- (\d.west);}
+  \draw[flecha,draw=oro,line width=1pt] (proxy.south) |- node[pos=0.75,above,font=\footnotesize,text=oroscuro] {rotar la clave} (vault.west);
+  \draw[flechagris,dashed] (api.east) -- ++(0.4,0) coordinate (bajada)
+    -- node[midway,rotate=90,anchor=north,font=\footnotesize,text=ceniza] {¿la clave sigue vigente?} (bajada |- vault.east) -- (vault.east);
+  \draw[flechagris,dashed,<->] (ledger.east) -- ++(0.55,0) |- (p2.west);
+  \node[nota,anchor=north] at ($(ledger.south)+(0,-0.05)$) {otros proxies de\\la misma máquina};
+\end{tikzpicture}

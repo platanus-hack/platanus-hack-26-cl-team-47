@@ -1,0 +1,190 @@
+\section{La evidencia de comportamiento}\label{sec:evidencia}
+
+El contador de bits es exacto para lo que sabe leer y ciego para lo demás. La evidencia de
+comportamiento es la segunda línea: no mira \emph{qué} sale sino \emph{cómo se ve} la llamada. Es un
+modelo estadístico pequeño, ajustado con datos, y es la pieza que frenó las familias nuevas del set de
+prueba. Está en \cod{engine/evidence/} y en \cod{engine/detector/features.py}.
+
+Esta sección lo describe entero, incluido lo que el ajuste dejó a la vista: el modelo quedó saturado y
+se comporta casi como una regla de dos valores. Decirlo es más útil que presentarlo como algo más fino
+de lo que es.
+
+\subsection{La idea}
+
+A cada llamada se le asigna un número $\ell_t$, positivo si la llamada se parece más a las de un
+ataque y negativo si se parece más al trabajo normal. Esos números se acumulan en una suma $S_t$ que
+no baja de cero. Cuando $S_t$ pasa un umbral, hay evidencia de que la sesión cambió de régimen. Es el
+esquema de detección de cambios de Page~\cite{page}, conocido como CUSUM, aplicado a una razón de
+verosimilitudes.
+
+\subsection{Las nueve señales}
+
+De cada llamada se extraen nueve números (\cref{tab:senales}). Tres vienen del grafo de archivos,
+tres del grafo de llamadas, uno del proxy y dos del contenido.
+
+\begin{table}[ht]
+\caption{Las nueve señales de una llamada (\cod{engine/detector/features.py}).}\label{tab:senales}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.7cm}P{1.9cm}L@{}}
+\toprule
+Señal & Origen & Qué mide \\
+\midrule
+$m$ & Grafo de archivos & Sensibilidad del nodo más sensible que toca la llamada \\
+$m_{\mathrm{sd}}$ & Grafo de archivos & Incertidumbre de esa sensibilidad \\
+\cod{jump} & Grafo de archivos & Saltos entre lo que toca esta llamada y lo que tocaron las cinco
+  anteriores \\
+$U$ & Grafo de llamadas & 1 si la llamada es no confiable o desciende de una que lo es \\
+$n_S$ & Grafo de llamadas & Número de claves que la llamada leyó o heredó \\
+\cod{is_sink} & Proxy & 1 si la llamada saca datos \\
+\cod{prev_source_now_sink} & Grafo de llamadas & 1 si la llamada anterior fue una fuente y esta es un
+  sumidero \\
+\cod{arg_entropy} & Contenido & Entropía de Shannon, por carácter, de los argumentos serializados \\
+\cod{short_match} & Contador & Bits candidatos vigentes, sumados sobre todas las claves \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{El modelo}
+
+El modelo (\cod{engine/evidence/model.py}) trata cada señal por separado. Para la señal $j$ divide su
+rango en cajas, con bordes en los cuantiles de las muestras normales y de ataque juntas (hasta 10
+cajas; los bordes repetidos se funden). En cada caja $c$ estima dos probabilidades, la de las llamadas
+normales y la de las de ataque, con suavizado de Laplace $\alpha = 1$:
+\begin{equation}
+  \hat p_0^{\,j}(c) = \frac{N_0^{\,j}(c) + \alpha}{N_0 + \alpha\, k_j} , \qquad
+  \hat p_1^{\,j}(c) = \frac{N_1^{\,j}(c) + \alpha}{N_1 + \alpha\, k_j} ,
+  \label{eq:hist}
+\end{equation}
+donde $N_0^{\,j}(c)$ y $N_1^{\,j}(c)$ cuentan las muestras normales y de ataque en la caja, $N_0$ y
+$N_1$ son los totales y $k_j$ es el número de cajas. El incremento de una llamada con señales
+$f_{t1}, \dots, f_{t9}$ es la suma de los logaritmos de las razones, recortada a $[-B, B]$ con
+$B = 3$:
+\begin{equation}
+  \ell_t = \clip\!\left( \sum_{j=1}^{9} \log \frac{\hat p_1^{\,j}\!\left(c_j(f_{tj})\right)}
+                                               {\hat p_0^{\,j}\!\left(c_j(f_{tj})\right)} ,\; -B ,\; B \right) .
+  \label{eq:ell}
+\end{equation}
+Sumar los logaritmos equivale a suponer que las señales son independientes dada la clase. No lo son:
+varias dicen casi lo mismo. El recorte existe para que ninguna llamada, por muy segura que parezca,
+mueva la suma más de $B$.
+
+\subsection{La acumulación}
+
+La evidencia acumulada sigue la recurrencia de Page,
+\begin{equation}
+  S_t = \max\!\left(0,\; S_{t-1} + \ell_t\right) , \qquad S_0 = 0 .
+  \label{eq:cusum}
+\end{equation}
+Hay una suma por sesión. No baja de cero, de modo que una sesión larga de trabajo normal no acumula
+«crédito» que después tape un ataque. No se reinicia cuando una clave rota.
+
+Dos umbrales la leen. Con $S_t \geq \brot$, y si hay una clave expuesta, se rota. Con $S_t > b$, y si
+además hay un camino de contenido en el grafo de llamadas, se bloquea (\cref{sec:decision}).
+
+\subsection{El ajuste}\label{sec:modelo-ajustado}
+
+El modelo se ajusta con \cod{python -m eval.fit}. Las señales se obtienen pasando cada sesión por el
+detector en modo de solo medición y sin modelo.
+
+\begin{itemize}
+  \item \textbf{Llamadas normales:} las \num{2511} llamadas de las 60 sesiones de entrenamiento del
+    tráfico normal de fondo (la mitad de las 120 de \cod{data/benign}).
+  \item \textbf{Llamadas de ataque:} los 458 envíos etiquetados de los 80 ataques de
+    \cod{redteam/train}. El resto de las llamadas de una sesión de ataque no entra, ni como normal ni
+    como ataque.
+\end{itemize}
+
+Ni validación ni prueba entran al ajuste. La \cref{fig:modelo} muestra el modelo completo: las nueve
+señales, caja por caja. El \apref{ap:modelo} da los bordes y los valores.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=3 by 3,horizontal sep=1.25cm,vertical sep=1.25cm},
+  width=5.5cm,height=3.55cm,ymin=-7.2,ymax=9,ytick={-6,-3,0,3,6},
+  xticklabel style={font=\tiny},tick label style={font=\tiny},
+  extra y ticks={-3,3},extra y tick labels={},
+  extra y tick style={grid=major,grid style={oro,dashed,line width=0.5pt}},
+  axis x line=bottom,axis y line=left,enlarge x limits=false]
+\input{datos/fig_modelo}
+\end{groupplot}
+\end{tikzpicture}
+\caption{El modelo de evidencia ajustado (\cod{models/model.json}): $\log(\hat p_1/\hat p_0)$ de cada
+caja de cada señal, con las cajas en orden creciente del valor de la señal. Las líneas punteadas
+marcan el tope $\pm B = \pm 3$ del incremento. Varias señales, solas, ya lo superan. Las dos
+últimas tienen una sola caja con datos, con un valor casi nulo.}
+\label{fig:modelo}
+\end{figure}
+
+El informe del ajuste (\cod{models/model.report.json}) dice qué tan separadas quedaron las dos clases:
+
+\begin{itemize}
+  \item el \qty{99.92}{\percent} de las llamadas normales de entrenamiento queda exactamente en el
+    tope inferior, $\ell = -3$;
+  \item la media de $\ell$ en las llamadas normales es \num{-2.9995} y su varianza, \num{0.0003};
+  \item la media de $\ell$ en los envíos de ataque es \num{3.0}: todos quedan en el tope superior.
+\end{itemize}
+
+\begin{clave}
+\textbf{El modelo está saturado.} En los datos de entrenamiento no produce valores intermedios: da
+$-3$ o $+3$. Funciona como un clasificador de dos salidas, no como una medida graduada de sospecha. La
+razón está en la \cref{fig:modelo}: la suma junta varias señales que valen cada una más que el tope, y
+que además dicen casi lo mismo (si la llamada saca datos, si desciende de algo no confiable).
+\end{clave}
+
+Dos de las nueve señales, $n_S$ y \cod{prev_source_now_sink}, quedaron sin información: en los datos
+de ajuste casi todas sus muestras valen 0, los bordes se funden en uno solo y todas caen en la misma
+caja, con una razón cercana a 1.
+
+\subsection{Qué aprendió, en palabras}
+
+Para saber qué regla quedó escrita en esos histogramas, medimos $\ell$ en cada una de las
+\num{15281} llamadas del set de prueba, con las marcas del proxy (\cref{tab:ell}).
+
+\begin{table}[ht]
+\caption{El incremento $\ell$ por tipo de llamada, en el set de prueba con las marcas del proxy y el
+modelo congelado. Corrida hecha para este informe.}\label{tab:ell}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Tipo de llamada & Llamadas & $\ell = -3$ & Intermedio & $\ell = +3$ \\
+\midrule
+\tabladatos{tab_ell}
+\bottomrule
+\end{tabular}
+\end{table}
+
+La tabla dice la regla. El modelo da $+3$ a las peticiones HTTP hacia un destino que no es destino
+permitido de ninguna clave, sea o no un destino marcado como no confiable. A todo lo demás (leer
+archivos, usar \cod{git}, hablar con la API de la empresa) le da $-3$, con pocas excepciones que
+quedan en la columna «Intermedio» y que por sí solas no alcanzan ningún umbral.
+
+Se entiende mirando las señales una por una. Una petición a un \esp{host} que no está en el grafo de
+archivos tiene $m = 0$, $m_{\mathrm{sd}} = 0$ y \cod{jump} $= 0$, y esas tres cajas suman cerca de
+$+3{,}3$. Que sea un sumidero suma $+4{,}6$. Con eso ya está sobre el tope cuando además desciende de
+contenido no confiable ($+7{,}8$). Cuando no desciende ($-6{,}1$), el resultado lo decide la entropía
+de los argumentos: en 269 de las 300 peticiones a \cod{attacker.test} del set llega igual a $+3$, y en
+las otras 31 queda en \num{1.88}. Una petición a la API de la empresa, en cambio, toca un nodo del
+grafo con sensibilidad alta, y las tres señales del grafo de archivos caen en cajas muy negativas: el
+modelo aprendió que hablar con la API propia es trabajo normal.
+
+\subsection{Qué significa esto}
+
+\begin{itemize}
+  \item \textbf{Por qué generaliza.} La regla no depende de la codificación ni del canal exacto: mira
+    hacia dónde va la llamada. Por eso frena familias que usan base32 o XOR, que el contador no sabe
+    leer.
+  \item \textbf{Por qué rota de más.} Una sesión normal que lee una clave y después consulta una
+    página web hace exactamente lo que la regla marca. Es la familia B5, donde Alicanto rotó de más
+    en las 30 sesiones.
+  \item \textbf{Por qué no ve la familia A9.} Los fragmentos viajan hacia la API de la empresa, que
+    para el modelo es trabajo normal.
+  \item \textbf{Cuánto aportan los grafos.} Según las ablaciones hechas después sobre validación
+    (\cod{results/test/LECTURA.md}), quitar las señales de los dos grafos no baja los ataques frenados,
+    pero sube las rotaciones en sesiones normales de 0,47 a 7,5 por cada \num{1000} llamadas. Un
+    indicador binario simple (si la llamada toca algún archivo conocido) da lo mismo que la
+    sensibilidad calculada. La diferencia de área bajo la curva al separar llamadas de ataque de
+    normales, con y sin el grafo de archivos, es de \num{0.0045}, con intervalo al \qty{95}{\percent}
+    de \num{0.0027} a \num{0.0065}: existe y es muy chica.
+\end{itemize}

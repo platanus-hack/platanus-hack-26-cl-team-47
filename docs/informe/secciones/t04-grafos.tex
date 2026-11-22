@@ -1,0 +1,158 @@
+\section{Los dos grafos}\label{sec:grafos}
+
+El contador mira el contenido de lo que sale. Los grafos miran el contexto: qué tan sensible es lo
+que la sesión está tocando, y si lo que sale desciende de algo que se leyó antes. Los dos están en
+\cod{engine/graph/}.
+
+Conviene decir de entrada cuál es su papel real, porque es más modesto que el que tenían en el diseño.
+En la versión evaluada los grafos aportan \emph{señales por llamada} al modelo de evidencia
+(\cref{sec:evidencia}). La parte que propaga sospecha entre pasos lejanos está implementada y
+probada, pero ninguna regla de decisión la lee (\cref{sec:no-conectado}).
+
+\subsection{El grafo de archivos}\label{sec:gff}
+
+\paragraph{Qué representa.} Un grafo no dirigido $G_R$ del repositorio de trabajo
+(\cod{engine/graph/gff.py}). Sus nodos son los archivos, las carpetas, las claves del manifiesto y los
+destinos permitidos de cada clave. Tiene tres clases de aristas, cada una con un peso
+(\cref{tab:aristas}).
+
+\begin{table}[ht]
+\caption{Las aristas del grafo de archivos.}\label{tab:aristas}
+\small
+\begin{tabularx}{\textwidth}{@{}P{3.4cm}LR{1.2cm}@{}}
+\toprule
+Clase & Une & Peso \\
+\midrule
+Árbol de carpetas & Cada archivo o carpeta con la carpeta que lo contiene & 1 \\
+Importación & Un archivo Python con cada módulo del repositorio que importa (se lee con el analizador
+  sintáctico de Python, sin ejecutar nada) & 2 \\
+Referencia & Cada clave con los archivos donde vive, y con sus destinos permitidos & 4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El grafo se construye una vez, al arrancar. Del manifiesto usa los identificadores, los archivos y los
+destinos; el valor de las claves no se lee.
+
+\paragraph{Qué calcula.} A cada nodo se le quiere asignar una \emph{sensibilidad} entre 0 y 1. El
+manifiesto etiqueta unos pocos: las rutas sensibles (\cod{hot_paths}, con valor 1: los archivos de
+claves) y las que se sabe que no lo son (\cod{cold_paths}, con valor 0: la documentación). El resto
+se infiere suponiendo que nodos vecinos tienen sensibilidades parecidas. Es regresión con un campo
+gaussiano sobre el grafo~\cite{zhu}: el campo tiene como matriz de precisión el laplaciano del grafo
+más un término de regularización,
+\begin{equation}
+  Q = D - A + \kappa I ,
+  \label{eq:Q}
+\end{equation}
+donde $A$ es la matriz de pesos, $D$ la diagonal de sus sumas por fila y $\kappa = \num{0.05}$. Si $P_B$
+es la matriz diagonal que marca los nodos etiquetados, $y_B$ sus valores y $\tau = \num{0.2}$ el ruido de
+las etiquetas, la distribución posterior es gaussiana con
+\begin{equation}
+  Q_{\mathrm{post}} = Q + \tau^{-2} P_B , \qquad
+  Q_{\mathrm{post}}\, \mu = \tau^{-2} P_B\, y_B , \qquad
+  \sigma^2 = \diag\!\left(Q_{\mathrm{post}}^{-1}\right) .
+  \label{eq:post}
+\end{equation}
+La media $\mu$ es la sensibilidad estimada de cada nodo y $\sigma$ su incertidumbre. Se resuelve con
+una factorización LU dispersa; la diagonal de la inversa se obtiene resolviendo contra columnas de la
+identidad, en bloques de 256.
+
+\paragraph{Qué entrega en cada llamada.} La función \cod{touch} recibe los recursos de la llamada y
+devuelve tres números.
+\begin{description}
+  \item[$m$.] La sensibilidad $\mu$ del nodo más sensible que toca la llamada.
+  \item[$m_{\mathrm{sd}}$.] La incertidumbre $\sigma$ de ese mismo nodo.
+  \item[\cod{jump}.] La distancia, en saltos del grafo, entre lo que toca esta llamada y lo que
+    tocaron las cinco anteriores. Mide si la sesión saltó a una zona del repositorio donde no estaba.
+\end{description}
+Si la llamada no toca ningún nodo del grafo, los tres valen 0. Es el caso de una petición a un
+\esp{host} que no es destino permitido de ninguna clave, y resulta ser una señal informativa
+(\cref{sec:modelo-ajustado}).
+
+\paragraph{El grafo de la demo.} El repositorio de la demo es chico: 30 nodos (13 archivos, 7
+carpetas, 5 claves y 5 destinos) y 30 aristas (19 de árbol, 1 de importación y 10 de referencia), con
+5 nodos etiquetados. La \cref{tab:grafo} muestra el resultado en algunos de ellos.
+
+\begin{table}[ht]
+\caption{Sensibilidad posterior de algunos nodos del repositorio de la demo. Calculado con
+\cod{FileGraph.from_workspace} sobre \cod{demo/repo}.}\label{tab:grafo}
+\small
+\begin{tabular}{@{}lllrr@{}}
+\toprule
+Nodo & Clase & Etiqueta del manifiesto & $\mu$ & $\sigma$ \\
+\midrule
+\tabladatos{tab_grafo}
+\bottomrule
+\end{tabular}
+\end{table}
+
+La tabla se lee así. Los archivos de claves quedan cerca de 1 y con poca incertidumbre, porque están
+etiquetados. La clave y su destino permitido heredan una sensibilidad alta por las aristas de
+referencia. La documentación queda cerca de 0. Una carpeta que contiene a la vez un archivo sensible
+y uno que no lo es (\cod{config/}) queda en el medio. Y el código, que está lejos de toda etiqueta,
+queda en un valor intermedio con mucha incertidumbre: el modelo dice que no sabe.
+
+\subsection{El grafo de llamadas}\label{sec:dag}
+
+\paragraph{Qué representa.} Un grafo dirigido acíclico de las llamadas de una sesión
+(\cod{engine/graph/dag.py}). Hay una arista de la llamada $i$ a la llamada posterior $j$ cuando los
+argumentos de $j$ comparten una subcadena de $k = 8$ o más caracteres con el resultado de $i$, en
+claro o en una de sus variantes (base64 en sus tres alineaciones, hexadecimal, codificación de URL,
+invertido y ROT13). La arista dice: algo de lo que devolvió $i$ viajó en lo que envió $j$.
+
+\paragraph{Las dos etiquetas.} Cada llamada lleva dos etiquetas que se heredan por las aristas.
+\begin{description}
+  \item[$U$.] La llamada es no confiable o desciende de una que lo es.
+  \item[$S$.] El conjunto de claves que la llamada leyó o que le llegaron por sus ancestros. Una
+    llamada lee una clave si toca su archivo o si su resultado contiene 8 caracteres seguidos de su
+    valor vigente.
+\end{description}
+La etiqueta $U$ viaja por cualquier arista. La etiqueta $S$ de una clave viaja por una arista solo si
+el material compartido incluye 8 caracteres seguidos del valor vigente de esa clave. Sin esa
+condición, $S$ se heredaba con cualquier texto en común y casi todo quedaba marcado.
+
+\paragraph{El patrón que detecta.} Un sumidero que tiene $U$ y tiene $S$ no vacío: lo que sale
+desciende a la vez de contenido no confiable y de la lectura de una clave. En ese caso el grafo
+devuelve un \emph{camino}: la llamada no confiable más antigua, la lectura más antigua y el sumidero.
+Es la única información del grafo de llamadas que usa una regla de decisión (la regla 3 de la
+\cref{sec:decision}), y sirve también para explicar la decisión a una persona.
+
+\paragraph{El índice.} Buscar subcadenas comunes contra todas las llamadas anteriores sería
+cuadrático. El grafo mantiene un índice de los $k$-gramas de todos los resultados vistos: un
+\esp{hash} polinomial de cada ventana de 8 caracteres apunta a la llamada dueña. El índice son bloques
+ordenados que se fusionan por tamaño, de modo que consultar los $m$ $k$-gramas de unos argumentos
+cuesta $O(m \log N)$ sin recorrer las llamadas anteriores. Toda coincidencia de \esp{hash} se confirma
+con la subcadena real antes de crear la arista. Cada resultado se indexa hasta \num{200000}
+caracteres. Según la bitácora del detector, este cambio bajó el percentil 95 del tiempo por llamada
+de 15,6 a 0,55~ms en sesiones de \num{1000} llamadas.
+
+\paragraph{Su límite.} Un envío en pedazos de menos de 8 caracteres no crea arista: ningún pedazo
+comparte 8 caracteres con lo leído. El goteo, que es el caso que motiva el proyecto, es invisible para
+este grafo. Lo cubren el contador y la rotación.
+
+\subsection{Lo que está implementado y no se usa para decidir}\label{sec:no-conectado}
+
+El diseño original tenía una pieza más ambiciosa, y está en el repositorio con sus tests.
+
+\begin{description}
+  \item[Aristas de sospecha y $R^{+}$ (\cod{suspicion.py}).] Además de las aristas de contenido, que
+    son seguras, se agregan aristas \emph{probables} entre una fuente (una llamada no confiable o que
+    leyó una clave) y cualquier llamada posterior. Cada una se abre con probabilidad
+    $p_{ij} = g \cdot e^{-(t_j - t_i)/\tau_s}$, con $\tau_s = 50$ llamadas, donde $g$ depende de la
+    sensibilidad de lo que tocan las dos llamadas y de su correlación posterior en el grafo de
+    archivos. $R^{+}(c)$ es la probabilidad de que exista un camino desde contenido no confiable,
+    pasando por la lectura de una clave, hasta la llamada $c$. Se calcula de forma exacta cuando hay
+    hasta 16 aristas inciertas y por Monte Carlo (200 muestras) en otro caso.
+  \item[Explicación por dominadores (\cod{explain.py}).] Para un sumidero bloqueado, calcula las
+    llamadas por las que pasa \emph{todo} camino desde una fuente no confiable: la explicación mínima y
+    el mejor punto de corte. Usa la intersección de Cooper, Harvey y Kennedy~\cite{chk} en una sola
+    pasada, porque el orden temporal ya es un orden topológico.
+\end{description}
+
+\begin{limite}
+\textbf{Ninguna regla lee $R^{+}$.} En el detector evaluado, el campo \cod{R_plus} de la decisión vale
+1 si hay camino de contenido y 0 si no. Una investigación posterior, hecha solo sobre validación,
+encontró que conectar $R^{+}$ no cambiaría nada medible con estos datos: no marca ningún envío que la
+regla simple no marque (\cod{results/test/LECTURA.md}). Queda como trabajo futuro, y así lo decimos:
+los grafos «conectan pasos lejanos» en el código, no en las decisiones.
+\end{limite}

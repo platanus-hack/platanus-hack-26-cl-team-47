@@ -1,0 +1,161 @@
+\section{Planteamiento: qué se mide y contra qué}\label{sec:planteamiento}
+
+Esta sección fija el vocabulario y la notación del resto del documento. Todo lo demás (el contador,
+la evidencia, la regla de decisión, las métricas) se apoya en cuatro definiciones: qué es un secreto,
+qué es una llamada, cuánto de un secreto ha salido y cuándo decimos que el ataque triunfó.
+
+\subsection{El escenario}
+
+Un agente de código trabaja en un repositorio que contiene claves: en un archivo \cod{.env}, en un
+\cod{config/secrets.yaml}. Para trabajar lee archivos, corre \cod{git} y habla con servicios por HTTP.
+También lee texto que no escribió su equipo: un issue, una página de documentación. Ese texto puede
+traer una instrucción plantada. Si el agente la sigue, usa sus propias herramientas para enviar la
+clave hacia afuera, y lo puede hacer de a pocos caracteres por llamada, entre decenas de llamadas
+normales.
+
+Es el patrón que Willison llama la «tríada letal»~\cite{willison}: contenido no confiable, acceso a
+datos privados y un canal de salida, las tres cosas en el mismo agente. Las herramientas que hacen
+útil al agente son las mismas que sirven de canal.
+
+\subsection{Qué ve Alicanto y qué no}
+
+Alicanto se pone en el único lugar por donde pasan las tres cosas: la llamada a la herramienta.
+
+\begin{itemize}
+  \item \textbf{Ve} el nombre de la herramienta, sus argumentos y su resultado, para cada llamada de
+    cada sesión.
+  \item \textbf{Conoce} las claves que protege y sus destinos permitidos. Vienen en un manifiesto
+    (\cod{demo/secrets_manifest.json}) que para cada clave da su identificador, su valor, los archivos
+    donde vive y los \esp{hosts} a los que es legítimo enviarla.
+  \item \textbf{Puede} pedirle al gestor de secretos que cambie una clave, y puede impedir que una
+    llamada se ejecute.
+  \item \textbf{No ve} el razonamiento del modelo, ni el \esp{prompt}, ni lo que ocurre fuera de las
+    herramientas que él ofrece.
+\end{itemize}
+
+De ahí sale la primera decisión de diseño: como la intención no se puede observar, Alicanto no la
+estima. Mide algo que sí puede observar, que es cuánto material de cada clave ha cruzado hacia afuera.
+
+\subsection{Secretos y entropía}
+
+Un secreto $s$ es una cadena de largo $n$ sobre un alfabeto $A_s$. Su entropía, suponiendo que cada
+carácter se eligió al azar y de forma uniforme, es
+\begin{equation}
+  H(s) = n \cdot \log_2 |A_s| .
+  \label{eq:H}
+\end{equation}
+El alfabeto no se declara: se deduce del valor. Es el más chico de una lista fija que contiene a todos
+los caracteres de $s$ (\cref{tab:alfabetos}). Las claves de la demo y de los tres sets de datos son de
+40 caracteres hexadecimales, así que $H = 40 \cdot 4 = 160$ bits.
+
+\begin{table}[ht]
+\caption{Alfabetos del contador de bits (\cod{engine/bits/decoders.py}, función \cod{alphabet_of}). Se
+prueba en este orden y se usa el primero que contiene a la clave.}\label{tab:alfabetos}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.5cm}LR{1.6cm}R{2.4cm}@{}}
+\toprule
+Alfabeto & Caracteres & $|A_s|$ & Bits por carácter \\
+\midrule
+\cod{hex} & \cod{0-9}, \cod{a-f}; no distingue mayúsculas & 16 & \num{4.000} \\
+\cod{alnum} & \cod{0-9}, \cod{a-z}, \cod{A-Z} & 62 & \num{5.954} \\
+\cod{base64} & los de \cod{alnum} más \cod{+ / = - _} & 65 & \num{6.022} \\
+\cod{printable} & cualquier otro: los 95 caracteres ASCII imprimibles & 95 & \num{6.570} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Llamadas, sumideros y contenido no confiable}
+
+Una sesión es una secuencia de llamadas $c_1, c_2, \dots$ Cada llamada $c_t$ tiene una herramienta,
+unos argumentos y, después de ejecutarse, un resultado. El proxy le agrega tres datos antes de decidir:
+
+\begin{description}
+  \item[Recursos.] Lo que la llamada toca: la ruta del archivo, el \esp{host} de la petición, o
+    \cod{git}.
+  \item[Sumidero (\cod{is_sink}).] La llamada saca datos hacia afuera. Lo son las peticiones HTTP,
+    los issues y comentarios de GitHub, y \cod{git push}, \cod{fetch} y \cod{pull}.
+  \item[No confiable (\cod{untrusted}).] El resultado de la llamada es contenido que no escribió el
+    equipo: lo que viene de GitHub o de la web.
+\end{description}
+
+Las reglas exactas con que el proxy pone esas marcas están en la \cref{sec:marcas}. Importan mucho:
+el resultado principal de la evaluación cambió cuando se pasó de las marcas que traían las grabaciones
+a las que calcula el proxy.
+
+\subsection{Cuánto ha salido}
+
+Para cada secreto $s$, el contador mantiene el conjunto $K_t(s) \subseteq \{0, \dots, n-1\}$ de
+posiciones de $s$ que ya aparecieron en los argumentos de algún sumidero hasta la llamada $t$. Lo
+filtrado, en bits, y la fracción filtrada son
+\begin{equation}
+  I_t(s) = |K_t(s)| \cdot \log_2 |A_s| , \qquad \lambda_t(s) = \frac{I_t(s)}{H(s)} .
+  \label{eq:I}
+\end{equation}
+Es una cuenta por posiciones, no por caracteres enviados: mandar dos veces el mismo pedazo no suma, y
+mandar un pedazo que se solapa con otro suma solo lo nuevo. Es también una cota inferior de lo que el
+atacante sabe. Si un pedazo sale en una codificación que el contador no sabe leer, o es más corto que
+el mínimo que cuenta, $K_t$ no lo registra (\cref{sec:contador-limites}).
+
+Cuando una clave rota, su valor cambia y $K_t(s)$ vuelve a vacío: lo que salió era de un valor que ya
+no sirve. Por eso todas las cuentas de este documento son \emph{por versión} de la clave.
+
+\subsection{Cuándo triunfa el ataque}
+
+No hace falta sacar la clave entera para robarla: con la mayor parte, el resto se puede probar por
+fuerza bruta. El diseño fija una seguridad residual $\beta = 64$ bits: mientras al atacante le falten
+más de 64 bits de una versión, se considera que no la tiene. Con $H = 160$,
+\begin{equation}
+  \text{el ataque triunfa si saca más de } H - \beta = 96 \text{ bits de una misma versión de la clave,}
+  \label{eq:exito}
+\end{equation}
+es decir, más de 24 de los 40 caracteres. Es el criterio de la métrica (\cod{eval/metrics/metrics.py}),
+del servidor del atacante que decide si puede completar la clave (\cod{services/attacker/app.py}) y de
+la invariante que acota los parámetros (\cref{sec:invariante}).
+
+\begin{limite}
+\textbf{Un detalle de borde.} La métrica cuenta el ataque como frenado si salieron \emph{96 bits o
+menos}. El servidor del atacante da la clave por completada si reunió \emph{96 bits o más}. En el
+caso exacto de 96 bits las dos piezas no coinciden. No afecta a ninguna cifra de Alicanto (el máximo
+que dejó salir es menor), pero sí a una ablación del análisis del atacante que se adapta, donde una
+familia queda justo en 96 (\cref{sec:adaptativo}).
+\end{limite}
+
+\subsection{Las dos decisiones de diseño, en estos términos}
+
+\begin{description}
+  \item[Medir.] La cantidad que gobierna las decisiones es $\lambda_t(s)$, que se acumula entre
+    llamadas, entre codificaciones y, con la cuenta compartida, entre agentes. Ninguna llamada tiene
+    que parecer sospechosa por sí sola.
+  \item[Rotar.] La respuesta por defecto no es impedir la llamada sino devolver $K_t(s)$ a vacío,
+    cambiando la clave en el gestor. Un error de Alicanto en una sesión normal cuesta una rotación y no
+    interrumpe el trabajo. El bloqueo queda para tres casos: cuando sale un tramo largo y seguido de la
+    clave hacia un destino que no es el suyo, cuando la evidencia y el camino de los datos coinciden, y
+    cuando una clave ya rotó demasiadas veces (\cref{sec:decision}).
+\end{description}
+
+\subsection{Notación}
+
+\begin{table}[ht]
+\caption{Símbolos usados en este documento, con su nombre en el código.}\label{tab:notacion}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.2cm}LP{4.4cm}@{}}
+\toprule
+Símbolo & Significado & En el código \\
+\midrule
+$s$, $n$, $A_s$ & Un secreto, su largo y su alfabeto & \cod{_SecretState} \\
+$H(s)$ & Entropía del secreto, en bits & \cod{BitsEngine.H} \\
+$K_t(s)$ & Posiciones confirmadas de $s$ que ya salieron & \cod{K} \\
+$C_t(s)$ & Posiciones candidatas vigentes (\cref{sec:confirmadas}) & \cod{cand} \\
+$I_t(s)$, $\lambda_t(s)$ & Bits filtrados y fracción filtrada & \cod{bits}, \cod{fraction} \\
+$k$ & Largo mínimo de una coincidencia confirmada (8) & \cod{k} \\
+$W$ & Llamadas que dura una candidata sin compañía (50) & \cod{W} \\
+$\ell_t$ & Incremento de evidencia de la llamada $t$ & \cod{FeatureModel.llr} \\
+$S_t$ & Evidencia acumulada (CUSUM) & \cod{Decision.S} \\
+$B$ & Tope del incremento, $|\ell_t| \leq B$ (3) & \cod{B} \\
+$\lrot$ & Fracción filtrada que dispara la rotación & \cod{lambda_rot} \\
+$\brot$, $b$ & Umbrales de evidencia para rotar y para bloquear & \cod{b_rot}, \cod{b} \\
+$T$ & Llamadas entre rotaciones periódicas de una clave expuesta & \cod{T} \\
+$\beta$ & Seguridad residual exigida, en bits (64) & \cod{beta_bits} \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,207 @@
+\section{El contador de bits}\label{sec:contador}
+
+El contador responde una sola pregunta: de cada clave, ¿qué posiciones ya salieron? Está en
+\cod{engine/bits/} (\cod{engine.py} y \cod{decoders.py}, unas 420 líneas) y no depende de ninguna otra
+pieza. Es determinista: no tiene nada que ajustar con datos.
+
+\subsection{Qué texto mira}
+
+Solo mira las llamadas que sacan datos. De una llamada que no es sumidero no cuenta nada, traiga lo
+que traiga. De un sumidero toma \emph{todas} las cadenas de sus argumentos, claves y valores, a
+cualquier profundidad (la URL, cada cabecera y su nombre, el cuerpo, el título de un issue, el
+contenido saliente de un \esp{push}), y las une en un solo texto.
+
+No intenta adivinar en qué campo viajaría una clave. Cualquier lugar de la llamada sirve de canal, y
+todos se miran igual.
+
+\subsection{Las variantes: leer lo que viene codificado}\label{sec:variantes}
+
+Un fragmento puede venir en claro o transformado. El contador genera, a partir del texto de la
+llamada, un conjunto de \emph{variantes}: el texto original más lo que resulta de aplicarle seis
+decodificadores (\cref{tab:decodificadores}), y lo que resulta de aplicárselos otra vez a cada
+resultado. Con profundidad 2 se cubren los encadenamientos de dos pasos, como un fragmento invertido y
+después pasado a base64. El conjunto se corta en 256 variantes.
+
+\begin{table}[ht]
+\caption{Los seis decodificadores (\cod{engine/bits/decoders.py}). Los de base64 y hexadecimal
+descartan lo decodificado si menos del \qty{90}{\percent} de sus caracteres es imprimible: es ruido de
+decodificar algo que no era.}\label{tab:decodificadores}
+\small
+\begin{tabularx}{\textwidth}{@{}P{2.3cm}L@{}}
+\toprule
+Decodificador & Qué reconoce \\
+\midrule
+\cod{base64} & Tramos de 6 o más caracteres de base64, estándar o seguro para URL, con hasta dos
+  \cod{=} de relleno. Prueba los 4 desfases, porque el tramo puede venir pegado a otro texto. Los
+  tramos de 8 o más se decodifican siempre; los de 6 o 7, solo si traen su relleno, que es la forma de
+  un fragmento de 4 o 5 caracteres \\
+\cod{hex} & Tramos de 8 o más dígitos hexadecimales, leídos como bytes, con los 2 desfases \\
+\cod{url} & Secuencias \cod{\%XX} y el signo \cod{+} \\
+\cod{reversed} & El texto completo leído al revés \\
+\cod{rot13} & El texto con las letras rotadas 13 lugares \\
+\cod{separated} & Caracteres sueltos separados por uno a tres símbolos, como \cod{a-b-c-d} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+La regla de los tramos cortos de base64 tiene historia. Al principio se exigían 8 caracteres, y un
+goteo de 4 caracteres en base64 (que ocupa 6 más el relleno) pasaba sin contarse: salían los 160 bits.
+Se corrigió antes del congelamiento y quedó anotado en la bitácora como el único cambio al detector
+que responde a un ataque concreto. Exigir el relleno deja fuera las palabras corrientes de 6 o 7
+letras, que serían la fuente obvia de coincidencias al azar.
+
+\subsection{Coincidencias maximales}
+
+En cada variante el contador busca los tramos que coinciden con la clave. Una coincidencia es un par
+(posición de inicio en la clave, largo). Se buscan las \emph{maximales}: las que no se pueden extender
+ni a la izquierda ni a la derecha.
+
+El método es el clásico de sembrar y extender. Se indexan los 4-gramas de la clave (cada ventana de 4
+caracteres y dónde empieza). Se recorre el texto ventana por ventana; cuando una ventana del texto
+está en el índice, se descarta si el carácter anterior también coincide (no sería maximal) y, si no,
+se extiende hacia la derecha mientras clave y texto sigan coincidiendo. Para las claves hexadecimales
+la comparación no distingue mayúsculas.
+
+El mínimo de 4 caracteres es una constante del diseño (\cod{MIN_CANDIDATE}). Con menos, las
+coincidencias por azar harían la cuenta inútil: un par de caracteres hexadecimales cualquiera aparece
+en casi cualquier texto largo.
+
+\subsection{Confirmadas y candidatas}\label{sec:confirmadas}
+
+No todas las coincidencias pesan igual. Un tramo de 12 caracteres seguidos de una clave no aparece por
+azar; uno de 4, a veces sí. El contador separa dos clases según un umbral $k$, que vale 8.
+
+\begin{description}
+  \item[Confirmada.] Coincidencia de $k$ o más caracteres. Sus posiciones entran al conjunto
+    $K_t(s)$ y no salen de él hasta que la clave rota.
+  \item[Candidata.] Coincidencia de 4 a $k-1$ caracteres. Sus posiciones entran a un conjunto aparte,
+    $C_t(s)$. Cuentan para \emph{rotar}, nunca para \emph{bloquear}.
+\end{description}
+
+Las candidatas caducan. Si pasan $W = 50$ llamadas sin que aparezca una candidata nueva en una
+posición distinta de la misma clave, el conjunto $C_t(s)$ se vacía. La idea es que una coincidencia
+corta y aislada es probablemente azar, y varias seguidas en posiciones distintas son un goteo: cada
+candidata nueva renueva el plazo de todas.
+
+Lo que el contador informa por clave en cada llamada es
+\begin{equation}
+  \text{confirmados} = |K_t| \cdot \log_2|A_s| , \qquad
+  \text{candidatos} = |C_t \setminus K_t| \cdot \log_2|A_s| ,
+  \label{eq:conf-cand}
+\end{equation}
+y la fracción que comparan las reglas de rotación es la suma de los dos dividida por $H(s)$. El
+\cref{alg:observe} resume el paso completo.
+
+\begin{algorithm}[ht]
+\caption{Una llamada en el contador de bits (\cod{BitsEngine.observe}).}\label{alg:observe}
+\KwIn{la llamada $c$; por cada clave $s$: $K$, $C$ y el paso $u$ de su última candidata nueva}
+$p \leftarrow p + 1$ \Com*[r]{reloj del contador: llamadas vistas}
+\If{$c$ saca datos}{
+  $x \leftarrow$ todas las cadenas de los argumentos de $c$, unidas\;
+  $V \leftarrow$ variantes de $x$ (profundidad 2, a lo más 256)\;
+  $x' \leftarrow x$ sin las cadenas con forma de hash; $V' \leftarrow$ variantes de $x'$\;
+  \ForEach{clave $s$}{
+    $M \leftarrow$ coincidencias maximales de $s$ en $V$, sin las espejadas\;
+    $K^{+} \leftarrow$ posiciones de las coincidencias de $M$ con largo $\geq k$\;
+    \eIf{todos los destinos nombrados en $x$ son destinos permitidos de $s$}{
+      $M' \leftarrow$ coincidencias maximales de $s$ en $V'$\;
+    }{
+      $M' \leftarrow M$\;
+    }
+    $C^{+} \leftarrow$ posiciones de las coincidencias de $M'$ con largo $< k$\;
+  }
+}
+\ForEach{clave $s$}{
+  $K \leftarrow K \cup K^{+}$\;
+  \uIf{$C^{+} \setminus (K \cup C) \neq \emptyset$}{
+    $C \leftarrow C \cup C^{+}$; $u \leftarrow p$ \Com*[r]{candidata nueva: se renueva el plazo}
+  }
+  \ElseIf{$C \neq \emptyset$ \textbf{y} $p - u \geq W$}{
+    $C \leftarrow \emptyset$ \Com*[r]{caducan}
+  }
+  $C \leftarrow C \setminus K$\;
+}
+\end{algorithm}
+
+\subsection{Dos reglas contra las coincidencias falsas}
+
+\paragraph{Cadenas con forma de hash hacia un destino permitido.} El trabajo normal mueve
+identificadores hexadecimales largos: SHA de git de 40 y 64 caracteres, UUID. Uno de ellos puede
+compartir por azar 4 caracteres seguidos con una clave. Si la llamada va solo hacia destinos
+permitidos de esa clave, las cadenas con esa forma se borran del texto antes de buscar candidatas. La
+excepción vale solo para candidatas: una coincidencia de 8 o más se confirma igual.
+
+\paragraph{Coincidencias espejadas.} Como una de las variantes es el texto invertido, una clave que
+contiene un palíndromo puede producir dos lecturas de un mismo envío: la directa y una desplazada, en
+posiciones que no salieron. Una coincidencia se descarta si su inversa aparece en otra parte de la
+clave y esas posiciones ya las explica la lectura en el otro sentido. Lo encontró un test por
+propiedades durante la construcción.
+
+\subsection{Enviar una clave a su destino no es una fuga}
+
+Una clave se usa: va en la cabecera de autorización de la API a la que pertenece. Cada clave del
+manifiesto declara sus destinos permitidos. Si el destino de la llamada (el \esp{host} de la URL) está
+entre los permitidos de una clave, el detector descarta lo que el contador acaba de sumar para
+\emph{esa} clave en \emph{esa} llamada. Para las demás claves la llamada cuenta igual.
+
+Esta regla es necesaria: sin ella, cada uso legítimo dispararía una rotación. También es el hueco por
+el que se escapa una de las familias del set de prueba (\cref{sec:por-familia}).
+
+\subsection{Un ejemplo, paso a paso}
+
+La \cref{fig:tira} sigue cuatro llamadas contra una clave ficticia de 40 hexadecimales. Los números
+los calculó el propio contador.
+
+\begin{figure}[ht]
+\centering
+\input{figuras/tira}
+\caption{La cuenta tras cada llamada. (1) Sale \cod{3f9a} en claro. (2) Sale \cod{MWMwNw==}, que es
+\cod{1c07} en base64. (3) Sale \cod{a58d}, que es \cod{d85a} invertido. Con tres candidatas en
+posiciones distintas la fracción llega a \num{0.30}, y la configuración de la demo rota aquí. (4) Si
+no hubiera rotado: sale \cod{6c0f17e93ab2}, doce caracteres seguidos; se confirman, y la regla de
+bloqueo impide la llamada.}
+\label{fig:tira}
+\end{figure}
+
+\subsection{Cuando la clave rota}
+
+Al rotar, el contador recibe el valor nuevo y deja la cuenta de esa clave en cero: $K$ y $C$ vacíos,
+alfabeto recalculado. Desde ese momento busca coincidencias con el valor nuevo. Lo que alguien siga
+enviando del valor viejo ya no coincide con nada, y está bien que así sea: es material que no sirve.
+
+El estado del contador se puede guardar y volver a cargar. Lo que se guarda son posiciones y relojes,
+nunca valores de claves.
+
+\subsection{Lo que el contador no ve}\label{sec:contador-limites}
+
+El contador da una cota inferior. Estas son las formas conocidas de quedar por debajo de lo que
+realmente salió.
+
+\begin{itemize}
+  \item \textbf{Pedazos de menos de 4 caracteres.} No se cuentan. Un goteo de 1 a 3 caracteres por
+    llamada pasa bajo el contador; lo que lo frena, cuando se frena, es la evidencia de
+    comportamiento o la rotación periódica (\cref{sec:fragmentos}).
+  \item \textbf{Codificaciones que no están en la lista.} Base32, XOR con una clave, códigos ASCII en
+    decimal, una tabla de sustitución propia. Las cuatro codificaciones del set de prueba se
+    eligieron fuera de la lista, y por eso el contador solo frena muy poco de ese set.
+  \item \textbf{Encadenamientos de más de dos pasos,} y textos que generan más de 256 variantes.
+  \item \textbf{Lo que sale por una llamada que no está marcada como sumidero.} El contador confía en
+    esa marca.
+  \item \textbf{Lo que va a un destino permitido de la propia clave.}
+\end{itemize}
+
+En el otro sentido, el contador puede contar de más por azar. Dos cadenas hexadecimales de 40
+caracteres al azar comparten 4 caracteres seguidos con probabilidad cercana al \qty{2}{\percent}:
+\[
+  1 - \left(1 - 16^{-4}\right)^{37 \cdot 37} \approx \num{0.021} .
+\]
+Una coincidencia así es una candidata de 16 bits, el \qty{10}{\percent} de la clave. Con la
+configuración de la demo (rota al \qty{30}{\percent}) no pasa nada. Con la evaluada (rota al
+\qty{10}{\percent}) basta para rotar, y es la causa de cuatro de las rotaciones de más del set de
+prueba (\cref{sec:costo}).
+
+\subsection{Costo}
+
+Para una llamada con un texto de largo $m$ y una clave de largo $n$, cada variante cuesta $O(n + m)$:
+indexar los 4-gramas de la clave y recorrer el texto. Con a lo más 256 variantes y pocas claves, el
+contador es una parte menor del tiempo de una decisión (\cref{sec:latencia}).
