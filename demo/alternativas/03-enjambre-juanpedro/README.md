@@ -32,7 +32,7 @@ Tres recursos ayudan a seguirla:
 
 Con todo a la vista, un clic en cualquier pantalla acerca la cámara a ese asistente y muestra sus llamadas; Escape vuelve. Teclas: espacio (reproducir o pausar), flechas (un paso), 1 y 2 (sin y con Alicanto), E (cómo lo probamos), T (poco texto o todo), R (inicio).
 
-Dura 64 segundos sin Alicanto (27 de ellos son el origen y el prólogo) y 46 con Alicanto: 1 minuto 50 en total. `?speed=1.3` lo deja en 1 minuto 25; las flechas permiten saltar cuadros. `?w=b` parte directo en el mundo con Alicanto.
+Corriendo sola dura 1 minuto 14: 43 segundos sin Alicanto (18 de ellos son el origen y el prólogo) y 31 con Alicanto. El tope es 1 minuto 20, y un test lo fija; vale igual en el sitio, en local y dentro del pitch. `?speed=1` trae la versión larga, de 1 minuto 50; las flechas permiten saltar cuadros. Para presentarla hablando encima: `terminales.html?texto=poco&reloj=80` (con `servidor.py`). Espera la barra espaciadora, corre de corrido los dos mundos con las terminales en vivo debajo y muestra un reloj que cuenta desde 1:20 y se detiene en el resultado final. `?w=b` parte directo en el mundo con Alicanto.
 
 ## El pitch de 3 minutos: el público elige el ataque y el motor corre en vivo
 
@@ -301,7 +301,7 @@ Antes de poner cualquiera de estos datos en una lámina, una persona debe abrir 
 - **Teléfono:** no es su lugar. No se rompe ni se desplaza hacia el lado, pero las 20 pantallas quedan muy chicas.
 - **Letra chica:** con todo a la vista, cada pantalla mide unos 85 píxeles de ancho a 1024×768. Se entiende por la forma (quién manda un pedazo) y por el subtítulo, no por leer cada una.
 - **Rendimiento:** la cámara se anima cuadro a cuadro con 20 copias de la pantalla. En el computador donde se hizo, con el navegador sin ventana, cada cuadro tardó 16,7 ms al entrar y al salir (60 por segundo). Eso no garantiza lo mismo con un proyector conectado: hay que mirarla corriendo en el computador del pitch.
-- **Duración:** 1 minuto 50 es largo para un pitch de 3 minutos. Hay que decidir entre acelerarla, saltar cuadros o acortar el prólogo.
+- **Duración:** la escena corre en 1 minuto 14 por defecto. A esa velocidad los subtítulos de la versión con todo el texto pasan rápido; con alguien explicando (poco texto) no importa.
 - **Red:** no usa internet; necesita el servidor local.
 - **La parte en vivo depende de `servidor.py`.** Si no está corriendo, la página lo dice en pantalla y sigue con la corrida grabada; quien presenta tiene que decirlo igual. El servidor escucha solo en este computador (127.0.0.1) y no acepta más valores que los que ofrece la página.
 - **El público puede elegir 1 o 2 asistentes.** Ahí hasta un monitor por agente frena el ataque, y hay que tener lista la frase para ese caso (está en el guion).

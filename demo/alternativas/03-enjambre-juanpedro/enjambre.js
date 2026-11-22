@@ -23,8 +23,9 @@
  * Las cifras de la prueba se leen de evaluacion.json, que hacer_evaluacion.py copia de results/
  * y de redteam/SELLO.md; con servidor.py, el sello del set se vuelve a calcular en el momento.
  *
- * Parámetros: ?w=a|b, ?t=<llamada>|end (abre con todo a la vista), ?speed=<n> (1.3 acorta todo
- * un 30 %), ?autoplay=1,
+ * Parámetros: ?w=a|b, ?t=<llamada>|end (abre con todo a la vista), ?speed=<n> (por defecto 1.5:
+ * la escena entera dura menos de 1 minuto 20; con 1 dura 1 minuto 50), ?autoplay=1,
+ * ?reloj=<segundos> (un reloj que cuenta hacia atrás desde que parte la escena),
  * ?a=<jsonl>&b=<jsonl>, ?pitch=1 (el pitch completo de 3 minutos), ?escena=prueba (abre en
  * «Cómo lo probamos»; con &paso=0..5), ?texto=poco|todo. Teclas: espacio, flechas, 1 y 2 (mundo),
  * S (salta a lo próximo que importa), V (el público elige), E (cómo lo probamos), T (poco texto o
@@ -243,9 +244,16 @@ if (typeof document !== "undefined") (function () {
   let pocoTexto = Q.has("texto") ? Q.get("texto") === "poco" : PITCH;
   document.body.dataset.texto = pocoTexto ? "poco" : "todo";
   const PITCH_MS = 180000; // 3 minutos, ni uno más
+  // Un reloj que cuenta hacia atrás. En el pitch son sus 3 minutos; fuera de él, ?reloj=<segundos>
+  // lo muestra para presentar la escena con un tope (parte con la primera reproducción y se detiene
+  // en el resultado final).
+  const RELOJ_MS = PITCH ? PITCH_MS : Math.max(0, Number(Q.get("reloj")) || 0) * 1000;
   const API = "/api/correr"; // lo sirve servidor.py; sin él, sigue la corrida grabada
   const ENC = Q.get("enc") || "auto";
-  let speed = Number(Q.get("speed")) || (PITCH ? 1.5 : 1); // el pitch corre más rápido: son 3 minutos
+  // La escena entera, del origen al resultado con Alicanto, dura menos de 1 minuto 20 sin pedir nada
+  // (un test lo fija). ?speed= la cambia: con 1 dura 1 minuto 50.
+  const VELOCIDAD = 1.5;
+  let speed = Number(Q.get("speed")) || VELOCIDAD;
   let card = PITCH ? "opening" : ""; // capa a la vista: "opening", "proof" (cómo lo probamos) o ninguna
   let evalData = null; // evaluacion.json
   let proofStep = 0; // paso de «Cómo lo probamos»
@@ -254,6 +262,7 @@ if (typeof document !== "undefined") (function () {
   let sealAsked = false;
   let sealLive = null; // el sello recalculado recién por servidor.py, si está
   let clockT0 = 0; // cuándo partió el reloj del pitch
+  let clockFin = 0; // cuándo se detuvo (solo con ?reloj=, al llegar al resultado final)
   let liveRun = null; // la corrida que eligió el público, tal como la devolvió el servidor
   let liveOpen = false; // el panel del público está abierto
   let liveAsked = false; // ya se le preguntó al público en este pitch
@@ -696,6 +705,15 @@ if (typeof document !== "undefined") (function () {
     const moves = !!prev && prev.cam !== f.cam;
     return Math.max(moves ? CAM_MS + 500 : 90, f.ms / speed);
   }
+  /** Cuánto dura la escena corriendo sola, en segundos: cada mundo y los dos seguidos. */
+  function duracion() {
+    const de = (w) => frames[w].reduce((ms, f, i) => ms + hold(f, i ? frames[w][i - 1] : null), 0) / 1000;
+    const a = de("a");
+    const b = de("b");
+    return { a, b, total: a + b, velocidad: speed };
+  }
+  window.__enjambre = { duracion, cuadros: (w) => frames[w].map((f) => ({ ms: f.ms, rot: f.rot || 0, verdict: !!f.verdict, beat: f.beat || "" })) };
+
   function tick() {
     if (F >= last()) {
       // Al terminar el mundo sin Alicanto, pasa solo al mundo con Alicanto (por su tarjeta).
@@ -718,6 +736,7 @@ if (typeof document !== "undefined") (function () {
       restart();
     }
     const fresh = !started;
+    if (!PITCH && RELOJ_MS && !clockT0) clockT0 = performance.now(); // el reloj parte con la escena
     started = true;
     zoomAgent = 0;
     timer = setTimeout(tick, F === 0 ? hold(frame(), null) : 120);
@@ -764,6 +783,7 @@ if (typeof document !== "undefined") (function () {
     clearTimeout(proofTimer); proofTimer = null; proofAutoOn = false;
     card = PITCH ? "opening" : "";
     if (PITCH) { clockT0 = 0; liveAsked = false; }
+    else { clockT0 = 0; clockFin = 0; }
     if (liveRun) { location.reload(); return; } // vuelven las grabaciones del archivo
     render(false, false, true);
   }
@@ -1287,7 +1307,7 @@ if (typeof document !== "undefined") (function () {
       b.addEventListener("click", () => { pick.disfraz = b.dataset.v; pick.chosen[1] = true; pick.step = 2; paintLive(); });
     }
     $("live-run").addEventListener("click", () => { if (!running) runLive(); });
-    if (PITCH) setInterval(paintClock, 250);
+    if (RELOJ_MS) setInterval(paintClock, 250);
   }
 
   function startClock() {
@@ -1296,9 +1316,11 @@ if (typeof document !== "undefined") (function () {
   }
   function paintClock() {
     const node = $("timer");
-    node.hidden = !PITCH;
-    if (!PITCH) return;
-    const left = clockT0 ? PITCH_MS - (performance.now() - clockT0) : PITCH_MS;
+    node.hidden = !RELOJ_MS;
+    if (!RELOJ_MS) return;
+    // Fuera del pitch el reloj se detiene cuando la escena llega al resultado final.
+    if (!PITCH && clockT0 && !clockFin && world === "b" && frames.b && F >= last()) clockFin = performance.now();
+    const left = clockT0 ? RELOJ_MS - ((clockFin || performance.now()) - clockT0) : RELOJ_MS;
     const s = Math.ceil(Math.abs(left) / 1000);
     node.textContent = `${left < 0 ? "+" : ""}${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     node.classList.toggle("late", clockT0 > 0 && left < 20000);
@@ -1452,7 +1474,7 @@ if (typeof document !== "undefined") (function () {
     proofTimer = null;
     if (proofStep >= PROOF_ASK) proofAutoOn = false; // el pedido se queda; el paso 5 es a mano
     if (proofAutoOn) {
-      const k = speed / (PITCH ? 1.5 : 1);
+      const k = speed / VELOCIDAD;
       proofTimer = setTimeout(() => proofGo(proofStep + 1), Math.max(400, PROOF_MS[proofStep] / k));
     }
     paintControls();

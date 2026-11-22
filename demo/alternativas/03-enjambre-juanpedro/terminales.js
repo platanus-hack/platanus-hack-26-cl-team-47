@@ -365,7 +365,7 @@
   // (los de un enlace viejo, como ?demo=enjambre) no cuentan. En este computador (el del pitch)
   // espera a quien presenta.
   const local = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) || location.protocol === "file:";
-  const SUYOS = ["w", "t", "speed", "autoplay", "a", "b", "pitch", "escena", "paso", "texto", "enc"];
+  const SUYOS = ["w", "t", "speed", "autoplay", "a", "b", "pitch", "escena", "paso", "texto", "enc", "reloj"];
   const consulta = new URLSearchParams(location.search);
   const pide = SUYOS.some((k) => consulta.has(k));
   marco.src = "enjambre.html" + (pide ? location.search : local ? "" : "?autoplay=1") + location.hash;

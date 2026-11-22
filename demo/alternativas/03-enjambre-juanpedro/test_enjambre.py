@@ -1028,3 +1028,56 @@ def test_la_tecla_t_cambia_entre_poco_texto_y_todo(browser, site):
     assert page.evaluate(FITS) == [] and errors == []
     page.close()
 
+
+# ---------- cuánto dura ----------
+
+def test_la_escena_entera_dura_menos_de_un_minuto_veinte(browser, site):
+    """Del origen al resultado con Alicanto, corriendo sola y sin pedir velocidad: 80 segundos como tope.
+    Vale igual en el sitio (parte sola), en local y en el pitch."""
+    for consulta in ("", "?autoplay=1", "?texto=poco", "?pitch=1"):
+        page, errors = _open(browser, site + consulta)
+        d = page.evaluate("window.__enjambre.duracion()")
+        assert d["total"] <= 78, (consulta, d)          # dos segundos de margen bajo el tope
+        assert abs(d["a"] + d["b"] - d["total"]) < 1e-6 and d["a"] > 30 and d["b"] > 20
+        assert errors == []
+        page.close()
+    # Con ?speed=1 sigue disponible la versión larga, y la cuenta responde a la velocidad.
+    page, _ = _open(browser, site + "?speed=1")
+    assert page.evaluate("window.__enjambre.duracion().total") > 100
+    page.close()
+
+
+def test_a_esa_velocidad_la_rotacion_y_el_resultado_se_alcanzan_a_leer(browser, site):
+    """Acortar no puede dejar la rotación en un parpadeo: sus tres tiempos duran al menos 2 segundos
+    cada uno, y el resultado sin Alicanto se sostiene al menos 3."""
+    page, errors = _open(browser, site + "?w=b&t=47")
+    tiempos = page.evaluate("""() => {
+      const d = window.__enjambre.duracion();
+      return window.__enjambre.cuadros('b').filter(c => c.rot).map(c => c.ms / d.velocidad / 1000);
+    }""")
+    assert len(tiempos) == 3 and min(tiempos) >= 2.0, tiempos
+    final_a = page.evaluate("""() => { const d = window.__enjambre.duracion();
+      return window.__enjambre.cuadros('a').filter(c => c.verdict).map(c => c.ms / d.velocidad / 1000); }""")
+    assert final_a and final_a[0] >= 3.0, final_a
+    assert errors == []
+    page.close()
+
+
+def test_el_reloj_para_presentar_la_escena_con_un_tope(browser, site):
+    """?reloj=80: cuenta hacia atrás desde que parte la escena y se detiene en el resultado final."""
+    page, errors = _open(browser, site + "?texto=poco&reloj=80&speed=40")
+    assert page.locator("#timer").is_visible() and page.inner_text("#timer") == "1:20"   # espera el espacio
+    page.keyboard.press("Space")
+    page.wait_for_function("document.getElementById('timer').textContent !== '1:20'", timeout=5000)
+    page.wait_for_function(
+        "document.body.dataset.world === 'b' && !document.getElementById('verdict').hidden", timeout=60000)
+    page.wait_for_timeout(600)
+    final = page.inner_text("#timer")
+    page.wait_for_timeout(1300)
+    assert page.inner_text("#timer") == final and not final.startswith("+")     # detenido, y dentro del tope
+    assert errors == []
+    page.close()
+    sin, _ = _open(browser, site + "?texto=poco")
+    assert not sin.locator("#timer").is_visible()                              # sin pedirlo, no hay reloj
+    sin.close()
+
