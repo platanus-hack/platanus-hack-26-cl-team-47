@@ -156,7 +156,7 @@ Van aquí, juntos, para que nadie tenga que buscarlos.
 
 ### La demo oficial
 
-Está en `demo/viz/` y publicada en [alicanto.vercel.app](https://alicanto.vercel.app). Muestra el mismo ataque dos veces. Sin protección, el atacante arma la clave y recibe 200. Con Alicanto, la clave rota en la llamada 24, con 48 bits filtrados, y recibe 401. Una segunda versión reparte la fuga entre cinco agentes: con una cuenta por agente nadie la ve; con la cuenta por clave, rota.
+Está en `demo/viz/` y se corre en local. Fue la que publicó el sitio hasta el domingo 22 a las 05:27. Desde entonces [alicanto.vercel.app](https://alicanto.vercel.app) publica la alternativa 03, con sus terminales, el tablero de pruebas y este informe. Muestra el mismo ataque dos veces. Sin protección, el atacante arma la clave y recibe 200. Con Alicanto, la clave rota en la llamada 24, con 48 bits filtrados, y recibe 401. Una segunda versión reparte la fuga entre cinco agentes: con una cuenta por agente nadie la ve; con la cuenta por clave, rota.
 
 ### Las demos alternativas
 
@@ -166,7 +166,7 @@ Son tres exploraciones en `demo/alternativas/`, hechas sobre corridas reales del
 | --- | --- |
 | 01, «El botín» | El ataque visto desde el servidor del atacante: la clave se arma de a cuatro caracteres y, con Alicanto, lo que había juntado se vuelve ceniza |
 | 02, «El juez es el atacante» | Una página para el teléfono de alguien del jurado, que recibe la clave pedazo a pedazo y la prueba |
-| 03, «20 agentes, una clave» | Una clínica ficticia, sus 20 asistentes de código y una nota plantada. Es la que lleva el pitch de 3 minutos |
+| 03, «20 agentes, una clave» | Una clínica ficticia, sus 20 asistentes de código y una nota plantada. Es la que lleva el pitch de 3 minutos y, desde el domingo, la del sitio público |
 
 ### El pitch de 3 minutos
 
@@ -278,7 +278,8 @@ Todo está en el repositorio del equipo, `platanus-hack/platanus-hack-26-cl-team
 | El atacante que se adapta y los fragmentos cortos | `results/adaptive/`, `results/short_fragments/` |
 | Las corridas con modelos reales | `docs/LLM_EN_VIVO.md` |
 | El hook de Claude Code | `integrations/claude_code/README.md` |
-| La demo oficial y su despliegue | `demo/viz/`, `demo/DEPLOY.md` |
+| La demo oficial | `demo/viz/` |
+| El sitio público y su despliegue | `demo/alternativas/03-enjambre-juanpedro/publicar.sh`, `vercel.json`, `demo/DEPLOY.md` |
 | Las demos alternativas | `demo/alternativas/` |
 | El pitch de 3 minutos con la parte en vivo | `demo/alternativas/03-enjambre-juanpedro/GUION_3_MIN.md` |
 | El pitch oficial y las preguntas del jurado | `pitch/GUION.md`, `pitch/PREGUNTAS.md` |
